@@ -371,7 +371,20 @@ function seedDatabase(db) {
         productivity_growth_since_1979, wage_growth_since_1979,
         median_household_income, avg_student_debt, avg_medical_debt,
         rent_pct_income_1985, rent_pct_income_now
-      ) VALUES (1, 3.5, 7.5, 69.6, 17.5, 74580, 37574, 2459, 25, 35)
+      ) VALUES (1, 3.5, 5.5, 80, 17.5, 83592, 39000, 10570, 9, 23.5)
+    `).run();
+  } else {
+    db.prepare(`
+      UPDATE historical_economic_data SET
+        home_price_to_income_now = 5.5,
+        productivity_growth_since_1979 = 80,
+        median_household_income = 83592,
+        avg_student_debt = 39000,
+        avg_medical_debt = 10570,
+        rent_pct_income_1985 = 9,
+        rent_pct_income_now = 23.5,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = 1
     `).run();
   }
 

@@ -165,7 +165,7 @@ app.get('/api/local-data/:zipCode', (req, res) => {
   });
 });
 
-// GET /api/theft-calculator - Calculate personalized economic theft metrics
+// GET /api/theft-calculator - Calculate personalized inflationary cost metrics
 app.get('/api/theft-calculator', (req, res) => {
   const { age, income, zip } = req.query;
   const userAge = parseInt(age, 10);
@@ -193,19 +193,19 @@ app.get('/api/theft-calculator', (req, res) => {
   const yearsToRetirement = Math.max(0, 65 - userAge);
 
   // -- HOUSING (time-based, not dollars) --
-  // In 1985, median home cost 3.5 years of income. Now it costs 7.5 years.
+  // In 1985, median home cost 3.5 years of income. Now it costs 5.5 years.
   // Show the extra working years needed — not a dollar figure.
   const historicalHomeRatio = historical.home_price_to_income_1985;
   const currentHomeRatio = historical.home_price_to_income_now;
   const extraYearsToBuyHome = currentHomeRatio - historicalHomeRatio;
 
-  // -- WAGE THEFT (productivity vs pay gap) --
-  // Since 1979, productivity rose ~70% but wages only ~17%.
+  // -- WAGE-PRODUCTIVITY GAP (inflationary wage loss) --
+  // Since 1979, productivity rose ~80% but wages only ~17.5%.
   const productivityGap = historical.productivity_growth_since_1979;
   const wageGrowth = historical.wage_growth_since_1979;
   const wageGapPct = productivityGap - wageGrowth;
-  const annualWageTheft = Math.round(userIncome * (wageGapPct / 100));
-  const lifetimeEarningsTheft = annualWageTheft * workingYears;
+  const annualWageLoss = Math.round(userIncome * (wageGapPct / 100));
+  const lifetimeEarningsLoss = annualWageLoss * workingYears;
 
   // -- DEBT BURDEN --
   // Average student + medical debt normalized by income relative to median
@@ -215,51 +215,51 @@ app.get('/api/theft-calculator', (req, res) => {
   const avgMedicalDebt = historical.avg_medical_debt;
   const debtBurden = Math.round((avgStudentDebt + avgMedicalDebt) * Math.min(incomeRatio, 1.5));
 
-  // -- RENT EXTRACTION --
-  // In 1985 rent was ~25% of income; now it's ~35% nationally.
+  // -- INFLATIONARY RENT COST INCREASE --
+  // In 1985 rent was ~9% of income; now it's ~23.5% nationally.
   const rentPctThen = historical.rent_pct_income_1985;
   const rentPctNow = historical.rent_pct_income_now;
   const excessRentPct = (rentPctNow - rentPctThen) / 100;
-  const annualRentTheft = Math.round(userIncome * excessRentPct);
-  const lifetimeRentTheft = annualRentTheft * workingYears;
+  const annualRentCost = Math.round(userIncome * excessRentPct);
+  const lifetimeRentCost = annualRentCost * workingYears;
 
   // -- TOTALS (dollars: earnings + debt + rent only) --
-  const totalLifetimeTheft = lifetimeEarningsTheft + debtBurden + lifetimeRentTheft;
-  const yearsOfWorkStolen = totalLifetimeTheft > 0 ? (totalLifetimeTheft / userIncome).toFixed(1) : '0.0';
-  const projectedFutureTheft = (annualWageTheft + annualRentTheft) * yearsToRetirement;
+  const totalLifetimeCost = lifetimeEarningsLoss + debtBurden + lifetimeRentCost;
+  const yearsOfIncomeLost = totalLifetimeCost > 0 ? (totalLifetimeCost / userIncome).toFixed(1) : '0.0';
+  const projectedFutureCost = (annualWageLoss + annualRentCost) * yearsToRetirement;
 
   res.json({
     inputs: { age: userAge, income: userIncome, zip: zip || null },
     metrics: {
       housing: {
-        label: 'Housing Affordability Lost',
+        label: 'Housing Affordability Gap',
         yearsIn1985: historicalHomeRatio,
         yearsNow: currentHomeRatio,
         extraYears: extraYearsToBuyHome,
         detail: `A home costs ${currentHomeRatio.toFixed(1)} years of income today vs ${historicalHomeRatio.toFixed(1)} in 1985`,
       },
       earnings: {
-        label: 'Wages Stolen by Productivity Gap',
-        amount: lifetimeEarningsTheft,
-        annualAmount: annualWageTheft,
+        label: 'Wage-Productivity Inflationary Loss',
+        amount: lifetimeEarningsLoss,
+        annualAmount: annualWageLoss,
         detail: `Productivity up ${productivityGap}% since 1979, wages only up ${wageGrowth}%`,
       },
       debt: {
-        label: 'Systemic Debt Burden',
+        label: 'Inflationary Debt Burden',
         amount: debtBurden,
         detail: `Student + medical debt normalized to your income level`,
       },
       rent: {
-        label: 'Excess Rent Extracted',
-        amount: lifetimeRentTheft,
-        annualAmount: annualRentTheft,
+        label: 'Inflationary Rent Cost Increase',
+        amount: lifetimeRentCost,
+        annualAmount: annualRentCost,
         detail: `Rent takes ${rentPctNow}% of income now vs ${rentPctThen}% in 1985`,
       },
     },
     totals: {
-      lifetimeTheft: totalLifetimeTheft,
-      yearsOfWorkStolen: parseFloat(yearsOfWorkStolen),
-      projectedFutureTheft: projectedFutureTheft,
+      lifetimeTheft: totalLifetimeCost,
+      yearsOfWorkStolen: parseFloat(yearsOfIncomeLost),
+      projectedFutureTheft: projectedFutureCost,
       workingYears: workingYears,
       yearsToRetirement: yearsToRetirement,
     },

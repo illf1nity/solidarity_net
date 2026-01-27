@@ -1379,12 +1379,47 @@
       const [reportFilter, setReportFilter] = useState('all');
       const [newReport, setNewReport] = useState({ name: '', address: '', issues: [], description: '', anonymous: true });
 
-      // Theft Calculator State
+      // Inflationary Cost Calculator State
       const [theftAge, setTheftAge] = useState('');
       const [theftIncome, setTheftIncome] = useState('');
       const [theftResults, setTheftResults] = useState(null);
       const [theftLoading, setTheftLoading] = useState(false);
       const [theftError, setTheftError] = useState(null);
+
+      // Text Customization State
+      const [selectedFont, setSelectedFont] = useState("'IBM Plex Mono', 'Courier New', monospace");
+      const [showTextPanel, setShowTextPanel] = useState(false);
+      const [customTexts, setCustomTexts] = useState({
+        sectionTitle: 'Your Inflationary Cost Impact',
+        sectionDesc: 'Enter your age and income to see how systemic economic policy has impacted your purchasing power.',
+        buttonLabel: 'Calculate Impact',
+        heroHeader: 'Total inflationary cost over {workingYears} working years',
+        heroSubtext: 'That is {yearsOfWork} full years of income equivalent in inflationary losses.',
+        futureProjection: 'At this rate, another ${futureAmount} in projected inflationary costs before you reach 65.',
+        housingLabel: 'Housing Affordability Gap',
+        housingDetail: 'A home costs {yearsNow} years of income today vs {years1985} in 1985',
+        earningsLabel: 'Wage-Productivity Inflationary Loss',
+        earningsDetail: 'Productivity up {productivity}% since 1979, wages only up {wageGrowth}%',
+        debtLabel: 'Inflationary Debt Burden',
+        debtDetail: 'Student + medical debt normalized to your income level',
+        rentLabel: 'Inflationary Rent Cost Increase',
+        rentDetail: 'Rent takes {rentNow}% of income now vs {rentThen}% in 1985',
+        pctSuffix: '% of total inflationary cost',
+        ctaTitle: 'This is not inevitable. It is policy. Policy can be changed.',
+        ctaSubtitle: 'Join a worker collective, tenant union, or consumer group to start organizing.',
+      });
+
+      const updateCustomText = (key, value) => {
+        setCustomTexts(prev => ({ ...prev, [key]: value }));
+      };
+
+      const renderTemplate = (template, vars) => {
+        let result = template;
+        Object.entries(vars).forEach(([key, val]) => {
+          result = result.replace(new RegExp('\\{' + key + '\\}', 'g'), String(val));
+        });
+        return result;
+      };
 
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
@@ -2122,12 +2157,114 @@
                   )}
                 </section>
 
-                {/* Economic Theft Calculator */}
+                {/* Inflationary Cost Calculator */}
                 <section style={{ marginBottom: '60px' }}>
-                  <h2 style={styles.sectionHeader}>What Has Been Stolen From You</h2>
+                  <h2 style={styles.sectionHeader}>{customTexts.sectionTitle}</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                    Enter your age and income to see how systemic economic policy has personally cost you.
+                    {customTexts.sectionDesc}
                   </p>
+
+                  {/* Text Customization Panel */}
+                  <div style={{ marginBottom: '25px' }}>
+                    <button
+                      onClick={() => setShowTextPanel(!showTextPanel)}
+                      style={{
+                        padding: '10px 16px',
+                        backgroundColor: showTextPanel ? colors.bgLighter : 'transparent',
+                        color: showTextPanel ? colors.warning : colors.textDim,
+                        border: `1px solid ${showTextPanel ? colors.warning : colors.borderLight}`,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      {showTextPanel ? 'Hide' : 'Show'} Text Customization
+                    </button>
+
+                    {showTextPanel && (
+                      <div style={{
+                        marginTop: '15px',
+                        padding: '25px',
+                        backgroundColor: colors.bgLight,
+                        border: `1px solid ${colors.border}`,
+                      }}>
+                        <div style={{ fontSize: '10px', color: colors.warning, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', borderBottom: `1px solid ${colors.border}`, paddingBottom: '10px' }}>
+                          Text Customization Panel
+                        </div>
+
+                        {/* Font Selection */}
+                        <div style={{ marginBottom: '20px', paddingBottom: '20px', borderBottom: `1px solid ${colors.border}` }}>
+                          <label style={{ display: 'block', fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                            Font Family
+                          </label>
+                          <select
+                            value={selectedFont}
+                            onChange={(e) => setSelectedFont(e.target.value)}
+                            style={{
+                              backgroundColor: colors.bgLighter,
+                              border: `1px solid ${colors.borderLight}`,
+                              color: '#fff',
+                              padding: '10px 12px',
+                              fontFamily: 'inherit',
+                              fontSize: '13px',
+                              width: '100%',
+                              maxWidth: '350px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="'IBM Plex Mono', 'Courier New', monospace">IBM Plex Mono (Default)</option>
+                            <option value="'Times New Roman', Georgia, serif">Times New Roman</option>
+                          </select>
+                          <div style={{ marginTop: '8px', padding: '12px', backgroundColor: colors.bgLighter, border: `1px dashed ${colors.border}`, fontFamily: selectedFont, fontSize: '14px', color: colors.textMuted }}>
+                            Preview: The inflationary cost of living has increased significantly since 1985.
+                          </div>
+                        </div>
+
+                        {/* Customizable Text Fields */}
+                        <div style={{ display: 'grid', gap: '15px' }}>
+                          {[
+                            { key: 'sectionTitle', label: 'Section Title' },
+                            { key: 'sectionDesc', label: 'Section Description' },
+                            { key: 'buttonLabel', label: 'Calculate Button Label' },
+                            { key: 'heroHeader', label: 'Results Header (use {workingYears} for dynamic value)' },
+                            { key: 'heroSubtext', label: 'Results Subtext (use {yearsOfWork} for dynamic value)' },
+                            { key: 'futureProjection', label: 'Future Projection (use {futureAmount} for dynamic value)' },
+                            { key: 'housingLabel', label: 'Housing Metric Label' },
+                            { key: 'housingDetail', label: 'Housing Detail (use {yearsNow}, {years1985})' },
+                            { key: 'earningsLabel', label: 'Earnings Metric Label' },
+                            { key: 'earningsDetail', label: 'Earnings Detail (use {productivity}, {wageGrowth})' },
+                            { key: 'debtLabel', label: 'Debt Metric Label' },
+                            { key: 'debtDetail', label: 'Debt Detail' },
+                            { key: 'rentLabel', label: 'Rent Metric Label' },
+                            { key: 'rentDetail', label: 'Rent Detail (use {rentNow}, {rentThen})' },
+                            { key: 'pctSuffix', label: 'Percentage Suffix Text' },
+                            { key: 'ctaTitle', label: 'Call-to-Action Title' },
+                            { key: 'ctaSubtitle', label: 'Call-to-Action Subtitle' },
+                          ].map(({ key, label }) => (
+                            <div key={key}>
+                              <label style={{ display: 'block', fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
+                                {label}
+                              </label>
+                              <input
+                                type="text"
+                                value={customTexts[key]}
+                                onChange={(e) => updateCustomText(key, e.target.value)}
+                                style={{
+                                  ...styles.input,
+                                  fontSize: '12px',
+                                  padding: '8px 10px',
+                                  fontFamily: selectedFont
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <form onSubmit={handleTheftCalculate} style={{ marginBottom: '30px' }}>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -2161,7 +2298,7 @@
                         }}
                         disabled={theftLoading}
                       >
-                        {theftLoading ? 'Calculating...' : 'Calculate My Theft'}
+                        {theftLoading ? 'Calculating...' : customTexts.buttonLabel}
                       </button>
                     </div>
                     {theftError && (
@@ -2173,7 +2310,7 @@
                   </form>
 
                   {theftResults && (
-                    <div>
+                    <div style={{ fontFamily: selectedFont }}>
                       {/* Hero total */}
                       <div style={{
                         textAlign: 'center',
@@ -2183,17 +2320,27 @@
                         border: `2px solid ${colors.primary}`
                       }}>
                         <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
-                          Total stolen from you over {theftResults.totals.workingYears} working years
+                          {renderTemplate(customTexts.heroHeader, { workingYears: theftResults.totals.workingYears })}
                         </div>
                         <div style={{ fontSize: '64px', fontWeight: 700, color: colors.primary, lineHeight: 1 }}>
                           ${theftResults.totals.lifetimeTheft.toLocaleString()}
                         </div>
                         <div style={{ fontSize: '14px', color: colors.textMuted, marginTop: '12px' }}>
-                          That is <strong style={{ color: colors.primary, fontSize: '18px' }}>{theftResults.totals.yearsOfWorkStolen}</strong> full years of your labor — gone.
+                          {(() => {
+                            const parts = customTexts.heroSubtext.split('{yearsOfWork}');
+                            if (parts.length === 1) return customTexts.heroSubtext;
+                            return (
+                              <span>
+                                {parts[0]}
+                                <strong style={{ color: colors.primary, fontSize: '18px' }}>{theftResults.totals.yearsOfWorkStolen}</strong>
+                                {parts[1]}
+                              </span>
+                            );
+                          })()}
                         </div>
                         {theftResults.totals.yearsToRetirement > 0 && (
                           <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#ff333315', color: '#ff6666', fontSize: '12px' }}>
-                            At this rate, another <strong>${theftResults.totals.projectedFutureTheft.toLocaleString()}</strong> will be extracted before you reach 65.
+                            {renderTemplate(customTexts.futureProjection, { futureAmount: theftResults.totals.projectedFutureTheft.toLocaleString() })}
                           </div>
                         )}
                       </div>
@@ -2214,10 +2361,10 @@
                           }}>
                             <div style={{ flex: '1 1 auto' }}>
                               <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                                {h.label}
+                                {customTexts.housingLabel}
                               </div>
                               <div style={{ fontSize: '11px', color: colors.textDim }}>
-                                {h.detail}
+                                {renderTemplate(customTexts.housingDetail, { yearsNow: h.yearsNow, years1985: h.yearsIn1985 })}
                               </div>
                             </div>
                             <div style={{ display: 'flex', gap: '20px', alignItems: 'baseline', flexShrink: 0 }}>
@@ -2235,7 +2382,7 @@
                               <div style={{ textAlign: 'center', padding: '8px 12px', backgroundColor: '#ff333315', marginLeft: '5px' }}>
                                 <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '4px' }}>EXTRA</div>
                                 <div style={{ fontSize: '24px', fontWeight: 700, color: colors.primary }}>+{h.extraYears}</div>
-                                <div style={{ fontSize: '10px', color: colors.textDimmest }}>years of work</div>
+                                <div style={{ fontSize: '10px', color: colors.textDimmest }}>years of income</div>
                               </div>
                             </div>
                           </div>
@@ -2245,10 +2392,10 @@
                       {/* 3 Dollar-based Metric Cards */}
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px', marginBottom: '20px' }}>
                         {[
-                          { key: 'earnings', icon: '\u25B2', color: colors.warning },
-                          { key: 'debt', icon: '\u25CF', color: colors.purple },
-                          { key: 'rent', icon: '\u25AC', color: '#ff6644' },
-                        ].map(({ key, icon, color }) => {
+                          { key: 'earnings', icon: '\u25B2', color: colors.warning, labelKey: 'earningsLabel', detailKey: 'earningsDetail', detailVars: { productivity: theftResults.metrics.earnings.detail.match(/up (\S+)%/)?.[1] || '80', wageGrowth: theftResults.metrics.earnings.detail.match(/only up (\S+)%/)?.[1] || '17.5' } },
+                          { key: 'debt', icon: '\u25CF', color: colors.purple, labelKey: 'debtLabel', detailKey: 'debtDetail', detailVars: {} },
+                          { key: 'rent', icon: '\u25AC', color: '#ff6644', labelKey: 'rentLabel', detailKey: 'rentDetail', detailVars: { rentNow: theftResults.metrics.rent.detail.match(/takes (\S+)%/)?.[1] || '23.5', rentThen: theftResults.metrics.rent.detail.match(/vs (\S+)%/)?.[1] || '9' } },
+                        ].map(({ key, icon, color, labelKey, detailKey, detailVars }) => {
                           const m = theftResults.metrics[key];
                           const pct = theftResults.totals.lifetimeTheft > 0
                             ? Math.round((m.amount / theftResults.totals.lifetimeTheft) * 100)
@@ -2260,7 +2407,7 @@
                               padding: '20px'
                             }}>
                               <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                                {icon} {m.label}
+                                {icon} {customTexts[labelKey]}
                               </div>
                               <div style={{ fontSize: '28px', fontWeight: 700, color: color, marginBottom: '8px' }}>
                                 ${m.amount.toLocaleString()}
@@ -2274,10 +2421,10 @@
                                 <div style={{ height: '100%', width: `${pct}%`, backgroundColor: color, borderRadius: '2px', transition: 'width 0.5s' }} />
                               </div>
                               <div style={{ fontSize: '11px', color: colors.textDim }}>
-                                {m.detail}
+                                {renderTemplate(customTexts[detailKey], detailVars)}
                               </div>
                               <div style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '4px' }}>
-                                {pct}% of total theft
+                                {pct}{customTexts.pctSuffix}
                               </div>
                             </div>
                           );
@@ -2292,10 +2439,10 @@
                         padding: '30px'
                       }}>
                         <div style={{ fontSize: '16px', fontWeight: 700, color: colors.text, marginBottom: '10px' }}>
-                          This is not inevitable. It is policy. Policy can be changed.
+                          {customTexts.ctaTitle}
                         </div>
                         <div style={{ fontSize: '12px', color: colors.textMuted, marginBottom: '20px' }}>
-                          Join a worker collective, tenant union, or consumer group to start fighting back.
+                          {customTexts.ctaSubtitle}
                         </div>
                         <button
                           onClick={() => { setActiveTab('formation'); setActiveSubTab('worker'); }}
@@ -2319,7 +2466,7 @@
                   {theftLoading && (
                     <div style={{ ...styles.card, textAlign: 'center', padding: '60px' }}>
                       <div style={{ fontSize: '24px', marginBottom: '15px' }}>...</div>
-                      <div style={{ color: colors.textMuted }}>Calculating your personal economic data...</div>
+                      <div style={{ color: colors.textMuted }}>Calculating your inflationary cost data...</div>
                     </div>
                   )}
                 </section>
