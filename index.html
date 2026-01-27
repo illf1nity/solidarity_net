@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOLIDARITY_NET — Workers First</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #0a0a0a;
+      font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #111;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #444;
+    }
+    input:focus, textarea:focus, button:focus {
+      outline: 1px solid #ff3333;
+      outline-offset: 2px;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .notification-enter {
+      animation: slideIn 0.3s ease-out;
+    }
+    .modal-enter {
+      animation: fadeIn 0.2s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    // ============================================
+    // MOCK DATA
+    // ============================================
+
+    const MOCK_LOCAL_DATA = {
+      '10001': { medianWage: 22.00, rent: 3200, food: 520, healthcare: 420, transport: 150, utilities: 160, area: "Manhattan, NY" },
+      '90210': { medianWage: 24.00, rent: 2800, food: 580, healthcare: 450, transport: 350, utilities: 140, area: "Beverly Hills, CA" },
+      '48127': { medianWage: 16.50, rent: 1100, food: 380, healthcare: 320, transport: 300, utilities: 200, area: "Dearborn, MI" },
+      '30301': { medianWage: 17.80, rent: 1650, food: 420, healthcare: 380, transport: 320, utilities: 190, area: "Atlanta, GA" },
+      '60601': { medianWage: 19.50, rent: 1850, food: 440, healthcare: 360, transport: 120, utilities: 170, area: "Chicago, IL" },
+      '98101': { medianWage: 23.00, rent: 2100, food: 480, healthcare: 400, transport: 140, utilities: 150, area: "Seattle, WA" },
+      '02101': { medianWage: 21.50, rent: 2400, food: 500, healthcare: 390, transport: 100, utilities: 165, area: "Boston, MA" },
+      '78201': { medianWage: 16.00, rent: 1200, food: 400, healthcare: 340, transport: 280, utilities: 175, area: "San Antonio, TX" },
+      '85001': { medianWage: 17.25, rent: 1400, food: 420, healthcare: 350, transport: 300, utilities: 200, area: "Phoenix, AZ" },
+      'default': { medianWage: 18.50, rent: 1750, food: 450, healthcare: 350, transport: 280, utilities: 180, area: "National Average" }
+    };
+
+    const MOCK_BUILDINGS = {
+      '10001': [
+        { id: 'b1', address: '123 Main St, Apt 1-24', units: 24, members: 8, landlord: 'Greystone Properties', issues: ['Heat', 'Repairs'] },
+        { id: 'b2', address: '456 Oak Ave, Units A-L', units: 12, members: 3, landlord: 'Metro Housing LLC', issues: ['Fees'] },
+        { id: 'b3', address: '789 Park Blvd', units: 48, members: 15, landlord: 'Urban Living Corp', issues: ['Security', 'Pests'] },
+      ],
+      '60601': [
+        { id: 'b4', address: '100 Lake Shore Dr', units: 200, members: 42, landlord: 'Lakeside Management', issues: ['Rent increases'] },
+        { id: 'b5', address: '250 State St', units: 36, members: 11, landlord: 'Downtown Rentals Inc', issues: ['Maintenance'] },
+      ],
+      '90210': [
+        { id: 'b6', address: '9000 Wilshire Blvd', units: 80, members: 22, landlord: 'Luxury Living LA', issues: ['Parking', 'Amenities'] },
+      ],
+      'default': [
+        { id: 'b7', address: '500 Example St', units: 20, members: 5, landlord: 'Sample Properties', issues: ['General'] },
+      ]
+    };
+
+    const MOCK_WORKER_COLLECTIVES = [
+      { id: 'w1', industry: 'Retail', company: 'MegaMart', members: 127, issues: ['Scheduling', 'Understaffing'], active: true, messages: [] },
+      { id: 'w2', industry: 'Food Service', company: 'QuickBite Chain', members: 89, issues: ['Wage theft', 'No breaks'], active: true, messages: [] },
+      { id: 'w3', industry: 'Warehouse', company: 'FastShip Logistics', members: 234, issues: ['Safety', 'Quotas'], active: true, messages: [] },
+      { id: 'w4', industry: 'Healthcare', company: 'CareFirst Hospital', members: 156, issues: ['Understaffing', 'Mandatory OT'], active: true, messages: [] },
+      { id: 'w5', industry: 'Tech', company: 'Anonymous Startup', members: 45, issues: ['Layoffs', 'RTO mandate'], active: false, messages: [] },
+      { id: 'w6', industry: 'Education', company: 'City School District', members: 312, issues: ['Class sizes', 'Resources'], active: true, messages: [] },
+    ];
+
+    const MOCK_CONSUMER_GROUPS = [
+      { id: 'c1', name: 'Internet Access Collective', members: 342, target: 'ISP bulk negotiation', savings: '$15/mo avg', description: 'Negotiating group rates with local ISPs' },
+      { id: 'c2', name: 'Grocery Bulk Buy', members: 89, target: 'Wholesale access', savings: '$80/mo avg', description: 'Weekly bulk orders from wholesalers' },
+      { id: 'c3', name: 'Utility Bill Co-op', members: 156, target: 'Solar installation', savings: '$45/mo avg', description: 'Community solar purchasing program' },
+      { id: 'c4', name: 'Prescription Pool', members: 203, target: 'Medication costs', savings: '$120/mo avg', description: 'Group purchasing for common medications' },
+    ];
+
+    const MOCK_PETITIONS = [
+      { id: 'p1', title: 'Stop Rent Increase at 123 Main St', area: '10001', signatures: 18, goal: 24, status: 'active', created: '2 days ago', description: 'Landlord proposing 15% increase despite no improvements.' },
+      { id: 'p2', title: 'Demand Fair Scheduling at MegaMart', area: '60601', signatures: 89, goal: 100, status: 'active', created: '1 week ago', description: 'End on-call scheduling and provide 2-week advance notice.' },
+      { id: 'p3', title: 'Fix Dangerous Intersection on Oak Ave', area: '10001', signatures: 156, goal: 150, status: 'won', created: '3 weeks ago', description: 'Traffic light installed after petition delivered to city council.' },
+      { id: 'p4', title: 'Oppose Utility Rate Hike', area: '30301', signatures: 423, goal: 500, status: 'active', created: '4 days ago', description: 'Power company requesting 22% rate increase.' },
+      { id: 'p5', title: 'Keep Community Health Clinic Open', area: '48127', signatures: 267, goal: 300, status: 'active', created: '5 days ago', description: 'Only clinic serving uninsured residents in the area.' },
+    ];
+
+    const MOCK_REPORTS = [
+      { id: 'r1', type: 'landlord', name: 'Greystone Properties', address: '123 Main St', issues: ['No repairs', 'Harassment'], reports: 12, lastReport: '2h ago', details: [] },
+      { id: 'r2', type: 'employer', name: 'QuickBite Chain', address: null, issues: ['Wage theft', 'No breaks'], reports: 34, lastReport: '5h ago', details: [] },
+      { id: 'r3', type: 'landlord', name: 'Metro Housing LLC', address: '456 Oak Ave', issues: ['Safety hazard', 'Illegal fees'], reports: 7, lastReport: '1d ago', details: [] },
+      { id: 'r4', type: 'employer', name: 'FastShip Logistics', address: null, issues: ['Unsafe conditions', 'Retaliation'], reports: 56, lastReport: '3h ago', details: [] },
+      { id: 'r5', type: 'landlord', name: 'Urban Living Corp', address: '789 Park Blvd', issues: ['Pest infestation', 'No heat'], reports: 23, lastReport: '8h ago', details: [] },
+    ];
+
+    const MOCK_PRICE_RESISTANCE = [
+      { id: 'pr1', item: 'Gallon of Gas', current: 3.45, resistance: 4.50, votes: 1247, atResistance: 72 },
+      { id: 'pr2', item: 'Dozen Eggs', current: 4.20, resistance: 5.00, votes: 892, atResistance: 85 },
+      { id: 'pr3', item: 'Gallon of Milk', current: 3.80, resistance: 5.00, votes: 756, atResistance: 68 },
+      { id: 'pr4', item: 'Loaf of Bread', current: 3.50, resistance: 4.50, votes: 634, atResistance: 55 },
+      { id: 'pr5', item: 'Internet (Basic)', current: 65, resistance: 80, votes: 1089, atResistance: 45 },
+      { id: 'pr6', item: 'Electricity (avg/mo)', current: 150, resistance: 200, votes: 923, atResistance: 38 },
+      { id: 'pr7', item: 'Ground Beef (1 lb)', current: 5.50, resistance: 7.00, votes: 445, atResistance: 62 },
+      { id: 'pr8', item: 'Streaming Service', current: 15.99, resistance: 20.00, votes: 1567, atResistance: 78 },
+    ];
+
+    // ============================================
+    // MAIN COMPONENT
+    // ============================================
+
+    const SolidarityPlatform = () => {
+      // Navigation
+      const [activeTab, setActiveTab] = useState('information');
+      const [activeSubTab, setActiveSubTab] = useState('sentiment');
+      const [notification, setNotification] = useState(null);
+
+      // Information State
+      const [zipCode, setZipCode] = useState('');
+      const [localData, setLocalData] = useState(null);
+      const [priceVotes, setPriceVotes] = useState({});
+
+      // Formation State
+      const [workSentiment, setWorkSentiment] = useState(null);
+      const [sentimentHistory] = useState([
+        { week: 'W1', willing: 45, unwilling: 55, total: 87 },
+        { week: 'W2', willing: 42, unwilling: 58, total: 92 },
+        { week: 'W3', willing: 38, unwilling: 62, total: 103 },
+        { week: 'W4', willing: 31, unwilling: 69, total: 98 },
+      ]);
+      const [todaySentiment, setTodaySentiment] = useState({ willing: 23, unwilling: 67, total: 90 });
+
+      // Tenant State
+      const [selectedBuilding, setSelectedBuilding] = useState(null);
+      const [joinedBuildings, setJoinedBuildings] = useState([]);
+      const [tenantMessages, setTenantMessages] = useState([
+        { id: 1, building: 'b1', text: 'Anyone else having issues with heat? Third time this month.', time: '1h ago', replies: 4, author: 'Unit 12' },
+        { id: 2, building: 'b1', text: 'Landlord ignored my repair request for 3 weeks. Documenting everything.', time: '3h ago', replies: 7, author: 'Unit 8' },
+        { id: 3, building: 'b1', text: 'Meeting in lobby Saturday 2pm to discuss organizing. All welcome.', time: '6h ago', replies: 12, author: 'Unit 3', pinned: true },
+        { id: 4, building: 'b4', text: 'They just announced another rent increase. We need to coordinate response.', time: '2h ago', replies: 23, author: 'Floor 15' },
+        { id: 5, building: 'b4', text: 'Has anyone contacted a tenants rights lawyer?', time: '4h ago', replies: 8, author: 'Floor 7' },
+      ]);
+      const [newTenantMessage, setNewTenantMessage] = useState('');
+
+      // Worker State
+      const [joinedCollectives, setJoinedCollectives] = useState([]);
+      const [selectedCollective, setSelectedCollective] = useState(null);
+      const [collectiveMessages, setCollectiveMessages] = useState([
+        { id: 1, collective: 'w1', text: 'Meeting Thursday 6pm - discussing schedule changes. Location TBD.', time: '2h ago', pinned: true, author: 'Organizer' },
+        { id: 2, collective: 'w1', text: 'Anyone else get their hours cut this week? Third week in a row for me.', time: '5h ago', replies: 12, author: 'Anonymous' },
+        { id: 3, collective: 'w1', text: 'New hire orientation is lying about break policies. We should document.', time: '8h ago', replies: 6, author: 'Anonymous' },
+        { id: 4, collective: 'w3', text: 'Safety incident on loading dock yesterday. Management said nothing. Anyone have details?', time: '3h ago', replies: 18, author: 'Anonymous' },
+      ]);
+      const [newCollectiveMessage, setNewCollectiveMessage] = useState('');
+
+      // Consumer State
+      const [joinedConsumerGroups, setJoinedConsumerGroups] = useState([]);
+
+      // Petition State
+      const [petitions, setPetitions] = useState(MOCK_PETITIONS);
+      const [signedPetitions, setSignedPetitions] = useState([]);
+      const [showPetitionForm, setShowPetitionForm] = useState(false);
+      const [newPetition, setNewPetition] = useState({ title: '', area: '', description: '', goal: 100 });
+
+      // Report State
+      const [reports, setReports] = useState(MOCK_REPORTS);
+      const [reportType, setReportType] = useState('landlord');
+      const [reportFilter, setReportFilter] = useState('all');
+      const [newReport, setNewReport] = useState({ name: '', address: '', issues: [], description: '', anonymous: true });
+
+      // New Collective Form
+      const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
+      const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [] });
+
+      // ============================================
+      // HELPERS
+      // ============================================
+
+      const showNotification = useCallback((message, type = 'success') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+      }, []);
+
+      const calculateHours = (cost, wage) => Math.ceil(cost / wage);
+
+      const handleZipSubmit = (e) => {
+        e.preventDefault();
+        const data = MOCK_LOCAL_DATA[zipCode] || MOCK_LOCAL_DATA.default;
+        setLocalData(data);
+        showNotification(`Loaded data for ${data.area}`);
+      };
+
+      const handleSentimentVote = (vote) => {
+        setWorkSentiment(vote);
+        setTodaySentiment(prev => ({
+          ...prev,
+          [vote === 'yes' ? 'willing' : 'unwilling']: prev[vote === 'yes' ? 'willing' : 'unwilling'] + 1,
+          total: prev.total + 1
+        }));
+        showNotification('Response recorded anonymously');
+      };
+
+      const handlePriceVote = (item, threshold) => {
+        setPriceVotes({ ...priceVotes, [item]: threshold });
+        showNotification(`Recorded: Stop buying ${item} at $${threshold}`);
+      };
+
+      const handleJoinBuilding = (building) => {
+        if (!joinedBuildings.includes(building.id)) {
+          setJoinedBuildings([...joinedBuildings, building.id]);
+          showNotification(`Joined tenant group at ${building.address}`);
+        }
+      };
+
+      const handleJoinCollective = (collective) => {
+        if (!joinedCollectives.includes(collective.id)) {
+          setJoinedCollectives([...joinedCollectives, collective.id]);
+          showNotification(`Joined ${collective.company} worker collective`);
+        }
+      };
+
+      const handleJoinConsumerGroup = (group) => {
+        if (!joinedConsumerGroups.includes(group.id)) {
+          setJoinedConsumerGroups([...joinedConsumerGroups, group.id]);
+          showNotification(`Joined ${group.name}`);
+        }
+      };
+
+      const handleSignPetition = (petition) => {
+        if (!signedPetitions.includes(petition.id)) {
+          setSignedPetitions([...signedPetitions, petition.id]);
+          setPetitions(petitions.map(p =>
+            p.id === petition.id ? { ...p, signatures: p.signatures + 1 } : p
+          ));
+          showNotification('Petition signed anonymously');
+        }
+      };
+
+      const handleCreatePetition = () => {
+        if (newPetition.title && newPetition.area) {
+          const petition = {
+            id: `p${Date.now()}`,
+            ...newPetition,
+            signatures: 1,
+            status: 'active',
+            created: 'Just now'
+          };
+          setPetitions([petition, ...petitions]);
+          setSignedPetitions([...signedPetitions, petition.id]);
+          setNewPetition({ title: '', area: '', description: '', goal: 100 });
+          setShowPetitionForm(false);
+          showNotification('Petition created successfully');
+        }
+      };
+
+      const handleSubmitReport = () => {
+        if (newReport.name && newReport.issues.length > 0) {
+          const existingReport = reports.find(r => 
+            r.name.toLowerCase() === newReport.name.toLowerCase() && r.type === reportType
+          );
+          
+          if (existingReport) {
+            setReports(reports.map(r =>
+              r.id === existingReport.id ? { ...r, reports: r.reports + 1, lastReport: 'Just now' } : r
+            ));
+            showNotification('Report added to existing record');
+          } else {
+            const report = {
+              id: `r${Date.now()}`,
+              type: reportType,
+              name: newReport.name,
+              address: newReport.address,
+              issues: newReport.issues,
+              reports: 1,
+              lastReport: 'Just now'
+            };
+            setReports([report, ...reports]);
+            showNotification('Report submitted successfully');
+          }
+          setNewReport({ name: '', address: '', issues: [], description: '', anonymous: true });
+        }
+      };
+
+      const handleCreateCollective = () => {
+        if (newCollective.company && newCollective.industry) {
+          const collective = {
+            id: `w${Date.now()}`,
+            company: newCollective.company,
+            industry: newCollective.industry,
+            issues: newCollective.issues,
+            members: 1,
+            active: false,
+            messages: []
+          };
+          MOCK_WORKER_COLLECTIVES.unshift(collective);
+          setJoinedCollectives([...joinedCollectives, collective.id]);
+          setNewCollective({ company: '', industry: '', issues: [] });
+          setShowNewCollectiveForm(false);
+          showNotification('Collective created - invite your coworkers!');
+        }
+      };
+
+      const toggleReportIssue = (issue) => {
+        setNewReport(prev => ({
+          ...prev,
+          issues: prev.issues.includes(issue)
+            ? prev.issues.filter(i => i !== issue)
+            : [...prev.issues, issue]
+        }));
+      };
+
+      const toggleCollectiveIssue = (issue) => {
+        setNewCollective(prev => ({
+          ...prev,
+          issues: prev.issues.includes(issue)
+            ? prev.issues.filter(i => i !== issue)
+            : [...prev.issues, issue]
+        }));
+      };
+
+      // Calculations
+      const totalMonthlyHours = localData ?
+        calculateHours(localData.rent, localData.medianWage) +
+        calculateHours(localData.food, localData.medianWage) +
+        calculateHours(localData.healthcare, localData.medianWage) +
+        calculateHours(localData.transport, localData.medianWage) +
+        calculateHours(localData.utilities, localData.medianWage) : 0;
+
+      const availableHours = 160;
+      const deficit = availableHours - totalMonthlyHours;
+      const weeksToAffordMonth = localData ? (totalMonthlyHours / 40).toFixed(1) : 0;
+      const buildings = MOCK_BUILDINGS[zipCode] || MOCK_BUILDINGS.default;
+
+      const filteredReports = reportFilter === 'all' 
+        ? reports 
+        : reports.filter(r => r.type === reportFilter);
+
+      // ============================================
+      // STYLES
+      // ============================================
+
+      const colors = {
+        bg: '#0a0a0a',
+        bgLight: '#111',
+        bgLighter: '#1a1a1a',
+        border: '#222',
+        borderLight: '#333',
+        text: '#e8e8e8',
+        textMuted: '#888',
+        textDim: '#666',
+        textDimmer: '#555',
+        textDimmest: '#444',
+        primary: '#ff3333',
+        primaryDark: '#cc2929',
+        success: '#33ff33',
+        successDark: '#29cc29',
+        warning: '#ffaa00',
+        purple: '#aa00ff',
+      };
+
+      const styles = {
+        container: {
+          minHeight: '100vh',
+          backgroundColor: colors.bg,
+          color: colors.text,
+          fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+          fontSize: '14px',
+          lineHeight: '1.6'
+        },
+        header: {
+          borderBottom: `2px solid ${colors.primary}`,
+          padding: '20px 40px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '15px'
+        },
+        nav: {
+          display: 'flex',
+          borderBottom: `1px solid ${colors.border}`,
+          backgroundColor: colors.bgLight
+        },
+        navButton: (active) => ({
+          flex: 1,
+          padding: '16px 20px',
+          backgroundColor: active ? colors.bgLighter : 'transparent',
+          color: active ? colors.primary : colors.textDim,
+          border: 'none',
+          borderBottom: active ? `2px solid ${colors.primary}` : '2px solid transparent',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          fontSize: '12px',
+          textTransform: 'uppercase',
+          letterSpacing: '2px',
+          fontWeight: active ? 700 : 400,
+          transition: 'all 0.2s'
+        }),
+        subNav: {
+          display: 'flex',
+          gap: '10px',
+          marginBottom: '30px',
+          flexWrap: 'wrap'
+        },
+        subNavButton: (active) => ({
+          padding: '10px 15px',
+          backgroundColor: active ? colors.primary : 'transparent',
+          color: active ? '#000' : colors.textMuted,
+          border: `1px solid ${active ? colors.primary : colors.borderLight}`,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          fontSize: '11px',
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          transition: 'all 0.15s'
+        }),
+        main: {
+          padding: '40px',
+          maxWidth: '1200px',
+          margin: '0 auto'
+        },
+        sectionHeader: {
+          fontSize: '11px',
+          color: colors.textDimmer,
+          textTransform: 'uppercase',
+          letterSpacing: '3px',
+          marginBottom: '20px',
+          borderBottom: `1px solid ${colors.border}`,
+          paddingBottom: '10px'
+        },
+        card: {
+          backgroundColor: colors.bgLight,
+          border: `1px solid ${colors.border}`,
+          padding: '25px',
+          marginBottom: '15px'
+        },
+        input: {
+          backgroundColor: colors.bgLighter,
+          border: `1px solid ${colors.borderLight}`,
+          color: '#fff',
+          padding: '12px',
+          fontFamily: 'inherit',
+          fontSize: '14px',
+          width: '100%',
+          boxSizing: 'border-box'
+        },
+        button: (variant = 'primary') => ({
+          padding: '12px 20px',
+          backgroundColor: variant === 'primary' ? colors.primary : 'transparent',
+          color: variant === 'primary' ? '#000' : colors.primary,
+          border: variant === 'primary' ? 'none' : `1px solid ${colors.primary}`,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          fontSize: '11px',
+          transition: 'all 0.15s'
+        }),
+        badge: (color) => ({
+          display: 'inline-block',
+          padding: '3px 8px',
+          backgroundColor: `${color}20`,
+          color: color,
+          fontSize: '10px',
+          textTransform: 'uppercase',
+          marginRight: '8px'
+        }),
+        grid: {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '15px'
+        },
+        modal: {
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        },
+        notification: (type) => ({
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          padding: '15px 25px',
+          backgroundColor: type === 'success' ? '#1a3d1a' : '#3d1a1a',
+          border: `1px solid ${type === 'success' ? colors.success : colors.primary}`,
+          color: type === 'success' ? colors.success : colors.primary,
+          zIndex: 1001,
+          fontFamily: 'inherit',
+          fontSize: '12px',
+          maxWidth: '300px'
+        })
+      };
+
+      // ============================================
+      // RENDER
+      // ============================================
+
+      return (
+        <div style={styles.container}>
+          {/* Notification */}
+          {notification && (
+            <div style={styles.notification(notification.type)} className="notification-enter">
+              {notification.message}
+            </div>
+          )}
+
+          {/* Header */}
+          <header style={styles.header}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, letterSpacing: '-0.5px', color: '#ffffff' }}>
+                SOLIDARITY<span style={{ color: colors.primary }}>_</span>NET
+              </h1>
+              <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px' }}>
+                Formation • Information • Accountability
+              </p>
+            </div>
+            <div style={{ fontSize: '11px', color: colors.textDimmer, textAlign: 'right' }}>
+              <div>NO TRACKING • NO PROFILES</div>
+              <div style={{ color: colors.primary, marginTop: '4px' }}>WORKERS FIRST</div>
+            </div>
+          </header>
+
+          {/* Navigation */}
+          <nav style={styles.nav}>
+            {['information', 'formation', 'accountability'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => { setActiveTab(tab); if (tab === 'formation') setActiveSubTab('sentiment'); }}
+                style={styles.navButton(activeTab === tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </nav>
+
+          {/* Main Content */}
+          <main style={styles.main}>
+
+            {/* ==================== INFORMATION TAB ==================== */}
+            {activeTab === 'information' && (
+              <div>
+                {/* Standard of Living Calculator */}
+                <section style={{ marginBottom: '60px' }}>
+                  <h2 style={styles.sectionHeader}>Standard of Living Calculator</h2>
+
+                  <form onSubmit={handleZipSubmit} style={{ marginBottom: '30px' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <label style={{ color: colors.textMuted }}>ZIP CODE:</label>
+                      <input
+                        type="text"
+                        value={zipCode}
+                        onChange={(e) => setZipCode(e.target.value)}
+                        placeholder="Enter ZIP"
+                        maxLength={5}
+                        style={{ ...styles.input, width: '120px' }}
+                      />
+                      <button type="submit" style={styles.button('primary')}>Calculate</button>
+                    </div>
+                    <p style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '8px' }}>
+                      Test ZIPs: 10001 (NYC), 90210 (LA), 48127 (Detroit), 30301 (Atlanta), 60601 (Chicago), 98101 (Seattle), 78201 (San Antonio)
+                    </p>
+                  </form>
+
+                  {localData && (
+                    <div style={styles.card}>
+                      {/* Key Metric */}
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '30px',
+                        marginBottom: '30px',
+                        backgroundColor: deficit < 0 ? '#1a0505' : '#051a05',
+                        border: `2px solid ${deficit < 0 ? colors.primary : colors.success}`
+                      }}>
+                        <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
+                          {localData.area}
+                        </div>
+                        <div style={{ fontSize: '72px', fontWeight: 700, color: deficit < 0 ? colors.primary : colors.success, lineHeight: 1 }}>
+                          {weeksToAffordMonth}
+                        </div>
+                        <div style={{ fontSize: '14px', color: colors.textMuted, marginTop: '10px' }}>
+                          weeks of work to afford one month of living
+                        </div>
+                        {deficit < 0 && (
+                          <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#ff333320', color: '#ff6666', fontSize: '12px' }}>
+                            ⚠ DEFICIT: You need <strong>{Math.abs(deficit)} more hours</strong> than a full-time job provides
+                          </div>
+                        )}
+                        {deficit >= 0 && (
+                          <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#33ff3320', color: '#66ff66', fontSize: '12px' }}>
+                            ✓ Technically sustainable with {deficit} hours of margin
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Wage */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: `1px solid ${colors.border}`, marginBottom: '15px' }}>
+                        <span style={{ color: colors.textMuted }}>Median hourly wage</span>
+                        <span style={{ fontWeight: 700, fontSize: '18px' }}>${localData.medianWage.toFixed(2)}</span>
+                      </div>
+
+                      <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        Hours needed per month:
+                      </div>
+
+                      {[
+                        { label: 'Rent', cost: localData.rent, icon: '🏠' },
+                        { label: 'Food', cost: localData.food, icon: '🍎' },
+                        { label: 'Healthcare', cost: localData.healthcare, icon: '🏥' },
+                        { label: 'Transport', cost: localData.transport, icon: '🚗' },
+                        { label: 'Utilities', cost: localData.utilities, icon: '💡' },
+                      ].map(item => {
+                        const hours = calculateHours(item.cost, localData.medianWage);
+                        const pct = (hours / totalMonthlyHours) * 100;
+                        return (
+                          <div key={item.label} style={{ marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <span style={{ color: colors.textMuted }}>{item.icon} {item.label}</span>
+                              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                <span style={{ color: colors.textDimmer, fontSize: '12px' }}>${item.cost}</span>
+                                <span style={{ color: '#fff', fontWeight: 700, minWidth: '70px', textAlign: 'right' }}>
+                                  {hours} hrs
+                                </span>
+                              </div>
+                            </div>
+                            <div style={{ height: '4px', backgroundColor: colors.border, borderRadius: '2px' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, backgroundColor: colors.primary, borderRadius: '2px' }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', borderTop: `2px solid ${colors.borderLight}`, marginTop: '15px' }}>
+                        <span style={{ fontWeight: 700 }}>TOTAL REQUIRED</span>
+                        <span style={{ fontWeight: 700, color: colors.primary, fontSize: '18px' }}>{totalMonthlyHours} hrs</span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', color: colors.textDim }}>
+                        <span>Available (40hr/wk × 4)</span>
+                        <span>{availableHours} hrs</span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontWeight: 700, fontSize: '16px', color: deficit < 0 ? colors.primary : colors.success }}>
+                        <span>{deficit < 0 ? 'MONTHLY DEFICIT' : 'MONTHLY SURPLUS'}</span>
+                        <span>{deficit} hrs</span>
+                      </div>
+
+                      <div style={{ marginTop: '20px', padding: '15px', backgroundColor: colors.bg, fontSize: '11px', color: colors.textDimmest }}>
+                        <strong>Data sources:</strong> BLS (wages), HUD Fair Market Rents (housing), USDA Thrifty Food Plan (food), Healthcare.gov (insurance), AAA (transport), EIA (utilities)
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Price Resistance */}
+                <section>
+                  <h2 style={styles.sectionHeader}>Consumer Price Resistance</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px' }}>
+                    "At what price do you stop buying?" — Click to set your threshold
+                  </p>
+
+                  <div style={styles.grid}>
+                    {MOCK_PRICE_RESISTANCE.map(item => (
+                      <div key={item.id} style={styles.card}>
+                        <div style={{ fontSize: '13px', color: colors.textMuted, marginBottom: '12px', fontWeight: 500 }}>{item.item}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                          <div>
+                            <div style={{ fontSize: '10px', color: colors.textDimmer }}>CURRENT</div>
+                            <div style={{ fontSize: '20px', fontWeight: 700 }}>
+                              ${item.current < 10 ? item.current.toFixed(2) : item.current}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '10px', color: colors.textDimmer }}>COMMUNITY THRESHOLD</div>
+                            <div style={{ fontSize: '20px', fontWeight: 700, color: colors.primary }}>
+                              ${item.resistance < 10 ? item.resistance.toFixed(2) : item.resistance}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ height: '6px', backgroundColor: colors.border, borderRadius: '3px', marginBottom: '8px' }}>
+                          <div style={{ height: '100%', width: `${item.atResistance}%`, backgroundColor: colors.primary, borderRadius: '3px', transition: 'width 0.3s' }} />
+                        </div>
+                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '15px' }}>
+                          {item.atResistance}% of {item.votes.toLocaleString()} people at resistance
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {[1.15, 1.3, 1.5, 2].map(mult => {
+                            const threshold = (item.current * mult).toFixed(2);
+                            const isSelected = priceVotes[item.item] === threshold;
+                            return (
+                              <button
+                                key={mult}
+                                onClick={() => handlePriceVote(item.item, threshold)}
+                                style={{
+                                  padding: '8px 12px',
+                                  backgroundColor: isSelected ? colors.primary : colors.bgLighter,
+                                  color: isSelected ? '#000' : colors.textMuted,
+                                  border: `1px solid ${isSelected ? colors.primary : colors.borderLight}`,
+                                  cursor: 'pointer',
+                                  fontFamily: 'inherit',
+                                  fontSize: '11px',
+                                  fontWeight: isSelected ? 700 : 400
+                                }}
+                              >
+                                ${threshold}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* ==================== FORMATION TAB ==================== */}
+            {activeTab === 'formation' && (
+              <div>
+                <div style={styles.subNav}>
+                  {[
+                    { id: 'sentiment', label: 'Work Sentiment', icon: '📊' },
+                    { id: 'tenant', label: 'Tenant Unions', icon: '🏢' },
+                    { id: 'worker', label: 'Worker Collectives', icon: '⚡' },
+                    { id: 'consumer', label: 'Consumer Groups', icon: '🛒' },
+                    { id: 'petition', label: 'Petitions', icon: '📋' }
+                  ].map(sub => (
+                    <button key={sub.id} onClick={() => setActiveSubTab(sub.id)} style={styles.subNavButton(activeSubTab === sub.id)}>
+                      {sub.icon} {sub.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Work Sentiment */}
+                {activeSubTab === 'sentiment' && (
+                  <section>
+                    <h2 style={styles.sectionHeader}>Work Sentiment — Your Area</h2>
+
+                    <div style={styles.card}>
+                      <p style={{ color: colors.textMuted, marginBottom: '25px', textAlign: 'center', fontSize: '16px' }}>
+                        Do you feel like working today?
+                      </p>
+                      <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '30px' }}>
+                        {['yes', 'no'].map(vote => (
+                          <button
+                            key={vote}
+                            onClick={() => !workSentiment && handleSentimentVote(vote)}
+                            disabled={workSentiment !== null}
+                            style={{
+                              padding: '25px 50px',
+                              backgroundColor: workSentiment === vote ? (vote === 'yes' ? colors.success : colors.primary) : colors.bgLighter,
+                              color: workSentiment === vote ? '#000' : (vote === 'yes' ? colors.success : colors.primary),
+                              border: `2px solid ${vote === 'yes' ? colors.success : colors.primary}`,
+                              cursor: workSentiment ? 'default' : 'pointer',
+                              opacity: workSentiment && workSentiment !== vote ? 0.4 : 1,
+                              fontFamily: 'inherit',
+                              fontWeight: 700,
+                              fontSize: '18px',
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            {vote.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+
+                      {workSentiment && (
+                        <div style={{ textAlign: 'center', marginBottom: '25px', fontSize: '12px', color: colors.success }}>
+                          ✓ Response recorded anonymously (fingerprint-based, no account)
+                        </div>
+                      )}
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', textAlign: 'center', marginBottom: '30px' }}>
+                        <div style={{ padding: '25px', backgroundColor: colors.bg }}>
+                          <div style={{ fontSize: '56px', fontWeight: 700, color: colors.primary }}>
+                            {Math.round((todaySentiment.unwilling / todaySentiment.total) * 100)}%
+                          </div>
+                          <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            Don't want to work today
+                          </div>
+                        </div>
+                        <div style={{ padding: '25px', backgroundColor: colors.bg }}>
+                          <div style={{ fontSize: '56px', fontWeight: 700, color: colors.textMuted }}>
+                            {todaySentiment.total}
+                          </div>
+                          <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            Responses in your area
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Trend */}
+                      <div>
+                        <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', marginBottom: '15px' }}>
+                          4-Week Trend (% unwilling to work)
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', height: '120px', gap: '15px' }}>
+                          {sentimentHistory.map((week, i) => (
+                            <div key={week.week} style={{ flex: 1, textAlign: 'center' }}>
+                              <div style={{
+                                height: `${week.unwilling * 1.5}px`,
+                                backgroundColor: i === sentimentHistory.length - 1 ? colors.primary : colors.borderLight,
+                                marginBottom: '8px',
+                                transition: 'height 0.3s',
+                                borderRadius: '2px 2px 0 0'
+                              }} />
+                              <div style={{ fontSize: '11px', color: colors.textDimmer }}>{week.week}</div>
+                              <div style={{ fontSize: '13px', color: colors.textMuted, fontWeight: 500 }}>{week.unwilling}%</div>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ marginTop: '20px', fontSize: '13px', color: colors.primary, textAlign: 'center' }}>
+                          ↑ Worker unwillingness rising 14 points over 4 weeks
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* Tenant Unions */}
+                {activeSubTab === 'tenant' && (
+                  <section>
+                    <h2 style={styles.sectionHeader}>Tenant Union Builder</h2>
+                    <p style={{ color: colors.textDim, marginBottom: '20px' }}>
+                      Find and connect with other tenants in your building. No personal data required.
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '25px', flexWrap: 'wrap' }}>
+                      <input
+                        type="text"
+                        value={zipCode}
+                        onChange={(e) => setZipCode(e.target.value)}
+                        placeholder="Enter ZIP to find buildings"
+                        style={{ ...styles.input, width: '200px' }}
+                      />
+                      <button onClick={() => showNotification(`Showing buildings in ${zipCode || 'your area'}`)} style={styles.button('secondary')}>
+                        Search Buildings
+                      </button>
+                    </div>
+
+                    <div style={styles.grid}>
+                      {buildings.map(building => {
+                        const joined = joinedBuildings.includes(building.id);
+                        const orgPct = Math.round((building.members / building.units) * 100);
+                        return (
+                          <div key={building.id} style={{
+                            ...styles.card,
+                            border: joined ? `1px solid ${colors.success}` : `1px solid ${colors.border}`
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                              <div>
+                                <div style={{ fontWeight: 700, marginBottom: '4px' }}>{building.address}</div>
+                                <div style={{ fontSize: '12px', color: colors.textDim }}>Landlord: {building.landlord}</div>
+                              </div>
+                              {joined && <span style={styles.badge(colors.success)}>Joined</span>}
+                            </div>
+
+                            {building.issues.length > 0 && (
+                              <div style={{ marginBottom: '12px' }}>
+                                {building.issues.map(issue => (
+                                  <span key={issue} style={{ ...styles.badge(colors.warning), marginBottom: '4px' }}>{issue}</span>
+                                ))}
+                              </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: '25px', marginBottom: '15px' }}>
+                              <div>
+                                <div style={{ fontSize: '28px', fontWeight: 700 }}>{building.members}</div>
+                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>MEMBERS</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '28px', fontWeight: 700, color: colors.textDim }}>{building.units}</div>
+                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>UNITS</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '28px', fontWeight: 700, color: orgPct > 30 ? colors.success : colors.primary }}>
+                                  {orgPct}%
+                                </div>
+                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>ORGANIZED</div>
+                              </div>
+                            </div>
+
+                            {!joined ? (
+                              <button onClick={() => handleJoinBuilding(building)} style={{ ...styles.button('secondary'), width: '100%' }}>
+                                Join Tenant Group →
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setSelectedBuilding(building.id === selectedBuilding ? null : building.id)}
+                                style={{ ...styles.button('primary'), width: '100%' }}
+                              >
+                                {selectedBuilding === building.id ? 'Hide Discussion' : 'View Discussion →'}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Discussion */}
+                    {selectedBuilding && joinedBuildings.includes(selectedBuilding) && (
+                      <div style={{ ...styles.card, marginTop: '25px' }}>
+                        <h3 style={{ margin: '0 0 20px 0', fontSize: '14px' }}>
+                          Building Discussion — {buildings.find(b => b.id === selectedBuilding)?.address}
+                        </h3>
+
+                        {tenantMessages.filter(m => m.building === selectedBuilding).map(msg => (
+                          <div key={msg.id} style={{
+                            padding: '15px',
+                            backgroundColor: msg.pinned ? '#1a1a0a' : colors.bg,
+                            border: msg.pinned ? `1px solid ${colors.warning}` : 'none',
+                            marginBottom: '10px'
+                          }}>
+                            {msg.pinned && <span style={{ ...styles.badge(colors.warning), marginBottom: '8px' }}>📌 Pinned</span>}
+                            <div style={{ marginBottom: '8px' }}>{msg.text}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: colors.textDimmer }}>
+                              <span>{msg.author} • {msg.time}</span>
+                              <span>{msg.replies} replies</span>
+                            </div>
+                          </div>
+                        ))}
+
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                          <input
+                            type="text"
+                            value={newTenantMessage}
+                            onChange={(e) => setNewTenantMessage(e.target.value)}
+                            placeholder="Share with your building..."
+                            style={{ ...styles.input, flex: 1 }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && newTenantMessage) {
+                                setTenantMessages([
+                                  { id: Date.now(), building: selectedBuilding, text: newTenantMessage, time: 'Just now', replies: 0, author: 'You' },
+                                  ...tenantMessages
+                                ]);
+                                setNewTenantMessage('');
+                                showNotification('Message posted anonymously');
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={() => {
+                              if (newTenantMessage) {
+                                setTenantMessages([
+                                  { id: Date.now(), building: selectedBuilding, text: newTenantMessage, time: 'Just now', replies: 0, author: 'You' },
+                                  ...tenantMessages
+                                ]);
+                                setNewTenantMessage('');
+                                showNotification('Message posted anonymously');
+                              }
+                            }}
+                            style={styles.button('primary')}
+                          >
+                            Post
+                          </button>
+                        </div>
+                        <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '10px', marginBottom: 0 }}>
+                          Messages are anonymous. Tied to browser fingerprint, not identity.
+                        </p>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {/* Worker Collectives */}
+                {activeSubTab === 'worker' && (
+                  <section>
+                    <h2 style={styles.sectionHeader}>Worker Collectives</h2>
+                    <p style={{ color: colors.textDim, marginBottom: '20px' }}>
+                      Anonymous coordination for workplace issues. Find your coworkers.
+                    </p>
+
+                    <div style={styles.grid}>
+                      {MOCK_WORKER_COLLECTIVES.map(collective => {
+                        const joined = joinedCollectives.includes(collective.id);
+                        return (
+                          <div key={collective.id} style={{
+                            ...styles.card,
+                            border: joined ? `1px solid ${colors.success}` : `1px solid ${colors.border}`,
+                            opacity: collective.active ? 1 : 0.7
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                              <span style={styles.badge(colors.textMuted)}>{collective.industry}</span>
+                              <span style={styles.badge(collective.active ? colors.success : colors.warning)}>
+                                {collective.active ? 'Active' : 'Forming'}
+                              </span>
+                            </div>
+
+                            <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '12px' }}>{collective.company}</div>
+
+                            <div style={{ marginBottom: '15px' }}>
+                              <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '6px' }}>ORGANIZING AROUND:</div>
+                              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                                {collective.issues.map(issue => (
+                                  <span key={issue} style={{ ...styles.badge(colors.primary), marginRight: 0 }}>{issue}</span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div style={{ marginBottom: '15px' }}>
+                              <span style={{ fontSize: '28px', fontWeight: 700 }}>{collective.members}</span>
+                              <span style={{ fontSize: '12px', color: colors.textDim, marginLeft: '8px' }}>members</span>
+                            </div>
+
+                            {!joined ? (
+                              <button onClick={() => handleJoinCollective(collective)} style={{ ...styles.button('secondary'), width: '100%' }}>
+                                Join Collective →
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setSelectedCollective(collective.id === selectedCollective ? null : collective.id)}
+                                style={{ ...styles.button('primary'), width: '100%' }}
+                              >
+                                {selectedCollective === collective.id ? 'Hide Discussion' : 'Open Discussion →'}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Collective Discussion */}
+                    {selectedCollective && joinedCollectives.includes(selectedCollective) && (
+                      <div style={{ ...styles.card, marginTop: '25px' }}>
+                        <h3 style={{ margin: '0 0 20px 0', fontSize: '14px' }}>
+                          {MOCK_WORKER_COLLECTIVES.find(c => c.id === selectedCollective)?.company} — Worker Discussion
+                        </h3>
+
+                        {collectiveMessages.filter(m => m.collective === selectedCollective).map(msg => (
+                          <div key={msg.id} style={{
+                            padding: '15px',
+                            backgroundColor: msg.pinned ? '#1a1a0a' : colors.bg,
+                            border: msg.pinned ? `1px solid ${colors.warning}` : 'none',
+                            marginBottom: '10px'
+                          }}>
+                            {msg.pinned && <span style={{ ...styles.badge(colors.warning), marginBottom: '8px' }}>📌 Pinned</span>}
+                            <div style={{ marginBottom: '8px' }}>{msg.text}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: colors.textDimmer }}>
+                              <span>{msg.author} • {msg.time}</span>
+                              {msg.replies && <span>{msg.replies} replies</span>}
+                            </div>
+                          </div>
+                        ))}
+
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                          <input
+                            type="text"
+                            value={newCollectiveMessage}
+                            onChange={(e) => setNewCollectiveMessage(e.target.value)}
+                            placeholder="Share with your coworkers..."
+                            style={{ ...styles.input, flex: 1 }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && newCollectiveMessage) {
+                                setCollectiveMessages([
+                                  { id: Date.now(), collective: selectedCollective, text: newCollectiveMessage, time: 'Just now', replies: 0, author: 'Anonymous' },
+                                  ...collectiveMessages
+                                ]);
+                                setNewCollectiveMessage('');
+                                showNotification('Message posted anonymously');
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={() => {
+                              if (newCollectiveMessage) {
+                                setCollectiveMessages([
+                                  { id: Date.now(), collective: selectedCollective, text: newCollectiveMessage, time: 'Just now', replies: 0, author: 'Anonymous' },
+                                  ...collectiveMessages
+                                ]);
+                                setNewCollectiveMessage('');
+                                showNotification('Message posted anonymously');
+                              }
+                            }}
+                            style={styles.button('primary')}
+                          >
+                            Post
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* New Collective */}
+                    <div style={{ ...styles.card, marginTop: '30px', textAlign: 'center' }}>
+                      <p style={{ color: colors.textMuted, marginBottom: '15px' }}>Don't see your workplace?</p>
+                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('secondary')}>
+                        + Start a New Collective
+                      </button>
+                    </div>
+
+                    {/* New Collective Modal */}
+                    {showNewCollectiveForm && (
+                      <div style={styles.modal} className="modal-enter">
+                        <div style={{ ...styles.card, maxWidth: '500px', width: '100%' }}>
+                          <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Start a Worker Collective</h3>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Company Name
+                            </label>
+                            <input
+                              type="text"
+                              value={newCollective.company}
+                              onChange={(e) => setNewCollective({ ...newCollective, company: e.target.value })}
+                              placeholder="Where do you work?"
+                              style={styles.input}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Industry
+                            </label>
+                            <select
+                              value={newCollective.industry}
+                              onChange={(e) => setNewCollective({ ...newCollective, industry: e.target.value })}
+                              style={{ ...styles.input, cursor: 'pointer' }}
+                            >
+                              <option value="">Select industry...</option>
+                              {['Retail', 'Food Service', 'Warehouse', 'Healthcare', 'Tech', 'Education', 'Transportation', 'Manufacturing', 'Other'].map(ind => (
+                                <option key={ind} value={ind}>{ind}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '10px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Issues to organize around
+                            </label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                              {['Wages', 'Scheduling', 'Safety', 'Benefits', 'Understaffing', 'Management', 'Other'].map(issue => (
+                                <label key={issue} style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '8px 12px',
+                                  backgroundColor: newCollective.issues.includes(issue) ? '#ff333320' : colors.bgLighter,
+                                  border: `1px solid ${newCollective.issues.includes(issue) ? colors.primary : colors.borderLight}`,
+                                  cursor: 'pointer',
+                                  fontSize: '12px'
+                                }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={newCollective.issues.includes(issue)}
+                                    onChange={() => toggleCollectiveIssue(issue)}
+                                    style={{ accentColor: colors.primary }}
+                                  />
+                                  {issue}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => setShowNewCollectiveForm(false)} style={{ ...styles.button('secondary'), flex: 1 }}>
+                              Cancel
+                            </button>
+                            <button onClick={handleCreateCollective} style={{ ...styles.button('primary'), flex: 1 }}>
+                              Create
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {/* Consumer Groups */}
+                {activeSubTab === 'consumer' && (
+                  <section>
+                    <h2 style={styles.sectionHeader}>Consumer Collectives</h2>
+                    <p style={{ color: colors.textDim, marginBottom: '20px' }}>
+                      Group buying power. Negotiate bulk rates for utilities and necessities.
+                    </p>
+
+                    <div style={styles.grid}>
+                      {MOCK_CONSUMER_GROUPS.map(group => {
+                        const joined = joinedConsumerGroups.includes(group.id);
+                        return (
+                          <div key={group.id} style={{
+                            ...styles.card,
+                            border: joined ? `1px solid ${colors.success}` : `1px solid ${colors.border}`
+                          }}>
+                            <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>{group.name}</div>
+                            <div style={{ fontSize: '12px', color: colors.textDim, marginBottom: '15px' }}>{group.description}</div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                              <div>
+                                <div style={{ fontSize: '28px', fontWeight: 700 }}>{group.members}</div>
+                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>MEMBERS</div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '28px', fontWeight: 700, color: colors.success }}>{group.savings}</div>
+                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>AVG SAVINGS</div>
+                              </div>
+                            </div>
+
+                            {!joined ? (
+                              <button onClick={() => handleJoinConsumerGroup(group)} style={{ ...styles.button('secondary'), width: '100%' }}>
+                                Join Group →
+                              </button>
+                            ) : (
+                              <div style={{ textAlign: 'center', color: colors.success, fontSize: '12px', padding: '12px' }}>
+                                ✓ You're a member
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+
+                {/* Petitions */}
+                {activeSubTab === 'petition' && (
+                  <section>
+                    <h2 style={styles.sectionHeader}>Local Petitions</h2>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
+                      <p style={{ color: colors.textDim, margin: 0 }}>
+                        Simple local petitions. No email harvesting. Just signatures.
+                      </p>
+                      <button onClick={() => setShowPetitionForm(true)} style={styles.button('primary')}>
+                        + Create Petition
+                      </button>
+                    </div>
+
+                    {petitions.map(petition => {
+                      const signed = signedPetitions.includes(petition.id);
+                      const pct = Math.min((petition.signatures / petition.goal) * 100, 100);
+                      return (
+                        <div key={petition.id} style={{
+                          ...styles.card,
+                          border: petition.status === 'won' ? `1px solid ${colors.success}` : `1px solid ${colors.border}`
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 700, fontSize: '15px', marginBottom: '5px' }}>{petition.title}</div>
+                              <div style={{ fontSize: '11px', color: colors.textDimmer }}>Area: {petition.area} • Created {petition.created}</div>
+                              {petition.description && (
+                                <div style={{ fontSize: '12px', color: colors.textDim, marginTop: '8px' }}>{petition.description}</div>
+                              )}
+                            </div>
+                            {petition.status === 'won' && <span style={styles.badge(colors.success)}>✓ Won!</span>}
+                            {petition.status === 'active' && <span style={styles.badge(colors.warning)}>Active</span>}
+                          </div>
+
+                          <div style={{ marginTop: '15px', marginBottom: '15px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                              <span style={{ fontWeight: 700 }}>{petition.signatures} signatures</span>
+                              <span style={{ color: colors.textDimmer }}>Goal: {petition.goal}</span>
+                            </div>
+                            <div style={{ height: '10px', backgroundColor: colors.border, borderRadius: '5px' }}>
+                              <div style={{
+                                height: '100%',
+                                width: `${pct}%`,
+                                backgroundColor: petition.signatures >= petition.goal ? colors.success : colors.primary,
+                                borderRadius: '5px',
+                                transition: 'width 0.3s'
+                              }} />
+                            </div>
+                          </div>
+
+                          {petition.status === 'active' && !signed && (
+                            <button onClick={() => handleSignPetition(petition)} style={{ ...styles.button('secondary'), width: '100%' }}>
+                              Sign Petition →
+                            </button>
+                          )}
+                          {signed && (
+                            <div style={{ textAlign: 'center', color: colors.success, fontSize: '12px', padding: '12px' }}>
+                              ✓ You signed this petition
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Petition Modal */}
+                    {showPetitionForm && (
+                      <div style={styles.modal} className="modal-enter">
+                        <div style={{ ...styles.card, maxWidth: '500px', width: '100%' }}>
+                          <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Create Local Petition</h3>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Title
+                            </label>
+                            <input
+                              type="text"
+                              value={newPetition.title}
+                              onChange={(e) => setNewPetition({ ...newPetition, title: e.target.value })}
+                              placeholder="What are you petitioning for?"
+                              style={styles.input}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Area (ZIP or Neighborhood)
+                            </label>
+                            <input
+                              type="text"
+                              value={newPetition.area}
+                              onChange={(e) => setNewPetition({ ...newPetition, area: e.target.value })}
+                              placeholder="Where does this apply?"
+                              style={styles.input}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Signature Goal
+                            </label>
+                            <input
+                              type="number"
+                              value={newPetition.goal}
+                              onChange={(e) => setNewPetition({ ...newPetition, goal: parseInt(e.target.value) || 100 })}
+                              style={{ ...styles.input, width: '120px' }}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Description
+                            </label>
+                            <textarea
+                              rows={4}
+                              value={newPetition.description}
+                              onChange={(e) => setNewPetition({ ...newPetition, description: e.target.value })}
+                              placeholder="Explain the issue..."
+                              style={{ ...styles.input, resize: 'vertical' }}
+                            />
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => setShowPetitionForm(false)} style={{ ...styles.button('secondary'), flex: 1 }}>
+                              Cancel
+                            </button>
+                            <button onClick={handleCreatePetition} style={{ ...styles.button('primary'), flex: 1 }}>
+                              Publish
+                            </button>
+                          </div>
+                          <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', marginBottom: 0 }}>
+                            No email required. Petition tied to browser fingerprint, not identity.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+              </div>
+            )}
+
+            {/* ==================== ACCOUNTABILITY TAB ==================== */}
+            {activeTab === 'accountability' && (
+              <div>
+                <section style={{ marginBottom: '60px' }}>
+                  <h2 style={styles.sectionHeader}>Submit Report</h2>
+
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                    {['landlord', 'employer'].map(type => (
+                      <button
+                        key={type}
+                        onClick={() => setReportType(type)}
+                        style={{
+                          padding: '12px 25px',
+                          backgroundColor: reportType === type ? colors.primary : 'transparent',
+                          color: reportType === type ? '#000' : colors.textMuted,
+                          border: `1px solid ${reportType === type ? colors.primary : colors.borderLight}`,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          textTransform: 'uppercase',
+                          fontSize: '12px',
+                          letterSpacing: '1px',
+                          fontWeight: reportType === type ? 700 : 400
+                        }}
+                      >
+                        {type === 'landlord' ? '🏠 Landlord' : '💼 Employer'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={styles.card}>
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                        {reportType === 'landlord' ? 'Landlord Name or Management Company' : 'Company Name'}
+                      </label>
+                      <input
+                        type="text"
+                        value={newReport.name}
+                        onChange={(e) => setNewReport({ ...newReport, name: e.target.value })}
+                        placeholder={reportType === 'landlord' ? 'e.g., Greystone Properties' : 'e.g., MegaCorp Inc'}
+                        style={styles.input}
+                      />
+                    </div>
+
+                    {reportType === 'landlord' && (
+                      <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                          Property Address (optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={newReport.address}
+                          onChange={(e) => setNewReport({ ...newReport, address: e.target.value })}
+                          placeholder="e.g., 123 Main St"
+                          style={styles.input}
+                        />
+                      </div>
+                    )}
+
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{ display: 'block', marginBottom: '10px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                        Issue Type (select all that apply)
+                      </label>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {(reportType === 'landlord'
+                          ? ['No repairs', 'Illegal fees', 'Harassment', 'Safety hazard', 'Discrimination', 'Retaliation', 'Pest infestation', 'No heat/AC', 'Other']
+                          : ['Wage theft', 'Unsafe conditions', 'Retaliation', 'Discrimination', 'Harassment', 'Scheduling abuse', 'Unpaid overtime', 'Other']
+                        ).map(issue => (
+                          <label key={issue} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 14px',
+                            backgroundColor: newReport.issues.includes(issue) ? '#ff333320' : colors.bgLighter,
+                            border: `1px solid ${newReport.issues.includes(issue) ? colors.primary : colors.borderLight}`,
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={newReport.issues.includes(issue)}
+                              onChange={() => toggleReportIssue(issue)}
+                              style={{ accentColor: colors.primary }}
+                            />
+                            {issue}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                        Description (optional)
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={newReport.description}
+                        onChange={(e) => setNewReport({ ...newReport, description: e.target.value })}
+                        placeholder="What happened? Be specific but protect your identity."
+                        style={{ ...styles.input, resize: 'vertical' }}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '25px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={newReport.anonymous}
+                          onChange={(e) => setNewReport({ ...newReport, anonymous: e.target.checked })}
+                          style={{ accentColor: colors.primary, width: '18px', height: '18px' }}
+                        />
+                        <span style={{ fontSize: '13px', color: colors.textMuted }}>Post anonymously</span>
+                      </label>
+                    </div>
+
+                    <button onClick={handleSubmitReport} style={{ ...styles.button('primary'), width: '100%', padding: '15px' }}>
+                      Submit Report
+                    </button>
+
+                    <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', textAlign: 'center' }}>
+                      Reports are public. No moderation by corporations or landlords.
+                    </p>
+                  </div>
+                </section>
+
+                <section>
+                  <h2 style={styles.sectionHeader}>Recent Reports</h2>
+
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
+                    {['all', 'landlord', 'employer'].map(filter => (
+                      <button
+                        key={filter}
+                        onClick={() => setReportFilter(filter)}
+                        style={{
+                          padding: '8px 15px',
+                          backgroundColor: reportFilter === filter ? colors.primary : 'transparent',
+                          color: reportFilter === filter ? '#000' : colors.textDim,
+                          border: `1px solid ${reportFilter === filter ? colors.primary : colors.borderLight}`,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: '11px',
+                          textTransform: 'capitalize'
+                        }}
+                      >
+                        {filter === 'all' ? 'All Reports' : filter + 's'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {filteredReports.map(report => (
+                    <div key={report.id} style={{
+                      ...styles.card,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '15px'
+                    }}>
+                      <div style={{ flex: 1, minWidth: '200px' }}>
+                        <div style={{ marginBottom: '8px' }}>
+                          <span style={styles.badge(report.type === 'landlord' ? colors.warning : colors.purple)}>
+                            {report.type === 'landlord' ? '🏠' : '💼'} {report.type}
+                          </span>
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: '15px', marginBottom: '4px' }}>{report.name}</div>
+                        {report.address && <div style={{ fontSize: '12px', color: colors.textDim, marginBottom: '8px' }}>{report.address}</div>}
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                          {report.issues.map(issue => (
+                            <span key={issue} style={{ ...styles.badge(colors.primary), marginRight: 0 }}>{issue}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '36px', fontWeight: 700, color: colors.primary }}>{report.reports}</div>
+                        <div style={{ fontSize: '10px', color: colors.textDimmer }}>REPORTS</div>
+                        <div style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '5px' }}>Last: {report.lastReport}</div>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              </div>
+            )}
+          </main>
+
+          {/* Footer */}
+          <footer style={{
+            borderTop: `1px solid ${colors.border}`,
+            padding: '30px 40px',
+            marginTop: '60px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '20px'
+          }}>
+            <div style={{ fontSize: '11px', color: colors.textDimmest }}>
+              <div style={{ fontWeight: 700, marginBottom: '4px' }}>SOLIDARITY_NET</div>
+              <div>Open source. No tracking. No profiles. No ads.</div>
+            </div>
+            <div style={{ display: 'flex', gap: '25px', fontSize: '11px' }}>
+              <a href="#" style={{ color: colors.textDim, textDecoration: 'none' }}>Source Code</a>
+              <a href="#" style={{ color: colors.textDim, textDecoration: 'none' }}>Data Sources</a>
+              <a href="#" style={{ color: colors.textDim, textDecoration: 'none' }}>Privacy</a>
+            </div>
+          </footer>
+        </div>
+      );
+    };
+
+    // Render
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<SolidarityPlatform />);
+  </script>
+</body>
+</html>
