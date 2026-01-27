@@ -192,17 +192,15 @@ app.get('/api/theft-calculator', (req, res) => {
   const workingYears = userAge - 18;
   const yearsToRetirement = Math.max(0, 65 - userAge);
 
-  // -- HOUSING THEFT --
-  // In 1985, median home was 3.5x median income. Now it's ~7.5x.
-  // The excess multiplier (4x) represents "stolen" housing affordability.
+  // -- HOUSING (time-based, not dollars) --
+  // In 1985, median home cost 3.5 years of income. Now it costs 7.5 years.
+  // Show the extra working years needed — not a dollar figure.
   const historicalHomeRatio = historical.home_price_to_income_1985;
   const currentHomeRatio = historical.home_price_to_income_now;
-  const excessHomeRatio = currentHomeRatio - historicalHomeRatio;
-  const housingTheft = Math.round(userIncome * excessHomeRatio);
+  const extraYearsToBuyHome = currentHomeRatio - historicalHomeRatio;
 
   // -- WAGE THEFT (productivity vs pay gap) --
   // Since 1979, productivity rose ~70% but wages only ~17%.
-  // Workers should earn ~45% more than they do.
   const productivityGap = historical.productivity_growth_since_1979;
   const wageGrowth = historical.wage_growth_since_1979;
   const wageGapPct = productivityGap - wageGrowth;
@@ -210,8 +208,7 @@ app.get('/api/theft-calculator', (req, res) => {
   const lifetimeEarningsTheft = annualWageTheft * workingYears;
 
   // -- DEBT BURDEN --
-  // Average student debt, medical debt, and credit card debt
-  // normalized by income level relative to median
+  // Average student + medical debt normalized by income relative to median
   const medianIncome = historical.median_household_income;
   const incomeRatio = userIncome / medianIncome;
   const avgStudentDebt = historical.avg_student_debt;
@@ -219,7 +216,6 @@ app.get('/api/theft-calculator', (req, res) => {
   const debtBurden = Math.round((avgStudentDebt + avgMedicalDebt) * Math.min(incomeRatio, 1.5));
 
   // -- RENT EXTRACTION --
-  // Rent has grown 2x faster than income since 2000.
   // In 1985 rent was ~25% of income; now it's ~35% nationally.
   const rentPctThen = historical.rent_pct_income_1985;
   const rentPctNow = historical.rent_pct_income_now;
@@ -227,8 +223,8 @@ app.get('/api/theft-calculator', (req, res) => {
   const annualRentTheft = Math.round(userIncome * excessRentPct);
   const lifetimeRentTheft = annualRentTheft * workingYears;
 
-  // -- TOTALS --
-  const totalLifetimeTheft = housingTheft + lifetimeEarningsTheft + debtBurden + lifetimeRentTheft;
+  // -- TOTALS (dollars: earnings + debt + rent only) --
+  const totalLifetimeTheft = lifetimeEarningsTheft + debtBurden + lifetimeRentTheft;
   const yearsOfWorkStolen = totalLifetimeTheft > 0 ? (totalLifetimeTheft / userIncome).toFixed(1) : '0.0';
   const projectedFutureTheft = (annualWageTheft + annualRentTheft) * yearsToRetirement;
 
@@ -236,9 +232,11 @@ app.get('/api/theft-calculator', (req, res) => {
     inputs: { age: userAge, income: userIncome, zip: zip || null },
     metrics: {
       housing: {
-        label: 'Housing Wealth Denied',
-        amount: housingTheft,
-        detail: `Home prices are ${currentHomeRatio.toFixed(1)}x income vs ${historicalHomeRatio.toFixed(1)}x in 1985`,
+        label: 'Housing Affordability Lost',
+        yearsIn1985: historicalHomeRatio,
+        yearsNow: currentHomeRatio,
+        extraYears: extraYearsToBuyHome,
+        detail: `A home costs ${currentHomeRatio.toFixed(1)} years of income today vs ${historicalHomeRatio.toFixed(1)} in 1985`,
       },
       earnings: {
         label: 'Wages Stolen by Productivity Gap',
