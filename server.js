@@ -35,19 +35,44 @@ function timeAgo(dateStr) {
 }
 
 // ============================================
-// CHANGE.ORG SCRAPING
+// TELEGRAM SCRAPING
 // ============================================
 
-// Cache for Change.org data (URL -> { signatures, goal, timestamp })
-const changeOrgCache = new Map();
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+// Cache for Telegram data (URL -> { members, timestamp })
+const telegramCache = new Map();
+const TELEGRAM_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
-function fetchChangeOrgData(url) {
+function parseTelegramCount(value, suffix = '') {
+  if (!value) return null;
+  const normalized = value.replace(/,/g, '').trim();
+  const number = parseFloat(normalized);
+  if (Number.isNaN(number)) return null;
+  const suffixLower = suffix.toLowerCase();
+  if (suffixLower === 'k') return Math.round(number * 1000);
+  if (suffixLower === 'm') return Math.round(number * 1000000);
+  if (suffixLower === 'b') return Math.round(number * 1000000000);
+  return Math.round(number);
+}
+
+function parseTelegramPage(html) {
+  const visibleMatch = html.match(/([\d,.]+)\s*([kmb])?\s+(?:members|subscribers)/i);
+  if (visibleMatch) {
+    return { members: parseTelegramCount(visibleMatch[1], visibleMatch[2]) };
+  }
+
+  const metaMatch = html.match(/"(?:members|subscribers)"\s*:\s*"?(?<count>[\d,.]+)"?/i);
+  if (metaMatch && metaMatch.groups?.count) {
+    return { members: parseTelegramCount(metaMatch.groups.count) };
+  }
+
+  return { members: null };
+}
+
+function fetchTelegramData(url) {
   return new Promise((resolve, reject) => {
-    // Check cache first
-    const cached = changeOrgCache.get(url);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return resolve({ signatures: cached.signatures, goal: cached.goal });
+    const cached = telegramCache.get(url);
+    if (cached && Date.now() - cached.timestamp < TELEGRAM_CACHE_TTL) {
+      return resolve({ members: cached.members });
     }
 
     const req = https.get(url, {
@@ -57,9 +82,8 @@ function fetchChangeOrgData(url) {
       },
       timeout: 8000,
     }, (res) => {
-      // Follow redirects
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchChangeOrgData(res.headers.location).then(resolve).catch(reject);
+        return fetchTelegramData(res.headers.location).then(resolve).catch(reject);
       }
       if (res.statusCode !== 200) {
         return reject(new Error(`HTTP ${res.statusCode}`));
@@ -69,9 +93,9 @@ function fetchChangeOrgData(url) {
       res.on('data', chunk => { body += chunk; });
       res.on('end', () => {
         try {
-          const data = parseChangeOrgPage(body);
-          if (data.signatures !== null) {
-            changeOrgCache.set(url, { ...data, timestamp: Date.now() });
+          const data = parseTelegramPage(body);
+          if (data.members !== null) {
+            telegramCache.set(url, { ...data, timestamp: Date.now() });
           }
           resolve(data);
         } catch (e) {
@@ -85,59 +109,10 @@ function fetchChangeOrgData(url) {
   });
 }
 
-function parseChangeOrgPage(html) {
-  let signatures = null;
-  let goal = null;
-
-  // Try JSON-LD / embedded JSON patterns
-  const supportersMatch = html.match(/"supporters_count"\s*:\s*(\d+)/);
-  if (supportersMatch) {
-    signatures = parseInt(supportersMatch[1], 10);
-  }
-
-  // Try alternate patterns
-  if (signatures === null) {
-    const totalSigsMatch = html.match(/"total_signatures"\s*:\s*(\d+)/);
-    if (totalSigsMatch) {
-      signatures = parseInt(totalSigsMatch[1], 10);
-    }
-  }
-
-  if (signatures === null) {
-    const sigCountMatch = html.match(/"signatureCount"\s*:\s*{[^}]*"total"\s*:\s*(\d+)/);
-    if (sigCountMatch) {
-      signatures = parseInt(sigCountMatch[1], 10);
-    }
-  }
-
-  // Try to extract from visible text patterns like "1,234 have signed"
-  if (signatures === null) {
-    const visibleMatch = html.match(/([\d,]+)\s+(?:have signed|supporters|signatures)/i);
-    if (visibleMatch) {
-      signatures = parseInt(visibleMatch[1].replace(/,/g, ''), 10);
-    }
-  }
-
-  // Try to find the goal
-  const goalMatch = html.match(/"goal"\s*:\s*(\d+)/);
-  if (goalMatch) {
-    goal = parseInt(goalMatch[1], 10);
-  }
-
-  if (goal === null) {
-    const goalTextMatch = html.match(/(?:goal|target)[:\s]+(?:of\s+)?([\d,]+)/i);
-    if (goalTextMatch) {
-      goal = parseInt(goalTextMatch[1].replace(/,/g, ''), 10);
-    }
-  }
-
-  return { signatures, goal };
-}
-
-function isValidChangeOrgUrl(url) {
+function isValidTelegramUrl(url) {
   try {
     const parsed = new URL(url);
-    return parsed.hostname === 'www.change.org' || parsed.hostname === 'change.org';
+    return parsed.hostname === 't.me' || parsed.hostname === 'telegram.me';
   } catch {
     return false;
   }
@@ -439,10 +414,10 @@ app.post('/api/consumer-groups/:id/join', (req, res) => {
 });
 
 // ============================================
-// PETITION ENDPOINTS
+// TENANT UNION / ORGANIZATION ENDPOINTS
 // ============================================
 
-// GET /api/petitions - List all petitions
+// GET /api/petitions - List all tenant unions
 app.get('/api/petitions', (req, res) => {
   const petitions = db.prepare('SELECT * FROM petitions ORDER BY created_at DESC').all();
   res.json(petitions.map(p => ({
@@ -450,73 +425,68 @@ app.get('/api/petitions', (req, res) => {
     title: p.title,
     area: p.area,
     description: p.description,
-    changeorg_url: p.changeorg_url,
-    signatures: p.signatures,
-    goal: p.goal,
+    telegram_url: p.telegram_url,
+    members: p.signatures,
     status: p.status,
     created: timeAgo(p.created_at),
   })));
 });
 
-// POST /api/petitions - Create a petition (requires Change.org URL)
+// POST /api/petitions - Create a tenant union (requires Telegram URL)
 app.post('/api/petitions', async (req, res) => {
-  const { title, area, description, changeorg_url } = req.body;
-  if (!title || !area || !changeorg_url) {
-    return res.status(400).json({ error: 'title, area, and changeorg_url are required' });
+  const { title, area, description, telegram_url } = req.body;
+  if (!title || !area || !telegram_url) {
+    return res.status(400).json({ error: 'title, area, and telegram_url are required' });
   }
-  if (!isValidChangeOrgUrl(changeorg_url)) {
-    return res.status(400).json({ error: 'A valid Change.org URL is required' });
+  if (!isValidTelegramUrl(telegram_url)) {
+    return res.status(400).json({ error: 'A valid Telegram URL is required' });
   }
 
-  // Try to fetch signature data from Change.org
-  let signatures = 0;
-  let goal = 100;
+  // Try to fetch member data from Telegram
+  let members = 0;
   try {
-    const data = await fetchChangeOrgData(changeorg_url);
-    if (data.signatures !== null) signatures = data.signatures;
-    if (data.goal !== null) goal = data.goal;
+    const data = await fetchTelegramData(telegram_url);
+    if (data.members !== null) members = data.members;
   } catch {
-    // Could not reach Change.org — use defaults, will refresh later
+    // Could not reach Telegram — use defaults, will refresh later
   }
 
   const id = `p${Date.now()}`;
   db.prepare(
-    'INSERT INTO petitions (id, title, area, description, changeorg_url, signatures, goal, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(id, title, area, description || '', changeorg_url, signatures, goal, 'active');
+    'INSERT INTO petitions (id, title, area, description, telegram_url, signatures, goal, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(id, title, area, description || '', telegram_url, members, 0, 'active');
   res.json({
     id,
     title,
     area,
     description: description || '',
-    changeorg_url,
-    signatures,
-    goal,
+    telegram_url,
+    members,
     status: 'active',
     created: 'Just now',
   });
 });
 
-// POST /api/petitions/:id/refresh - Refresh signature data from Change.org
+// POST /api/petitions/:id/refresh - Refresh member data from Telegram
 app.post('/api/petitions/:id/refresh', async (req, res) => {
   const { id } = req.params;
   const petition = db.prepare('SELECT * FROM petitions WHERE id = ?').get(id);
   if (!petition) {
     return res.status(404).json({ error: 'Petition not found' });
   }
-  if (!petition.changeorg_url) {
-    return res.status(400).json({ error: 'No Change.org URL linked' });
+  if (!petition.telegram_url) {
+    return res.status(400).json({ error: 'No Telegram URL linked' });
   }
 
   try {
-    const data = await fetchChangeOrgData(petition.changeorg_url);
-    const newSigs = data.signatures !== null ? data.signatures : petition.signatures;
-    const newGoal = data.goal !== null ? data.goal : petition.goal;
-    const newStatus = newSigs >= newGoal ? 'won' : petition.status;
+    const data = await fetchTelegramData(petition.telegram_url);
+    const newMembers = data.members !== null ? data.members : petition.signatures;
+    const newStatus = petition.status;
     db.prepare('UPDATE petitions SET signatures = ?, goal = ?, status = ? WHERE id = ?')
-      .run(newSigs, newGoal, newStatus, id);
-    res.json({ success: true, signatures: newSigs, goal: newGoal, status: newStatus });
+      .run(newMembers, 0, newStatus, id);
+    res.json({ success: true, members: newMembers, status: newStatus });
   } catch {
-    res.json({ success: false, signatures: petition.signatures, goal: petition.goal, status: petition.status });
+    res.json({ success: false, members: petition.signatures, status: petition.status });
   }
 });
 
