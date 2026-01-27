@@ -1379,6 +1379,13 @@
       const [reportFilter, setReportFilter] = useState('all');
       const [newReport, setNewReport] = useState({ name: '', address: '', issues: [], description: '', anonymous: true });
 
+      // Theft Calculator State
+      const [theftAge, setTheftAge] = useState('');
+      const [theftIncome, setTheftIncome] = useState('');
+      const [theftResults, setTheftResults] = useState(null);
+      const [theftLoading, setTheftLoading] = useState(false);
+      const [theftError, setTheftError] = useState(null);
+
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
       const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [] });
@@ -1664,6 +1671,38 @@
               showNotification('Collective created - invite your coworkers!');
             })
             .catch(() => showNotification('Failed to create collective', 'error'));
+        }
+      };
+
+      const handleTheftCalculate = async (e) => {
+        e.preventDefault();
+        const age = parseInt(theftAge, 10);
+        const income = parseFloat(theftIncome);
+        if (!age || age < 18 || age > 100) {
+          setTheftError('Enter your age (18-100)');
+          return;
+        }
+        if (!income || income <= 0) {
+          setTheftError('Enter your annual income');
+          return;
+        }
+        setTheftLoading(true);
+        setTheftError(null);
+        try {
+          const params = new URLSearchParams({ age, income });
+          if (zipCode && zipCode.length === 5) params.append('zip', zipCode);
+          const resp = await fetch(`${API_BASE}/theft-calculator?${params}`);
+          if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error || 'Calculation failed');
+          }
+          const data = await resp.json();
+          setTheftResults(data);
+        } catch (err) {
+          setTheftError(err.message || 'Failed to calculate');
+          showNotification('Calculation error', 'error');
+        } finally {
+          setTheftLoading(false);
         }
       };
 
@@ -2079,6 +2118,165 @@
                     }}>
                       <div style={{ fontSize: '24px', marginBottom: '15px' }}>⏳</div>
                       <div style={{ color: colors.textMuted }}>Loading data for ZIP {zipCode}...</div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Economic Theft Calculator */}
+                <section style={{ marginBottom: '60px' }}>
+                  <h2 style={styles.sectionHeader}>What Has Been Stolen From You</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                    Enter your age and income to see how systemic economic policy has personally cost you.
+                  </p>
+
+                  <form onSubmit={handleTheftCalculate} style={{ marginBottom: '30px' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <label style={{ color: colors.textMuted }}>AGE:</label>
+                      <input
+                        type="number"
+                        value={theftAge}
+                        onChange={(e) => { setTheftAge(e.target.value); setTheftError(null); }}
+                        placeholder="30"
+                        min={18}
+                        max={100}
+                        style={{ ...styles.input, width: '80px' }}
+                        disabled={theftLoading}
+                      />
+                      <label style={{ color: colors.textMuted }}>ANNUAL INCOME ($):</label>
+                      <input
+                        type="number"
+                        value={theftIncome}
+                        onChange={(e) => { setTheftIncome(e.target.value); setTheftError(null); }}
+                        placeholder="45000"
+                        min={1}
+                        style={{ ...styles.input, width: '140px' }}
+                        disabled={theftLoading}
+                      />
+                      <button
+                        type="submit"
+                        style={{
+                          ...styles.button('primary'),
+                          opacity: theftLoading ? 0.7 : 1,
+                          cursor: theftLoading ? 'wait' : 'pointer'
+                        }}
+                        disabled={theftLoading}
+                      >
+                        {theftLoading ? 'Calculating...' : 'Calculate My Theft'}
+                      </button>
+                    </div>
+                    {theftError && (
+                      <p style={{ fontSize: '12px', color: colors.primary, marginTop: '8px' }}>{theftError}</p>
+                    )}
+                    <p style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '8px' }}>
+                      Compares your lifetime economics against 1980s baselines — data from EPI, Federal Reserve, Census Bureau, HUD, BLS
+                    </p>
+                  </form>
+
+                  {theftResults && (
+                    <div>
+                      {/* Hero total */}
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '40px 30px',
+                        marginBottom: '20px',
+                        backgroundColor: '#1a0505',
+                        border: `2px solid ${colors.primary}`
+                      }}>
+                        <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
+                          Total stolen from you over {theftResults.totals.workingYears} working years
+                        </div>
+                        <div style={{ fontSize: '64px', fontWeight: 700, color: colors.primary, lineHeight: 1 }}>
+                          ${theftResults.totals.lifetimeTheft.toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '14px', color: colors.textMuted, marginTop: '12px' }}>
+                          That is <strong style={{ color: colors.primary, fontSize: '18px' }}>{theftResults.totals.yearsOfWorkStolen}</strong> full years of your labor — gone.
+                        </div>
+                        {theftResults.totals.yearsToRetirement > 0 && (
+                          <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#ff333315', color: '#ff6666', fontSize: '12px' }}>
+                            At this rate, another <strong>${theftResults.totals.projectedFutureTheft.toLocaleString()}</strong> will be extracted before you reach 65.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 4 Metric Cards */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+                        {[
+                          { key: 'housing', icon: '\u25A0', color: colors.primary },
+                          { key: 'earnings', icon: '\u25B2', color: colors.warning },
+                          { key: 'debt', icon: '\u25CF', color: colors.purple },
+                          { key: 'rent', icon: '\u25AC', color: '#ff6644' },
+                        ].map(({ key, icon, color }) => {
+                          const m = theftResults.metrics[key];
+                          const pct = theftResults.totals.lifetimeTheft > 0
+                            ? Math.round((m.amount / theftResults.totals.lifetimeTheft) * 100)
+                            : 0;
+                          return (
+                            <div key={key} style={{
+                              ...styles.card,
+                              borderLeft: `3px solid ${color}`,
+                              padding: '20px'
+                            }}>
+                              <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                                {icon} {m.label}
+                              </div>
+                              <div style={{ fontSize: '28px', fontWeight: 700, color: color, marginBottom: '8px' }}>
+                                ${m.amount.toLocaleString()}
+                              </div>
+                              {m.annualAmount && (
+                                <div style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '6px' }}>
+                                  ${m.annualAmount.toLocaleString()}/year
+                                </div>
+                              )}
+                              <div style={{ height: '4px', backgroundColor: colors.border, borderRadius: '2px', marginBottom: '8px' }}>
+                                <div style={{ height: '100%', width: `${pct}%`, backgroundColor: color, borderRadius: '2px', transition: 'width 0.5s' }} />
+                              </div>
+                              <div style={{ fontSize: '11px', color: colors.textDim }}>
+                                {m.detail}
+                              </div>
+                              <div style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '4px' }}>
+                                {pct}% of total theft
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* CTA to organize */}
+                      <div style={{
+                        ...styles.card,
+                        textAlign: 'center',
+                        borderColor: colors.primary,
+                        padding: '30px'
+                      }}>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: colors.text, marginBottom: '10px' }}>
+                          This is not inevitable. It is policy. Policy can be changed.
+                        </div>
+                        <div style={{ fontSize: '12px', color: colors.textMuted, marginBottom: '20px' }}>
+                          Join a worker collective, tenant union, or consumer group to start fighting back.
+                        </div>
+                        <button
+                          onClick={() => { setActiveTab('formation'); setActiveSubTab('worker'); }}
+                          style={{
+                            ...styles.button('primary'),
+                            padding: '14px 30px',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Organize Now
+                        </button>
+                      </div>
+
+                      {/* Sources */}
+                      <div style={{ marginTop: '15px', padding: '15px', backgroundColor: colors.bg, fontSize: '11px', color: colors.textDimmest }}>
+                        <strong>Sources:</strong> {theftResults.sources.join(' • ')}
+                      </div>
+                    </div>
+                  )}
+
+                  {theftLoading && (
+                    <div style={{ ...styles.card, textAlign: 'center', padding: '60px' }}>
+                      <div style={{ fontSize: '24px', marginBottom: '15px' }}>...</div>
+                      <div style={{ color: colors.textMuted }}>Calculating your personal economic data...</div>
                     </div>
                   )}
                 </section>
