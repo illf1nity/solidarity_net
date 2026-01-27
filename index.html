@@ -2422,12 +2422,11 @@
                 {activeSubTab === 'worker' && (
                   <section>
                     <h2 style={styles.sectionHeader}>Worker Collectives</h2>
-                    <p style={{ color: colors.textDim, marginBottom: '20px' }}>
-                      Anonymous coordination for workplace issues. Find your coworkers.
-                    </p>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('secondary')}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
+                      <p style={{ color: colors.textDim, margin: 0 }}>
+                        Anonymous coordination for workplace issues. Find your coworkers.
+                      </p>
+                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('primary')}>
                         + Create Worker Collective
                       </button>
                     </div>
@@ -2561,7 +2560,7 @@
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Telegram Link
+                              Telegram Link *
                             </label>
                             <input
                               type="url"
@@ -2569,12 +2568,16 @@
                               onChange={(e) => setNewCollective({ ...newCollective, telegram_url: e.target.value })}
                               placeholder="https://t.me/yourcollective"
                               style={styles.input}
+                              required
                             />
+                            <p style={{ fontSize: '10px', color: colors.textDimmest, margin: '5px 0 0 0' }}>
+                              Paste the full public Telegram group link. Member totals will be pulled automatically.
+                            </p>
                           </div>
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Company Name
+                              Company Name *
                             </label>
                             <input
                               type="text"
@@ -2588,7 +2591,7 @@
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Industry
+                              Industry *
                             </label>
                             <select
                               value={newCollective.industry}
@@ -2635,10 +2638,20 @@
                             <button onClick={() => setShowNewCollectiveForm(false)} style={{ ...styles.button('secondary'), flex: 1 }}>
                               Cancel
                             </button>
-                            <button onClick={handleCreateCollective} style={{ ...styles.button('primary'), flex: 1 }}>
-                              Create
+                            <button
+                              onClick={handleCreateCollective}
+                              disabled={!newCollective.telegram_url || !newCollective.company || !newCollective.industry}
+                              style={{
+                                ...styles.button('primary'), flex: 1,
+                                opacity: (!newCollective.telegram_url || !newCollective.company || !newCollective.industry) ? 0.5 : 1,
+                                cursor: (!newCollective.telegram_url || !newCollective.company || !newCollective.industry) ? 'not-allowed' : 'pointer'
+                              }}>
+                              Create Worker Collective
                             </button>
                           </div>
+                          <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', marginBottom: 0 }}>
+                            Member totals are pulled from Telegram. Invite your coworkers to grow the collective.
+                          </p>
                         </div>
                       </div>
                     )}
