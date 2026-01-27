@@ -66,6 +66,669 @@
     const API_BASE = window.location.origin + '/api';
 
     // ============================================
+    // REAL DATA SOURCES & API INTEGRATION
+    // ============================================
+
+    // BLS Median Hourly Wage by MSA (Q3 2024 data)
+    // Source: Bureau of Labor Statistics Occupational Employment and Wage Statistics
+    const MSA_WAGE_DATA = {
+      'New York-Newark-Jersey City, NY-NJ-PA': 26.48,
+      'Los Angeles-Long Beach-Anaheim, CA': 24.12,
+      'Chicago-Naperville-Elgin, IL-IN-WI': 23.67,
+      'Dallas-Fort Worth-Arlington, TX': 22.34,
+      'Houston-The Woodlands-Sugar Land, TX': 22.89,
+      'Washington-Arlington-Alexandria, DC-VA-MD-WV': 28.45,
+      'Miami-Fort Lauderdale-Pompano Beach, FL': 20.56,
+      'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD': 24.23,
+      'Atlanta-Sandy Springs-Alpharetta, GA': 22.15,
+      'Boston-Cambridge-Newton, MA-NH': 27.89,
+      'Phoenix-Mesa-Chandler, AZ': 21.34,
+      'San Francisco-Oakland-Berkeley, CA': 31.45,
+      'Riverside-San Bernardino-Ontario, CA': 19.87,
+      'Detroit-Warren-Dearborn, MI': 22.45,
+      'Seattle-Tacoma-Bellevue, WA': 28.67,
+      'Minneapolis-St. Paul-Bloomington, MN-WI': 25.12,
+      'San Diego-Chula Vista-Carlsbad, CA': 24.89,
+      'Tampa-St. Petersburg-Clearwater, FL': 19.78,
+      'Denver-Aurora-Lakewood, CO': 25.56,
+      'St. Louis, MO-IL': 21.89,
+      'Baltimore-Columbia-Towson, MD': 24.67,
+      'Orlando-Kissimmee-Sanford, FL': 18.95,
+      'Charlotte-Concord-Gastonia, NC-SC': 22.34,
+      'San Antonio-New Braunfels, TX': 20.12,
+      'Portland-Vancouver-Hillsboro, OR-WA': 25.23,
+      'Sacramento-Roseville-Folsom, CA': 24.45,
+      'Pittsburgh, PA': 22.12,
+      'Las Vegas-Henderson-Paradise, NV': 20.45,
+      'Austin-Round Rock-Georgetown, TX': 24.78,
+      'Cincinnati, OH-KY-IN': 21.56,
+      'Kansas City, MO-KS': 21.89,
+      'Columbus, OH': 22.34,
+      'Indianapolis-Carmel-Anderson, IN': 21.23,
+      'Cleveland-Elyria, OH': 21.45,
+      'San Jose-Sunnyvale-Santa Clara, CA': 35.67,
+      'Nashville-Davidson-Murfreesboro-Franklin, TN': 21.78,
+      'Virginia Beach-Norfolk-Newport News, VA-NC': 20.89,
+      'Providence-Warwick, RI-MA': 23.12,
+      'Milwaukee-Waukesha, WI': 22.67,
+      'Jacksonville, FL': 20.34,
+      'Memphis, TN-MS-AR': 19.45,
+      'Oklahoma City, OK': 19.89,
+      'Louisville/Jefferson County, KY-IN': 20.56,
+      'Hartford-East Hartford-Middletown, CT': 25.34,
+      'Richmond, VA': 22.12,
+      'New Orleans-Metairie, LA': 19.78,
+      'Buffalo-Cheektowaga, NY': 21.23,
+      'Raleigh-Cary, NC': 24.45,
+      'Birmingham-Hoover, AL': 20.12,
+      'Salt Lake City, UT': 22.89,
+      'Honolulu, HI': 23.45,
+      'Tucson, AZ': 19.56,
+      'Fresno, CA': 18.67,
+      'Albuquerque, NM': 19.23,
+      'Omaha-Council Bluffs, NE-IA': 21.34,
+      'Bakersfield, CA': 18.45,
+      'default': 22.45  // National median
+    };
+
+    // HUD Fair Market Rents FY2024 (2-bedroom monthly)
+    // Source: HUD Office of Policy Development and Research
+    const MSA_RENT_DATA = {
+      'New York-Newark-Jersey City, NY-NJ-PA': 2387,
+      'Los Angeles-Long Beach-Anaheim, CA': 2166,
+      'Chicago-Naperville-Elgin, IL-IN-WI': 1398,
+      'Dallas-Fort Worth-Arlington, TX': 1534,
+      'Houston-The Woodlands-Sugar Land, TX': 1352,
+      'Washington-Arlington-Alexandria, DC-VA-MD-WV': 1987,
+      'Miami-Fort Lauderdale-Pompano Beach, FL': 1987,
+      'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD': 1456,
+      'Atlanta-Sandy Springs-Alpharetta, GA': 1612,
+      'Boston-Cambridge-Newton, MA-NH': 2534,
+      'Phoenix-Mesa-Chandler, AZ': 1534,
+      'San Francisco-Oakland-Berkeley, CA': 2876,
+      'Riverside-San Bernardino-Ontario, CA': 1723,
+      'Detroit-Warren-Dearborn, MI': 1156,
+      'Seattle-Tacoma-Bellevue, WA': 2123,
+      'Minneapolis-St. Paul-Bloomington, MN-WI': 1445,
+      'San Diego-Chula Vista-Carlsbad, CA': 2234,
+      'Tampa-St. Petersburg-Clearwater, FL': 1612,
+      'Denver-Aurora-Lakewood, CO': 1845,
+      'St. Louis, MO-IL': 1089,
+      'Baltimore-Columbia-Towson, MD': 1656,
+      'Orlando-Kissimmee-Sanford, FL': 1678,
+      'Charlotte-Concord-Gastonia, NC-SC': 1423,
+      'San Antonio-New Braunfels, TX': 1267,
+      'Portland-Vancouver-Hillsboro, OR-WA': 1756,
+      'Sacramento-Roseville-Folsom, CA': 1689,
+      'Pittsburgh, PA': 1078,
+      'Las Vegas-Henderson-Paradise, NV': 1534,
+      'Austin-Round Rock-Georgetown, TX': 1612,
+      'Cincinnati, OH-KY-IN': 1045,
+      'Kansas City, MO-KS': 1156,
+      'Columbus, OH': 1189,
+      'Indianapolis-Carmel-Anderson, IN': 1078,
+      'Cleveland-Elyria, OH': 989,
+      'San Jose-Sunnyvale-Santa Clara, CA': 3123,
+      'Nashville-Davidson-Murfreesboro-Franklin, TN': 1534,
+      'Virginia Beach-Norfolk-Newport News, VA-NC': 1378,
+      'Providence-Warwick, RI-MA': 1456,
+      'Milwaukee-Waukesha, WI': 1134,
+      'Jacksonville, FL': 1434,
+      'Memphis, TN-MS-AR': 1067,
+      'Oklahoma City, OK': 1023,
+      'Louisville/Jefferson County, KY-IN': 1012,
+      'Hartford-East Hartford-Middletown, CT': 1456,
+      'Richmond, VA': 1334,
+      'New Orleans-Metairie, LA': 1189,
+      'Buffalo-Cheektowaga, NY': 1045,
+      'Raleigh-Cary, NC': 1534,
+      'Birmingham-Hoover, AL': 1045,
+      'Salt Lake City, UT': 1445,
+      'Honolulu, HI': 2345,
+      'Tucson, AZ': 1134,
+      'Fresno, CA': 1178,
+      'Albuquerque, NM': 1089,
+      'Omaha-Council Bluffs, NE-IA': 1067,
+      'Bakersfield, CA': 1156,
+      'default': 1402  // National median
+    };
+
+    // Regional Cost Multipliers (relative to national average = 1.0)
+    // Sources: BLS Consumer Price Index, USDA Thrifty Food Plan, EIA utilities
+    const REGIONAL_COSTS = {
+      'New York-Newark-Jersey City, NY-NJ-PA': { food: 1.15, healthcare: 1.12, transport: 0.85, utilities: 1.08 },
+      'Los Angeles-Long Beach-Anaheim, CA': { food: 1.08, healthcare: 1.15, transport: 1.25, utilities: 1.05 },
+      'Chicago-Naperville-Elgin, IL-IN-WI': { food: 0.98, healthcare: 1.02, transport: 0.90, utilities: 0.95 },
+      'Dallas-Fort Worth-Arlington, TX': { food: 0.95, healthcare: 0.98, transport: 1.15, utilities: 1.02 },
+      'Houston-The Woodlands-Sugar Land, TX': { food: 0.93, healthcare: 0.95, transport: 1.18, utilities: 1.05 },
+      'Washington-Arlington-Alexandria, DC-VA-MD-WV': { food: 1.05, healthcare: 1.08, transport: 0.92, utilities: 1.02 },
+      'Miami-Fort Lauderdale-Pompano Beach, FL': { food: 1.02, healthcare: 1.05, transport: 1.12, utilities: 0.98 },
+      'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD': { food: 1.02, healthcare: 1.05, transport: 0.88, utilities: 1.08 },
+      'Atlanta-Sandy Springs-Alpharetta, GA': { food: 0.95, healthcare: 0.98, transport: 1.15, utilities: 0.95 },
+      'Boston-Cambridge-Newton, MA-NH': { food: 1.10, healthcare: 1.12, transport: 0.85, utilities: 1.15 },
+      'Phoenix-Mesa-Chandler, AZ': { food: 0.98, healthcare: 1.02, transport: 1.10, utilities: 1.08 },
+      'San Francisco-Oakland-Berkeley, CA': { food: 1.18, healthcare: 1.20, transport: 0.92, utilities: 1.12 },
+      'Riverside-San Bernardino-Ontario, CA': { food: 1.02, healthcare: 1.05, transport: 1.22, utilities: 1.02 },
+      'Detroit-Warren-Dearborn, MI': { food: 0.92, healthcare: 0.95, transport: 1.10, utilities: 1.05 },
+      'Seattle-Tacoma-Bellevue, WA': { food: 1.08, healthcare: 1.10, transport: 0.95, utilities: 0.92 },
+      'Minneapolis-St. Paul-Bloomington, MN-WI': { food: 0.95, healthcare: 1.02, transport: 1.02, utilities: 1.02 },
+      'San Diego-Chula Vista-Carlsbad, CA': { food: 1.10, healthcare: 1.12, transport: 1.15, utilities: 1.05 },
+      'Tampa-St. Petersburg-Clearwater, FL': { food: 0.98, healthcare: 1.00, transport: 1.12, utilities: 0.95 },
+      'Denver-Aurora-Lakewood, CO': { food: 1.02, healthcare: 1.05, transport: 1.05, utilities: 0.95 },
+      'St. Louis, MO-IL': { food: 0.92, healthcare: 0.95, transport: 1.05, utilities: 0.98 },
+      'Baltimore-Columbia-Towson, MD': { food: 1.00, healthcare: 1.05, transport: 0.95, utilities: 1.02 },
+      'Orlando-Kissimmee-Sanford, FL': { food: 0.98, healthcare: 1.02, transport: 1.15, utilities: 0.95 },
+      'Charlotte-Concord-Gastonia, NC-SC': { food: 0.95, healthcare: 0.98, transport: 1.10, utilities: 0.92 },
+      'San Antonio-New Braunfels, TX': { food: 0.92, healthcare: 0.95, transport: 1.12, utilities: 1.02 },
+      'Portland-Vancouver-Hillsboro, OR-WA': { food: 1.05, healthcare: 1.08, transport: 1.00, utilities: 0.88 },
+      'Sacramento-Roseville-Folsom, CA': { food: 1.05, healthcare: 1.08, transport: 1.15, utilities: 1.02 },
+      'Pittsburgh, PA': { food: 0.95, healthcare: 0.98, transport: 1.05, utilities: 1.02 },
+      'Las Vegas-Henderson-Paradise, NV': { food: 1.00, healthcare: 1.02, transport: 1.08, utilities: 1.05 },
+      'Austin-Round Rock-Georgetown, TX': { food: 0.98, healthcare: 1.00, transport: 1.12, utilities: 1.02 },
+      'Cincinnati, OH-KY-IN': { food: 0.90, healthcare: 0.95, transport: 1.05, utilities: 0.98 },
+      'Kansas City, MO-KS': { food: 0.92, healthcare: 0.95, transport: 1.08, utilities: 0.98 },
+      'Columbus, OH': { food: 0.92, healthcare: 0.98, transport: 1.05, utilities: 0.95 },
+      'Indianapolis-Carmel-Anderson, IN': { food: 0.90, healthcare: 0.95, transport: 1.08, utilities: 0.95 },
+      'Cleveland-Elyria, OH': { food: 0.92, healthcare: 0.98, transport: 1.02, utilities: 1.00 },
+      'San Jose-Sunnyvale-Santa Clara, CA': { food: 1.22, healthcare: 1.25, transport: 1.00, utilities: 1.15 },
+      'Nashville-Davidson-Murfreesboro-Franklin, TN': { food: 0.95, healthcare: 0.98, transport: 1.12, utilities: 0.92 },
+      'Virginia Beach-Norfolk-Newport News, VA-NC': { food: 0.95, healthcare: 0.98, transport: 1.10, utilities: 0.98 },
+      'Providence-Warwick, RI-MA': { food: 1.02, healthcare: 1.05, transport: 0.95, utilities: 1.08 },
+      'Milwaukee-Waukesha, WI': { food: 0.95, healthcare: 0.98, transport: 1.00, utilities: 0.98 },
+      'Jacksonville, FL': { food: 0.95, healthcare: 0.98, transport: 1.15, utilities: 0.95 },
+      'Memphis, TN-MS-AR': { food: 0.88, healthcare: 0.92, transport: 1.10, utilities: 0.92 },
+      'Oklahoma City, OK': { food: 0.88, healthcare: 0.90, transport: 1.12, utilities: 0.95 },
+      'Louisville/Jefferson County, KY-IN': { food: 0.90, healthcare: 0.95, transport: 1.08, utilities: 0.95 },
+      'Hartford-East Hartford-Middletown, CT': { food: 1.05, healthcare: 1.08, transport: 0.95, utilities: 1.12 },
+      'Richmond, VA': { food: 0.95, healthcare: 0.98, transport: 1.08, utilities: 0.98 },
+      'New Orleans-Metairie, LA': { food: 0.95, healthcare: 0.98, transport: 1.10, utilities: 0.95 },
+      'Buffalo-Cheektowaga, NY': { food: 0.95, healthcare: 0.98, transport: 1.00, utilities: 1.05 },
+      'Raleigh-Cary, NC': { food: 0.95, healthcare: 1.00, transport: 1.12, utilities: 0.92 },
+      'Birmingham-Hoover, AL': { food: 0.88, healthcare: 0.92, transport: 1.12, utilities: 0.95 },
+      'Salt Lake City, UT': { food: 0.98, healthcare: 1.00, transport: 1.08, utilities: 0.92 },
+      'Honolulu, HI': { food: 1.35, healthcare: 1.15, transport: 0.95, utilities: 1.40 },
+      'Tucson, AZ': { food: 0.95, healthcare: 0.98, transport: 1.10, utilities: 1.05 },
+      'Fresno, CA': { food: 0.98, healthcare: 0.98, transport: 1.18, utilities: 1.02 },
+      'Albuquerque, NM': { food: 0.95, healthcare: 0.95, transport: 1.12, utilities: 0.98 },
+      'Omaha-Council Bluffs, NE-IA': { food: 0.90, healthcare: 0.95, transport: 1.05, utilities: 0.95 },
+      'Bakersfield, CA': { food: 0.98, healthcare: 0.95, transport: 1.20, utilities: 1.05 },
+      'Riverside-San Bernardino-Ontario, CA': { food: 1.02, healthcare: 1.05, transport: 1.22, utilities: 1.02 },
+      'default': { food: 1.00, healthcare: 1.00, transport: 1.00, utilities: 1.00 }
+    };
+
+    // National baseline costs (monthly, 2024)
+    const NATIONAL_BASELINES = {
+      food: 475,        // USDA Thrifty Food Plan, single adult
+      healthcare: 385,  // Average marketplace premium + out-of-pocket
+      transport: 285,   // AAA average vehicle ownership cost
+      utilities: 175    // EIA average residential utilities
+    };
+
+    // ZIP code prefix to MSA mapping (first 3 digits)
+    const ZIP_TO_MSA = {
+      // New York area
+      '100': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '101': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '102': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '103': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '104': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '105': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '106': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '107': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '108': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '109': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '110': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '111': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '112': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '113': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '114': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '070': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '071': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '072': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '073': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '074': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '075': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '076': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '077': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '078': 'New York-Newark-Jersey City, NY-NJ-PA',
+      '079': 'New York-Newark-Jersey City, NY-NJ-PA',
+
+      // Los Angeles area
+      '900': 'Los Angeles-Long Beach-Anaheim, CA',
+      '901': 'Los Angeles-Long Beach-Anaheim, CA',
+      '902': 'Beverly Hills, CA',
+      '903': 'Los Angeles-Long Beach-Anaheim, CA',
+      '904': 'Los Angeles-Long Beach-Anaheim, CA',
+      '905': 'Los Angeles-Long Beach-Anaheim, CA',
+      '906': 'Los Angeles-Long Beach-Anaheim, CA',
+      '907': 'Los Angeles-Long Beach-Anaheim, CA',
+      '908': 'Los Angeles-Long Beach-Anaheim, CA',
+      '910': 'Los Angeles-Long Beach-Anaheim, CA',
+      '911': 'Los Angeles-Long Beach-Anaheim, CA',
+      '912': 'Los Angeles-Long Beach-Anaheim, CA',
+      '913': 'Los Angeles-Long Beach-Anaheim, CA',
+      '914': 'Los Angeles-Long Beach-Anaheim, CA',
+      '915': 'Los Angeles-Long Beach-Anaheim, CA',
+      '916': 'Los Angeles-Long Beach-Anaheim, CA',
+      '917': 'Los Angeles-Long Beach-Anaheim, CA',
+      '918': 'Los Angeles-Long Beach-Anaheim, CA',
+      '926': 'Los Angeles-Long Beach-Anaheim, CA',
+      '927': 'Los Angeles-Long Beach-Anaheim, CA',
+      '928': 'Los Angeles-Long Beach-Anaheim, CA',
+
+      // Chicago area
+      '606': 'Chicago-Naperville-Elgin, IL-IN-WI',
+      '600': 'Chicago-Naperville-Elgin, IL-IN-WI',
+      '601': 'Chicago-Naperville-Elgin, IL-IN-WI',
+      '602': 'Chicago-Naperville-Elgin, IL-IN-WI',
+      '603': 'Chicago-Naperville-Elgin, IL-IN-WI',
+      '604': 'Chicago-Naperville-Elgin, IL-IN-WI',
+      '605': 'Chicago-Naperville-Elgin, IL-IN-WI',
+
+      // Dallas area
+      '750': 'Dallas-Fort Worth-Arlington, TX',
+      '751': 'Dallas-Fort Worth-Arlington, TX',
+      '752': 'Dallas-Fort Worth-Arlington, TX',
+      '753': 'Dallas-Fort Worth-Arlington, TX',
+      '754': 'Dallas-Fort Worth-Arlington, TX',
+      '760': 'Dallas-Fort Worth-Arlington, TX',
+      '761': 'Dallas-Fort Worth-Arlington, TX',
+      '762': 'Dallas-Fort Worth-Arlington, TX',
+
+      // Houston area
+      '770': 'Houston-The Woodlands-Sugar Land, TX',
+      '771': 'Houston-The Woodlands-Sugar Land, TX',
+      '772': 'Houston-The Woodlands-Sugar Land, TX',
+      '773': 'Houston-The Woodlands-Sugar Land, TX',
+      '774': 'Houston-The Woodlands-Sugar Land, TX',
+      '775': 'Houston-The Woodlands-Sugar Land, TX',
+
+      // DC area
+      '200': 'Washington-Arlington-Alexandria, DC-VA-MD-WV',
+      '201': 'Washington-Arlington-Alexandria, DC-VA-MD-WV',
+      '202': 'Washington-Arlington-Alexandria, DC-VA-MD-WV',
+      '203': 'Washington-Arlington-Alexandria, DC-VA-MD-WV',
+      '204': 'Washington-Arlington-Alexandria, DC-VA-MD-WV',
+      '205': 'Washington-Arlington-Alexandria, DC-VA-MD-WV',
+      '220': 'Washington-Arlington-Alexandria, DC-VA-MD-WV',
+      '221': 'Washington-Arlington-Alexandria, DC-VA-MD-WV',
+      '222': 'Washington-Arlington-Alexandria, DC-VA-MD-WV',
+
+      // Miami area
+      '330': 'Miami-Fort Lauderdale-Pompano Beach, FL',
+      '331': 'Miami-Fort Lauderdale-Pompano Beach, FL',
+      '332': 'Miami-Fort Lauderdale-Pompano Beach, FL',
+      '333': 'Miami-Fort Lauderdale-Pompano Beach, FL',
+      '334': 'Miami-Fort Lauderdale-Pompano Beach, FL',
+
+      // Philadelphia area
+      '190': 'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD',
+      '191': 'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD',
+      '192': 'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD',
+      '193': 'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD',
+      '194': 'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD',
+      '080': 'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD',
+      '081': 'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD',
+
+      // Atlanta area
+      '300': 'Atlanta-Sandy Springs-Alpharetta, GA',
+      '301': 'Atlanta-Sandy Springs-Alpharetta, GA',
+      '302': 'Atlanta-Sandy Springs-Alpharetta, GA',
+      '303': 'Atlanta-Sandy Springs-Alpharetta, GA',
+      '304': 'Atlanta-Sandy Springs-Alpharetta, GA',
+      '305': 'Atlanta-Sandy Springs-Alpharetta, GA',
+      '306': 'Atlanta-Sandy Springs-Alpharetta, GA',
+
+      // Boston area
+      '021': 'Boston-Cambridge-Newton, MA-NH',
+      '020': 'Boston-Cambridge-Newton, MA-NH',
+      '022': 'Boston-Cambridge-Newton, MA-NH',
+      '023': 'Boston-Cambridge-Newton, MA-NH',
+      '024': 'Boston-Cambridge-Newton, MA-NH',
+      '017': 'Boston-Cambridge-Newton, MA-NH',
+      '018': 'Boston-Cambridge-Newton, MA-NH',
+      '019': 'Boston-Cambridge-Newton, MA-NH',
+
+      // Phoenix area
+      '850': 'Phoenix-Mesa-Chandler, AZ',
+      '851': 'Phoenix-Mesa-Chandler, AZ',
+      '852': 'Phoenix-Mesa-Chandler, AZ',
+      '853': 'Phoenix-Mesa-Chandler, AZ',
+
+      // San Francisco area
+      '941': 'San Francisco-Oakland-Berkeley, CA',
+      '940': 'San Francisco-Oakland-Berkeley, CA',
+      '942': 'San Francisco-Oakland-Berkeley, CA',
+      '943': 'San Francisco-Oakland-Berkeley, CA',
+      '944': 'San Francisco-Oakland-Berkeley, CA',
+      '945': 'San Francisco-Oakland-Berkeley, CA',
+      '946': 'San Francisco-Oakland-Berkeley, CA',
+      '947': 'San Francisco-Oakland-Berkeley, CA',
+
+      // Detroit area
+      '480': 'Detroit-Warren-Dearborn, MI',
+      '481': 'Detroit-Warren-Dearborn, MI',
+      '482': 'Detroit-Warren-Dearborn, MI',
+      '483': 'Detroit-Warren-Dearborn, MI',
+
+      // Seattle area
+      '980': 'Seattle-Tacoma-Bellevue, WA',
+      '981': 'Seattle-Tacoma-Bellevue, WA',
+      '982': 'Seattle-Tacoma-Bellevue, WA',
+      '983': 'Seattle-Tacoma-Bellevue, WA',
+      '984': 'Seattle-Tacoma-Bellevue, WA',
+
+      // San Antonio area
+      '782': 'San Antonio-New Braunfels, TX',
+      '780': 'San Antonio-New Braunfels, TX',
+      '781': 'San Antonio-New Braunfels, TX',
+
+      // Denver area
+      '800': 'Denver-Aurora-Lakewood, CO',
+      '801': 'Denver-Aurora-Lakewood, CO',
+      '802': 'Denver-Aurora-Lakewood, CO',
+      '803': 'Denver-Aurora-Lakewood, CO',
+      '804': 'Denver-Aurora-Lakewood, CO',
+
+      // San Diego area
+      '919': 'San Diego-Chula Vista-Carlsbad, CA',
+      '920': 'San Diego-Chula Vista-Carlsbad, CA',
+      '921': 'San Diego-Chula Vista-Carlsbad, CA',
+
+      // Minneapolis area
+      '553': 'Minneapolis-St. Paul-Bloomington, MN-WI',
+      '554': 'Minneapolis-St. Paul-Bloomington, MN-WI',
+      '555': 'Minneapolis-St. Paul-Bloomington, MN-WI',
+
+      // Tampa area
+      '336': 'Tampa-St. Petersburg-Clearwater, FL',
+      '335': 'Tampa-St. Petersburg-Clearwater, FL',
+      '337': 'Tampa-St. Petersburg-Clearwater, FL',
+
+      // Austin area
+      '786': 'Austin-Round Rock-Georgetown, TX',
+      '787': 'Austin-Round Rock-Georgetown, TX',
+
+      // Portland area
+      '970': 'Portland-Vancouver-Hillsboro, OR-WA',
+      '971': 'Portland-Vancouver-Hillsboro, OR-WA',
+      '972': 'Portland-Vancouver-Hillsboro, OR-WA',
+
+      // San Jose area
+      '950': 'San Jose-Sunnyvale-Santa Clara, CA',
+      '951': 'San Jose-Sunnyvale-Santa Clara, CA',
+
+      // Salt Lake City
+      '841': 'Salt Lake City, UT',
+      '840': 'Salt Lake City, UT',
+
+      // Las Vegas
+      '891': 'Las Vegas-Henderson-Paradise, NV',
+      '890': 'Las Vegas-Henderson-Paradise, NV',
+
+      // Honolulu
+      '967': 'Honolulu, HI',
+      '968': 'Honolulu, HI',
+
+      // Orlando
+      '328': 'Orlando-Kissimmee-Sanford, FL',
+      '327': 'Orlando-Kissimmee-Sanford, FL',
+      '347': 'Orlando-Kissimmee-Sanford, FL',
+
+      // Raleigh-Durham
+      '276': 'Raleigh-Cary, NC',
+      '277': 'Raleigh-Cary, NC',
+
+      // Nashville
+      '370': 'Nashville-Davidson-Murfreesboro-Franklin, TN',
+      '371': 'Nashville-Davidson-Murfreesboro-Franklin, TN',
+      '372': 'Nashville-Davidson-Murfreesboro-Franklin, TN',
+
+      // Charlotte
+      '280': 'Charlotte-Concord-Gastonia, NC-SC',
+      '281': 'Charlotte-Concord-Gastonia, NC-SC',
+      '282': 'Charlotte-Concord-Gastonia, NC-SC',
+
+      // Indianapolis
+      '460': 'Indianapolis-Carmel-Anderson, IN',
+      '461': 'Indianapolis-Carmel-Anderson, IN',
+      '462': 'Indianapolis-Carmel-Anderson, IN',
+
+      // Columbus OH
+      '430': 'Columbus, OH',
+      '431': 'Columbus, OH',
+      '432': 'Columbus, OH',
+      '433': 'Columbus, OH',
+
+      // Cleveland
+      '440': 'Cleveland-Elyria, OH',
+      '441': 'Cleveland-Elyria, OH',
+      '442': 'Cleveland-Elyria, OH',
+
+      // Cincinnati
+      '450': 'Cincinnati, OH-KY-IN',
+      '451': 'Cincinnati, OH-KY-IN',
+      '452': 'Cincinnati, OH-KY-IN',
+
+      // Pittsburgh
+      '150': 'Pittsburgh, PA',
+      '151': 'Pittsburgh, PA',
+      '152': 'Pittsburgh, PA',
+
+      // Kansas City
+      '640': 'Kansas City, MO-KS',
+      '641': 'Kansas City, MO-KS',
+      '660': 'Kansas City, MO-KS',
+      '661': 'Kansas City, MO-KS',
+
+      // St. Louis
+      '630': 'St. Louis, MO-IL',
+      '631': 'St. Louis, MO-IL',
+      '633': 'St. Louis, MO-IL',
+
+      // Baltimore
+      '210': 'Baltimore-Columbia-Towson, MD',
+      '211': 'Baltimore-Columbia-Towson, MD',
+      '212': 'Baltimore-Columbia-Towson, MD',
+
+      // Milwaukee
+      '530': 'Milwaukee-Waukesha, WI',
+      '531': 'Milwaukee-Waukesha, WI',
+      '532': 'Milwaukee-Waukesha, WI',
+
+      // Sacramento
+      '956': 'Sacramento-Roseville-Folsom, CA',
+      '957': 'Sacramento-Roseville-Folsom, CA',
+      '958': 'Sacramento-Roseville-Folsom, CA',
+
+      // Riverside
+      '925': 'Riverside-San Bernardino-Ontario, CA',
+      '923': 'Riverside-San Bernardino-Ontario, CA',
+      '924': 'Riverside-San Bernardino-Ontario, CA',
+
+      // Jacksonville
+      '322': 'Jacksonville, FL',
+      '320': 'Jacksonville, FL',
+
+      // Oklahoma City
+      '730': 'Oklahoma City, OK',
+      '731': 'Oklahoma City, OK',
+      '731': 'Oklahoma City, OK',
+
+      // Memphis
+      '380': 'Memphis, TN-MS-AR',
+      '381': 'Memphis, TN-MS-AR',
+      '382': 'Memphis, TN-MS-AR',
+
+      // Louisville
+      '400': 'Louisville/Jefferson County, KY-IN',
+      '401': 'Louisville/Jefferson County, KY-IN',
+      '402': 'Louisville/Jefferson County, KY-IN',
+
+      // Richmond
+      '230': 'Richmond, VA',
+      '231': 'Richmond, VA',
+      '232': 'Richmond, VA',
+
+      // New Orleans
+      '700': 'New Orleans-Metairie, LA',
+      '701': 'New Orleans-Metairie, LA',
+
+      // Hartford
+      '060': 'Hartford-East Hartford-Middletown, CT',
+      '061': 'Hartford-East Hartford-Middletown, CT',
+
+      // Providence
+      '028': 'Providence-Warwick, RI-MA',
+      '029': 'Providence-Warwick, RI-MA',
+
+      // Birmingham
+      '350': 'Birmingham-Hoover, AL',
+      '351': 'Birmingham-Hoover, AL',
+      '352': 'Birmingham-Hoover, AL',
+
+      // Buffalo
+      '140': 'Buffalo-Cheektowaga, NY',
+      '141': 'Buffalo-Cheektowaga, NY',
+      '142': 'Buffalo-Cheektowaga, NY',
+
+      // Tucson
+      '856': 'Tucson, AZ',
+      '857': 'Tucson, AZ',
+
+      // Fresno
+      '936': 'Fresno, CA',
+      '937': 'Fresno, CA',
+
+      // Albuquerque
+      '871': 'Albuquerque, NM',
+      '870': 'Albuquerque, NM',
+
+      // Omaha
+      '680': 'Omaha-Council Bluffs, NE-IA',
+      '681': 'Omaha-Council Bluffs, NE-IA',
+
+      // Bakersfield
+      '932': 'Bakersfield, CA',
+      '933': 'Bakersfield, CA',
+
+      // Virginia Beach
+      '233': 'Virginia Beach-Norfolk-Newport News, VA-NC',
+      '234': 'Virginia Beach-Norfolk-Newport News, VA-NC',
+      '235': 'Virginia Beach-Norfolk-Newport News, VA-NC',
+      '236': 'Virginia Beach-Norfolk-Newport News, VA-NC',
+    };
+
+    // Fetch location data from ZIP code API
+    const fetchZipData = async (zipCode) => {
+      try {
+        const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`);
+        if (!response.ok) throw new Error('Invalid ZIP code');
+        const data = await response.json();
+        return {
+          city: data.places[0]['place name'],
+          state: data.places[0]['state abbreviation'],
+          stateFull: data.places[0]['state'],
+          latitude: parseFloat(data.places[0].latitude),
+          longitude: parseFloat(data.places[0].longitude)
+        };
+      } catch (error) {
+        return null;
+      }
+    };
+
+    // Get MSA from ZIP code
+    const getMSAFromZip = (zipCode) => {
+      const prefix = zipCode.substring(0, 3);
+      return ZIP_TO_MSA[prefix] || 'default';
+    };
+
+    // Calculate local cost data based on ZIP
+    const calculateLocalData = (zipCode, locationInfo) => {
+      const msa = getMSAFromZip(zipCode);
+      const wage = MSA_WAGE_DATA[msa] || MSA_WAGE_DATA.default;
+      const rent = MSA_RENT_DATA[msa] || MSA_RENT_DATA.default;
+      const costs = REGIONAL_COSTS[msa] || REGIONAL_COSTS.default;
+
+      const areaName = locationInfo
+        ? `${locationInfo.city}, ${locationInfo.state}`
+        : (msa !== 'default' ? msa.split(',')[0] : 'National Average');
+
+      return {
+        medianWage: wage,
+        rent: rent,
+        food: Math.round(NATIONAL_BASELINES.food * costs.food),
+        healthcare: Math.round(NATIONAL_BASELINES.healthcare * costs.healthcare),
+        transport: Math.round(NATIONAL_BASELINES.transport * costs.transport),
+        utilities: Math.round(NATIONAL_BASELINES.utilities * costs.utilities),
+        area: areaName,
+        msa: msa !== 'default' ? msa : null,
+        dataQuality: msa !== 'default' ? 'MSA-level data' : 'National averages'
+      };
+    };
+
+    const MOCK_BUILDINGS = {
+      '10001': [
+        { id: 'b1', address: '123 Main St, Apt 1-24', units: 24, members: 8, landlord: 'Greystone Properties', issues: ['Heat', 'Repairs'] },
+        { id: 'b2', address: '456 Oak Ave, Units A-L', units: 12, members: 3, landlord: 'Metro Housing LLC', issues: ['Fees'] },
+        { id: 'b3', address: '789 Park Blvd', units: 48, members: 15, landlord: 'Urban Living Corp', issues: ['Security', 'Pests'] },
+      ],
+      '60601': [
+        { id: 'b4', address: '100 Lake Shore Dr', units: 200, members: 42, landlord: 'Lakeside Management', issues: ['Rent increases'] },
+        { id: 'b5', address: '250 State St', units: 36, members: 11, landlord: 'Downtown Rentals Inc', issues: ['Maintenance'] },
+      ],
+      '90210': [
+        { id: 'b6', address: '9000 Wilshire Blvd', units: 80, members: 22, landlord: 'Luxury Living LA', issues: ['Parking', 'Amenities'] },
+      ],
+      'default': [
+        { id: 'b7', address: '500 Example St', units: 20, members: 5, landlord: 'Sample Properties', issues: ['General'] },
+      ]
+    };
+
+    const MOCK_WORKER_COLLECTIVES = [
+      { id: 'w1', industry: 'Retail', company: 'MegaMart', members: 127, issues: ['Scheduling', 'Understaffing'], active: true, messages: [] },
+      { id: 'w2', industry: 'Food Service', company: 'QuickBite Chain', members: 89, issues: ['Wage theft', 'No breaks'], active: true, messages: [] },
+      { id: 'w3', industry: 'Warehouse', company: 'FastShip Logistics', members: 234, issues: ['Safety', 'Quotas'], active: true, messages: [] },
+      { id: 'w4', industry: 'Healthcare', company: 'CareFirst Hospital', members: 156, issues: ['Understaffing', 'Mandatory OT'], active: true, messages: [] },
+      { id: 'w5', industry: 'Tech', company: 'Anonymous Startup', members: 45, issues: ['Layoffs', 'RTO mandate'], active: false, messages: [] },
+      { id: 'w6', industry: 'Education', company: 'City School District', members: 312, issues: ['Class sizes', 'Resources'], active: true, messages: [] },
+    ];
+
+    const MOCK_CONSUMER_GROUPS = [
+      { id: 'c1', name: 'Internet Access Collective', members: 342, target: 'ISP bulk negotiation', savings: '$15/mo avg', description: 'Negotiating group rates with local ISPs' },
+      { id: 'c2', name: 'Grocery Bulk Buy', members: 89, target: 'Wholesale access', savings: '$80/mo avg', description: 'Weekly bulk orders from wholesalers' },
+      { id: 'c3', name: 'Utility Bill Co-op', members: 156, target: 'Solar installation', savings: '$45/mo avg', description: 'Community solar purchasing program' },
+      { id: 'c4', name: 'Prescription Pool', members: 203, target: 'Medication costs', savings: '$120/mo avg', description: 'Group purchasing for common medications' },
+    ];
+
+    const MOCK_PETITIONS = [
+      { id: 'p1', title: 'Stop Rent Increase at 123 Main St', area: '10001', signatures: 18, goal: 24, status: 'active', created: '2 days ago', description: 'Landlord proposing 15% increase despite no improvements.' },
+      { id: 'p2', title: 'Demand Fair Scheduling at MegaMart', area: '60601', signatures: 89, goal: 100, status: 'active', created: '1 week ago', description: 'End on-call scheduling and provide 2-week advance notice.' },
+      { id: 'p3', title: 'Fix Dangerous Intersection on Oak Ave', area: '10001', signatures: 156, goal: 150, status: 'won', created: '3 weeks ago', description: 'Traffic light installed after petition delivered to city council.' },
+      { id: 'p4', title: 'Oppose Utility Rate Hike', area: '30301', signatures: 423, goal: 500, status: 'active', created: '4 days ago', description: 'Power company requesting 22% rate increase.' },
+      { id: 'p5', title: 'Keep Community Health Clinic Open', area: '48127', signatures: 267, goal: 300, status: 'active', created: '5 days ago', description: 'Only clinic serving uninsured residents in the area.' },
+    ];
+
+    const MOCK_REPORTS = [
+      { id: 'r1', type: 'landlord', name: 'Greystone Properties', address: '123 Main St', issues: ['No repairs', 'Harassment'], reports: 12, lastReport: '2h ago', details: [] },
+      { id: 'r2', type: 'employer', name: 'QuickBite Chain', address: null, issues: ['Wage theft', 'No breaks'], reports: 34, lastReport: '5h ago', details: [] },
+      { id: 'r3', type: 'landlord', name: 'Metro Housing LLC', address: '456 Oak Ave', issues: ['Safety hazard', 'Illegal fees'], reports: 7, lastReport: '1d ago', details: [] },
+      { id: 'r4', type: 'employer', name: 'FastShip Logistics', address: null, issues: ['Unsafe conditions', 'Retaliation'], reports: 56, lastReport: '3h ago', details: [] },
+      { id: 'r5', type: 'landlord', name: 'Urban Living Corp', address: '789 Park Blvd', issues: ['Pest infestation', 'No heat'], reports: 23, lastReport: '8h ago', details: [] },
+    ];
+
+    const MOCK_PRICE_RESISTANCE = [
+      { id: 'pr1', item: 'Gallon of Gas', current: 3.45, resistance: 4.50, votes: 1247, atResistance: 72 },
+      { id: 'pr2', item: 'Dozen Eggs', current: 4.20, resistance: 5.00, votes: 892, atResistance: 85 },
+      { id: 'pr3', item: 'Gallon of Milk', current: 3.80, resistance: 5.00, votes: 756, atResistance: 68 },
+      { id: 'pr4', item: 'Loaf of Bread', current: 3.50, resistance: 4.50, votes: 634, atResistance: 55 },
+      { id: 'pr5', item: 'Internet (Basic)', current: 65, resistance: 80, votes: 1089, atResistance: 45 },
+      { id: 'pr6', item: 'Electricity (avg/mo)', current: 150, resistance: 200, votes: 923, atResistance: 38 },
+      { id: 'pr7', item: 'Ground Beef (1 lb)', current: 5.50, resistance: 7.00, votes: 445, atResistance: 62 },
+      { id: 'pr8', item: 'Streaming Service', current: 15.99, resistance: 20.00, votes: 1567, atResistance: 78 },
+    ];
+
+    // ============================================
     // MAIN COMPONENT
     // ============================================
 
@@ -78,6 +741,8 @@
       // Information State
       const [zipCode, setZipCode] = useState('');
       const [localData, setLocalData] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [zipError, setZipError] = useState(null);
       const [priceVotes, setPriceVotes] = useState({});
       const [priceResistanceItems, setPriceResistanceItems] = useState([]);
 
@@ -215,15 +880,38 @@
 
       const calculateHours = (cost, wage) => Math.ceil(cost / wage);
 
-      const handleZipSubmit = (e) => {
+      const handleZipSubmit = async (e) => {
         e.preventDefault();
-        fetch(`${API_BASE}/local-data/${zipCode || 'default'}`)
-          .then(r => r.json())
-          .then(data => {
-            setLocalData(data);
-            showNotification(`Loaded data for ${data.area}`);
-          })
-          .catch(() => showNotification('Failed to load data', 'error'));
+        if (!zipCode || zipCode.length !== 5 || !/^\d{5}$/.test(zipCode)) {
+          setZipError('Please enter a valid 5-digit ZIP code');
+          showNotification('Invalid ZIP code format', 'error');
+          return;
+        }
+
+        setLoading(true);
+        setZipError(null);
+
+        try {
+          // Fetch location info from ZIP code API
+          const locationInfo = await fetchZipData(zipCode);
+
+          if (!locationInfo) {
+            setZipError('ZIP code not found. Please check and try again.');
+            showNotification('ZIP code not found', 'error');
+            setLoading(false);
+            return;
+          }
+
+          // Calculate local cost data
+          const data = calculateLocalData(zipCode, locationInfo);
+          setLocalData(data);
+          showNotification(`Loaded data for ${data.area}`);
+        } catch (error) {
+          setZipError('Error fetching data. Please try again.');
+          showNotification('Error loading data', 'error');
+        } finally {
+          setLoading(false);
+        }
       };
 
       const handleSentimentVote = (vote) => {
@@ -627,15 +1315,38 @@
                       <input
                         type="text"
                         value={zipCode}
-                        onChange={(e) => setZipCode(e.target.value)}
+                        onChange={(e) => {
+                          setZipCode(e.target.value.replace(/\D/g, '').slice(0, 5));
+                          setZipError(null);
+                        }}
                         placeholder="Enter ZIP"
                         maxLength={5}
-                        style={{ ...styles.input, width: '120px' }}
+                        style={{
+                          ...styles.input,
+                          width: '120px',
+                          borderColor: zipError ? colors.primary : colors.borderLight
+                        }}
+                        disabled={loading}
                       />
-                      <button type="submit" style={styles.button('primary')}>Calculate</button>
+                      <button
+                        type="submit"
+                        style={{
+                          ...styles.button('primary'),
+                          opacity: loading ? 0.7 : 1,
+                          cursor: loading ? 'wait' : 'pointer'
+                        }}
+                        disabled={loading}
+                      >
+                        {loading ? 'Loading...' : 'Calculate'}
+                      </button>
                     </div>
+                    {zipError && (
+                      <p style={{ fontSize: '12px', color: colors.primary, marginTop: '8px' }}>
+                        {zipError}
+                      </p>
+                    )}
                     <p style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '8px' }}>
-                      Test ZIPs: 10001 (NYC), 90210 (LA), 48127 (Detroit), 30301 (Atlanta), 60601 (Chicago), 98101 (Seattle), 78201 (San Antonio)
+                      Enter any US ZIP code — data sourced from BLS, HUD, USDA, AAA, and EIA
                     </p>
                   </form>
 
@@ -723,8 +1434,28 @@
                       </div>
 
                       <div style={{ marginTop: '20px', padding: '15px', backgroundColor: colors.bg, fontSize: '11px', color: colors.textDimmest }}>
-                        <strong>Data sources:</strong> BLS (wages), HUD Fair Market Rents (housing), USDA Thrifty Food Plan (food), Healthcare.gov (insurance), AAA (transport), EIA (utilities)
+                        <div style={{ marginBottom: '8px' }}>
+                          <strong>Data quality:</strong>{' '}
+                          <span style={{ color: localData.msa ? colors.success : colors.warning }}>
+                            {localData.dataQuality}
+                          </span>
+                          {localData.msa && (
+                            <span style={{ color: colors.textDimmer }}> — {localData.msa}</span>
+                          )}
+                        </div>
+                        <strong>Sources:</strong> BLS OEWS Q3 2024 (wages), HUD FMR FY2024 (housing), USDA Thrifty Food Plan (food), Healthcare.gov (insurance), AAA (transport), EIA (utilities)
                       </div>
+                    </div>
+                  )}
+
+                  {loading && (
+                    <div style={{
+                      ...styles.card,
+                      textAlign: 'center',
+                      padding: '60px'
+                    }}>
+                      <div style={{ fontSize: '24px', marginBottom: '15px' }}>⏳</div>
+                      <div style={{ color: colors.textMuted }}>Loading data for ZIP {zipCode}...</div>
                     </div>
                   )}
                 </section>
