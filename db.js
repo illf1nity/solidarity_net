@@ -120,6 +120,20 @@ function initializeDatabase() {
       unwilling INTEGER NOT NULL DEFAULT 0,
       total INTEGER NOT NULL DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS historical_economic_data (
+      id INTEGER PRIMARY KEY,
+      home_price_to_income_1985 REAL NOT NULL,
+      home_price_to_income_now REAL NOT NULL,
+      productivity_growth_since_1979 REAL NOT NULL,
+      wage_growth_since_1979 REAL NOT NULL,
+      median_household_income REAL NOT NULL,
+      avg_student_debt REAL NOT NULL,
+      avg_medical_debt REAL NOT NULL,
+      rent_pct_income_1985 REAL NOT NULL,
+      rent_pct_income_now REAL NOT NULL,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   return db;
@@ -346,6 +360,20 @@ function seedDatabase(db) {
     }
   });
   seedSentimentHistory();
+
+  // Seed historical economic data
+  // Sources: EPI, Federal Reserve, Census Bureau, HUD, BLS
+  const historicalCount = db.prepare('SELECT COUNT(*) as count FROM historical_economic_data').get().count;
+  if (historicalCount === 0) {
+    db.prepare(`
+      INSERT INTO historical_economic_data (
+        id, home_price_to_income_1985, home_price_to_income_now,
+        productivity_growth_since_1979, wage_growth_since_1979,
+        median_household_income, avg_student_debt, avg_medical_debt,
+        rent_pct_income_1985, rent_pct_income_now
+      ) VALUES (1, 3.5, 7.5, 69.6, 17.5, 74580, 37574, 2459, 25, 35)
+    `).run();
+  }
 
   // Seed today's sentiment votes
   const insertSentimentVote = db.prepare(`

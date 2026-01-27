@@ -165,6 +165,116 @@ app.get('/api/local-data/:zipCode', (req, res) => {
   });
 });
 
+// GET /api/theft-calculator - Calculate personalized economic theft metrics
+app.get('/api/theft-calculator', (req, res) => {
+  const { age, income, zip } = req.query;
+  const userAge = parseInt(age, 10);
+  const userIncome = parseFloat(income);
+
+  if (!userAge || userAge < 18 || userAge > 100) {
+    return res.status(400).json({ error: 'age must be between 18 and 100' });
+  }
+  if (!userIncome || userIncome <= 0) {
+    return res.status(400).json({ error: 'income must be a positive number' });
+  }
+
+  // Fetch historical data from DB
+  const historical = db.prepare('SELECT * FROM historical_economic_data WHERE id = 1').get();
+  // Fetch location-specific data if zip provided
+  let locationData = null;
+  if (zip) {
+    locationData = db.prepare('SELECT * FROM local_data WHERE zip_code = ?').get(zip);
+    if (!locationData) {
+      locationData = db.prepare('SELECT * FROM local_data WHERE zip_code = ?').get('default');
+    }
+  }
+
+  const workingYears = userAge - 18;
+  const yearsToRetirement = Math.max(0, 65 - userAge);
+
+  // -- HOUSING THEFT --
+  // In 1985, median home was 3.5x median income. Now it's ~7.5x.
+  // The excess multiplier (4x) represents "stolen" housing affordability.
+  const historicalHomeRatio = historical.home_price_to_income_1985;
+  const currentHomeRatio = historical.home_price_to_income_now;
+  const excessHomeRatio = currentHomeRatio - historicalHomeRatio;
+  const housingTheft = Math.round(userIncome * excessHomeRatio);
+
+  // -- WAGE THEFT (productivity vs pay gap) --
+  // Since 1979, productivity rose ~70% but wages only ~17%.
+  // Workers should earn ~45% more than they do.
+  const productivityGap = historical.productivity_growth_since_1979;
+  const wageGrowth = historical.wage_growth_since_1979;
+  const wageGapPct = productivityGap - wageGrowth;
+  const annualWageTheft = Math.round(userIncome * (wageGapPct / 100));
+  const lifetimeEarningsTheft = annualWageTheft * workingYears;
+
+  // -- DEBT BURDEN --
+  // Average student debt, medical debt, and credit card debt
+  // normalized by income level relative to median
+  const medianIncome = historical.median_household_income;
+  const incomeRatio = userIncome / medianIncome;
+  const avgStudentDebt = historical.avg_student_debt;
+  const avgMedicalDebt = historical.avg_medical_debt;
+  const debtBurden = Math.round((avgStudentDebt + avgMedicalDebt) * Math.min(incomeRatio, 1.5));
+
+  // -- RENT EXTRACTION --
+  // Rent has grown 2x faster than income since 2000.
+  // In 1985 rent was ~25% of income; now it's ~35% nationally.
+  const rentPctThen = historical.rent_pct_income_1985;
+  const rentPctNow = historical.rent_pct_income_now;
+  const excessRentPct = (rentPctNow - rentPctThen) / 100;
+  const annualRentTheft = Math.round(userIncome * excessRentPct);
+  const lifetimeRentTheft = annualRentTheft * workingYears;
+
+  // -- TOTALS --
+  const totalLifetimeTheft = housingTheft + lifetimeEarningsTheft + debtBurden + lifetimeRentTheft;
+  const yearsOfWorkStolen = totalLifetimeTheft > 0 ? (totalLifetimeTheft / userIncome).toFixed(1) : '0.0';
+  const projectedFutureTheft = (annualWageTheft + annualRentTheft) * yearsToRetirement;
+
+  res.json({
+    inputs: { age: userAge, income: userIncome, zip: zip || null },
+    metrics: {
+      housing: {
+        label: 'Housing Wealth Denied',
+        amount: housingTheft,
+        detail: `Home prices are ${currentHomeRatio.toFixed(1)}x income vs ${historicalHomeRatio.toFixed(1)}x in 1985`,
+      },
+      earnings: {
+        label: 'Wages Stolen by Productivity Gap',
+        amount: lifetimeEarningsTheft,
+        annualAmount: annualWageTheft,
+        detail: `Productivity up ${productivityGap}% since 1979, wages only up ${wageGrowth}%`,
+      },
+      debt: {
+        label: 'Systemic Debt Burden',
+        amount: debtBurden,
+        detail: `Student + medical debt normalized to your income level`,
+      },
+      rent: {
+        label: 'Excess Rent Extracted',
+        amount: lifetimeRentTheft,
+        annualAmount: annualRentTheft,
+        detail: `Rent takes ${rentPctNow}% of income now vs ${rentPctThen}% in 1985`,
+      },
+    },
+    totals: {
+      lifetimeTheft: totalLifetimeTheft,
+      yearsOfWorkStolen: parseFloat(yearsOfWorkStolen),
+      projectedFutureTheft: projectedFutureTheft,
+      workingYears: workingYears,
+      yearsToRetirement: yearsToRetirement,
+    },
+    sources: [
+      'Economic Policy Institute (productivity-pay gap)',
+      'Federal Reserve (household debt data)',
+      'Census Bureau (median income)',
+      'HUD / Zillow (housing cost trends)',
+      'BLS (rent & CPI data)',
+    ],
+  });
+});
+
 // GET /api/price-resistance - All price resistance items
 app.get('/api/price-resistance', (req, res) => {
   const items = db.prepare('SELECT * FROM price_resistance').all();
