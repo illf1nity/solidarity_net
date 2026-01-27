@@ -51,6 +51,7 @@ function initializeDatabase() {
       industry TEXT NOT NULL,
       company TEXT NOT NULL,
       members INTEGER NOT NULL DEFAULT 0,
+      telegram_url TEXT NOT NULL DEFAULT '',
       issues TEXT NOT NULL DEFAULT '[]',
       active INTEGER NOT NULL DEFAULT 0
     );
@@ -127,6 +128,12 @@ function initializeDatabase() {
   const petitionColumnNames = new Set(petitionColumns.map(column => column.name));
   if (!petitionColumnNames.has('telegram_url')) {
     db.exec("ALTER TABLE petitions ADD COLUMN telegram_url TEXT NOT NULL DEFAULT ''");
+  }
+
+  const collectiveColumns = db.prepare("PRAGMA table_info(worker_collectives)").all();
+  const collectiveColumnNames = new Set(collectiveColumns.map(column => column.name));
+  if (!collectiveColumnNames.has('telegram_url')) {
+    db.exec("ALTER TABLE worker_collectives ADD COLUMN telegram_url TEXT NOT NULL DEFAULT ''");
   }
 
   return db;
@@ -208,17 +215,17 @@ function seedDatabase(db) {
 
   // Seed worker collectives
   const insertCollective = db.prepare(`
-    INSERT INTO worker_collectives (id, industry, company, members, issues, active)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO worker_collectives (id, industry, company, members, telegram_url, issues, active)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
   const collectives = [
-    ['w1', 'Retail', 'MegaMart', 127, '["Scheduling","Understaffing"]', 1],
-    ['w2', 'Food Service', 'QuickBite Chain', 89, '["Wage theft","No breaks"]', 1],
-    ['w3', 'Warehouse', 'FastShip Logistics', 234, '["Safety","Quotas"]', 1],
-    ['w4', 'Healthcare', 'CareFirst Hospital', 156, '["Understaffing","Mandatory OT"]', 1],
-    ['w5', 'Tech', 'Anonymous Startup', 45, '["Layoffs","RTO mandate"]', 0],
-    ['w6', 'Education', 'City School District', 312, '["Class sizes","Resources"]', 1],
+    ['w1', 'Retail', 'MegaMart', 127, 'https://t.me/telegram', '["Scheduling","Understaffing"]', 1],
+    ['w2', 'Food Service', 'QuickBite Chain', 89, 'https://t.me/telegram', '["Wage theft","No breaks"]', 1],
+    ['w3', 'Warehouse', 'FastShip Logistics', 234, 'https://t.me/telegram', '["Safety","Quotas"]', 1],
+    ['w4', 'Healthcare', 'CareFirst Hospital', 156, 'https://t.me/telegram', '["Understaffing","Mandatory OT"]', 1],
+    ['w5', 'Tech', 'Anonymous Startup', 45, 'https://t.me/telegram', '["Layoffs","RTO mandate"]', 0],
+    ['w6', 'Education', 'City School District', 312, 'https://t.me/telegram', '["Class sizes","Resources"]', 1],
   ];
 
   const seedCollectives = db.transaction(() => {

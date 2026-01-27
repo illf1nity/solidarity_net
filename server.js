@@ -300,33 +300,62 @@ app.post('/api/buildings/:id/messages', (req, res) => {
 // ============================================
 
 // GET /api/worker-collectives - List all collectives
-app.get('/api/worker-collectives', (req, res) => {
+app.get('/api/worker-collectives', async (req, res) => {
   const collectives = db.prepare('SELECT * FROM worker_collectives ORDER BY members DESC').all();
-  res.json(collectives.map(c => ({
-    id: c.id,
-    industry: c.industry,
-    company: c.company,
-    members: c.members,
-    issues: JSON.parse(c.issues),
-    active: c.active === 1,
-  })));
+  const enriched = await Promise.all(collectives.map(async c => {
+    let members = c.members;
+    if (c.telegram_url) {
+      try {
+        const data = await fetchTelegramData(c.telegram_url);
+        if (data.members !== null) {
+          members = data.members;
+          if (members !== c.members) {
+            db.prepare('UPDATE worker_collectives SET members = ? WHERE id = ?').run(members, c.id);
+          }
+        }
+      } catch {
+        // Ignore Telegram fetch failures
+      }
+    }
+    return {
+      id: c.id,
+      industry: c.industry,
+      company: c.company,
+      members,
+      telegram_url: c.telegram_url,
+      issues: JSON.parse(c.issues),
+      active: c.active === 1,
+    };
+  }));
+  res.json(enriched);
 });
 
 // POST /api/worker-collectives - Create a new collective
-app.post('/api/worker-collectives', (req, res) => {
-  const { company, industry, issues } = req.body;
-  if (!company || !industry) {
-    return res.status(400).json({ error: 'company and industry are required' });
+app.post('/api/worker-collectives', async (req, res) => {
+  const { company, industry, issues, telegram_url } = req.body;
+  if (!company || !industry || !telegram_url) {
+    return res.status(400).json({ error: 'company, industry, and telegram_url are required' });
+  }
+  if (!isValidTelegramUrl(telegram_url)) {
+    return res.status(400).json({ error: 'A valid Telegram URL is required' });
+  }
+  let members = 1;
+  try {
+    const data = await fetchTelegramData(telegram_url);
+    if (data.members !== null) members = data.members;
+  } catch {
+    // Could not reach Telegram — keep default
   }
   const id = `w${Date.now()}`;
   db.prepare(
-    'INSERT INTO worker_collectives (id, industry, company, members, issues, active) VALUES (?, ?, ?, 1, ?, 0)'
-  ).run(id, industry, company, JSON.stringify(issues || []));
+    'INSERT INTO worker_collectives (id, industry, company, members, telegram_url, issues, active) VALUES (?, ?, ?, ?, ?, ?, 0)'
+  ).run(id, industry, company, members, telegram_url, JSON.stringify(issues || []));
   res.json({
     id,
     industry,
     company,
-    members: 1,
+    members,
+    telegram_url,
     issues: issues || [],
     active: false,
   });
