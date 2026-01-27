@@ -1653,7 +1653,7 @@
           fetch(`${API_BASE}/worker-collectives`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newCollective),
+            body: JSON.stringify(trimmedCollective),
           })
             .then(r => {
               if (!r.ok) return r.json().then(err => { throw new Error(err.error); });
@@ -2575,6 +2575,7 @@
                               value={newCollective.company}
                               onChange={(e) => setNewCollective({ ...newCollective, company: e.target.value })}
                               placeholder="Where do you work?"
+                              required
                               style={styles.input}
                             />
                           </div>
@@ -2586,6 +2587,7 @@
                             <select
                               value={newCollective.industry}
                               onChange={(e) => setNewCollective({ ...newCollective, industry: e.target.value })}
+                              required
                               style={{ ...styles.input, cursor: 'pointer' }}
                             >
                               <option value="">Select industry...</option>
