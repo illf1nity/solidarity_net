@@ -1300,11 +1300,11 @@
     ];
 
     const MOCK_PETITIONS = [
-      { id: 'p1', title: 'Lowered Rents for 123 Main St Tenants', area: '10001', members: 142, status: 'active', created: '2 days ago', description: 'Tenant union organizing against a proposed 15% rent increase.', telegram_url: 'https://t.me/tenantunion123main' },
-      { id: 'p2', title: 'South Loop Tenant Solidarity', area: '60601', members: 387, status: 'active', created: '1 week ago', description: 'Coordinating repair demands and legal resources for South Loop renters.', telegram_url: 'https://t.me/southlooptenants' },
-      { id: 'p3', title: 'Oak Ave Safe Streets Coalition', area: '10001', members: 512, status: 'active', created: '3 weeks ago', description: 'Coalition organizing for safer crosswalks and traffic calming.', telegram_url: 'https://t.me/oakavesafety' },
-      { id: 'p4', title: 'Atlanta Utility Accountability', area: '30301', members: 268, status: 'active', created: '4 days ago', description: 'Neighbors coordinating rate-hike pushback and council testimony.', telegram_url: 'https://t.me/atlutilityaccountability' },
-      { id: 'p5', title: 'Downriver Health Access Network', area: '48127', members: 194, status: 'active', created: '5 days ago', description: 'Mutual aid group protecting local clinic access.', telegram_url: 'https://t.me/downriverhealthaccess' },
+      { id: 'p1', title: 'Stop Rent Increase at 123 Main St', area: '10001', signatures: 18, goal: 24, status: 'active', created: '2 days ago', description: 'Landlord proposing 15% increase despite no improvements.' },
+      { id: 'p2', title: 'Demand Fair Scheduling at MegaMart', area: '60601', signatures: 89, goal: 100, status: 'active', created: '1 week ago', description: 'End on-call scheduling and provide 2-week advance notice.' },
+      { id: 'p3', title: 'Fix Dangerous Intersection on Oak Ave', area: '10001', signatures: 156, goal: 150, status: 'won', created: '3 weeks ago', description: 'Traffic light installed after petition delivered to city council.' },
+      { id: 'p4', title: 'Oppose Utility Rate Hike', area: '30301', signatures: 423, goal: 500, status: 'active', created: '4 days ago', description: 'Power company requesting 22% rate increase.' },
+      { id: 'p5', title: 'Keep Community Health Clinic Open', area: '48127', signatures: 267, goal: 300, status: 'active', created: '5 days ago', description: 'Only clinic serving uninsured residents in the area.' },
     ];
 
     const MOCK_REPORTS = [
@@ -1371,7 +1371,7 @@
       const [petitions, setPetitions] = useState([]);
       const [signedPetitions, setSignedPetitions] = useState([]);
       const [showPetitionForm, setShowPetitionForm] = useState(false);
-      const [newPetition, setNewPetition] = useState({ title: '', area: '', description: '', telegram_url: '' });
+      const [newPetition, setNewPetition] = useState({ title: '', area: '', description: '', changeorg_url: '' });
 
       // Report State
       const [reports, setReports] = useState([]);
@@ -1381,7 +1381,7 @@
 
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
-      const [newCollective, setNewCollective] = useState({ telegram_url: '', company: '', industry: '', issues: [] });
+      const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [] });
 
       // ============================================
       // DATA FETCHING
@@ -1586,19 +1586,19 @@
           .then(r => r.json())
           .then(data => {
             setPetitions(petitions.map(p =>
-              p.id === petition.id ? { ...p, members: data.members, status: data.status } : p
+              p.id === petition.id ? { ...p, signatures: data.signatures, goal: data.goal, status: data.status } : p
             ));
             if (data.success) {
-              showNotification('Telegram member count updated');
+              showNotification('Signature count updated from Change.org');
             } else {
-              showNotification('Could not reach Telegram — showing cached data', 'warning');
+              showNotification('Could not reach Change.org — showing cached data', 'warning');
             }
           })
           .catch(() => showNotification('Failed to refresh petition', 'error'));
       };
 
       const handleCreatePetition = () => {
-        if (newPetition.title && newPetition.area && newPetition.telegram_url) {
+        if (newPetition.title && newPetition.area && newPetition.changeorg_url) {
           fetch(`${API_BASE}/petitions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1610,9 +1610,9 @@
             })
             .then(petition => {
               setPetitions([petition, ...petitions]);
-              setNewPetition({ title: '', area: '', description: '', telegram_url: '' });
+              setNewPetition({ title: '', area: '', description: '', changeorg_url: '' });
               setShowPetitionForm(false);
-              showNotification('Tenant union added successfully');
+              showNotification('Petition created successfully');
             })
             .catch(err => showNotification(err.message || 'Failed to create petition', 'error'));
         }
@@ -1649,32 +1649,21 @@
       };
 
       const handleCreateCollective = () => {
-        const trimmedCollective = {
-          telegram_url: newCollective.telegram_url.trim(),
-          company: newCollective.company.trim(),
-          industry: newCollective.industry.trim(),
-          issues: newCollective.issues,
-        };
-        if (trimmedCollective.telegram_url && trimmedCollective.company && trimmedCollective.industry) {
+        if (newCollective.company && newCollective.industry) {
           fetch(`${API_BASE}/worker-collectives`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(trimmedCollective),
+            body: JSON.stringify(newCollective),
           })
-            .then(r => {
-              if (!r.ok) return r.json().then(err => { throw new Error(err.error); });
-              return r.json();
-            })
+            .then(r => r.json())
             .then(collective => {
               setWorkerCollectives([collective, ...workerCollectives]);
               setJoinedCollectives([...joinedCollectives, collective.id]);
-              setNewCollective({ telegram_url: '', company: '', industry: '', issues: [] });
+              setNewCollective({ company: '', industry: '', issues: [] });
               setShowNewCollectiveForm(false);
               showNotification('Collective created - invite your coworkers!');
             })
-            .catch(err => showNotification(err.message || 'Failed to create collective', 'error'));
-        } else {
-          showNotification('Telegram link, company, and industry are required', 'error');
+            .catch(() => showNotification('Failed to create collective', 'error'));
         }
       };
 
@@ -2422,14 +2411,9 @@
                 {activeSubTab === 'worker' && (
                   <section>
                     <h2 style={styles.sectionHeader}>Worker Collectives</h2>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
-                      <p style={{ color: colors.textDim, margin: 0 }}>
-                        Anonymous coordination for workplace issues. Find your coworkers.
-                      </p>
-                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('primary')}>
-                        + Create Worker Collective
-                      </button>
-                    </div>
+                    <p style={{ color: colors.textDim, marginBottom: '20px' }}>
+                      Anonymous coordination for workplace issues. Find your coworkers.
+                    </p>
 
                     <div style={styles.grid}>
                       {workerCollectives.map(collective => {
@@ -2552,6 +2536,14 @@
                       </div>
                     )}
 
+                    {/* New Collective */}
+                    <div style={{ ...styles.card, marginTop: '30px', textAlign: 'center' }}>
+                      <p style={{ color: colors.textMuted, marginBottom: '15px' }}>Don't see your workplace?</p>
+                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('secondary')}>
+                        + Start a New Collective
+                      </button>
+                    </div>
+
                     {/* New Collective Modal */}
                     {showNewCollectiveForm && (
                       <div style={styles.modal} className="modal-enter">
@@ -2560,43 +2552,24 @@
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Telegram Link *
-                            </label>
-                            <input
-                              type="url"
-                              value={newCollective.telegram_url}
-                              onChange={(e) => setNewCollective({ ...newCollective, telegram_url: e.target.value })}
-                              placeholder="https://t.me/yourcollective"
-                              style={styles.input}
-                              required
-                            />
-                            <p style={{ fontSize: '10px', color: colors.textDimmest, margin: '5px 0 0 0' }}>
-                              Paste the full public Telegram group link. Member totals will be pulled automatically.
-                            </p>
-                          </div>
-
-                          <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Company Name *
+                              Company Name
                             </label>
                             <input
                               type="text"
                               value={newCollective.company}
                               onChange={(e) => setNewCollective({ ...newCollective, company: e.target.value })}
                               placeholder="Where do you work?"
-                              required
                               style={styles.input}
                             />
                           </div>
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Industry *
+                              Industry
                             </label>
                             <select
                               value={newCollective.industry}
                               onChange={(e) => setNewCollective({ ...newCollective, industry: e.target.value })}
-                              required
                               style={{ ...styles.input, cursor: 'pointer' }}
                             >
                               <option value="">Select industry...</option>
@@ -2638,20 +2611,10 @@
                             <button onClick={() => setShowNewCollectiveForm(false)} style={{ ...styles.button('secondary'), flex: 1 }}>
                               Cancel
                             </button>
-                            <button
-                              onClick={handleCreateCollective}
-                              disabled={!newCollective.telegram_url || !newCollective.company || !newCollective.industry}
-                              style={{
-                                ...styles.button('primary'), flex: 1,
-                                opacity: (!newCollective.telegram_url || !newCollective.company || !newCollective.industry) ? 0.5 : 1,
-                                cursor: (!newCollective.telegram_url || !newCollective.company || !newCollective.industry) ? 'not-allowed' : 'pointer'
-                              }}>
-                              Create Worker Collective
+                            <button onClick={handleCreateCollective} style={{ ...styles.button('primary'), flex: 1 }}>
+                              Create
                             </button>
                           </div>
-                          <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', marginBottom: 0 }}>
-                            Member totals are pulled from Telegram. Invite your coworkers to grow the collective.
-                          </p>
                         </div>
                       </div>
                     )}
@@ -2707,18 +2670,19 @@
                 {/* Petitions */}
                 {activeSubTab === 'petition' && (
                   <section>
-                    <h2 style={styles.sectionHeader}>Local Tenant Unions</h2>
+                    <h2 style={styles.sectionHeader}>Local Petitions</h2>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
                       <p style={{ color: colors.textDim, margin: 0 }}>
-                        Tenant unions and organizations verified via Telegram. Member totals update live.
+                        Local petitions powered by Change.org. Signatures tracked live.
                       </p>
                       <button onClick={() => setShowPetitionForm(true)} style={styles.button('primary')}>
-                        + Add Tenant Union
+                        + Link Petition
                       </button>
                     </div>
 
                     {petitions.map(petition => {
+                      const pct = petition.goal > 0 ? Math.min((petition.signatures / petition.goal) * 100, 100) : 0;
                       return (
                         <div key={petition.id} style={{
                           ...styles.card,
@@ -2731,10 +2695,10 @@
                               {petition.description && (
                                 <div style={{ fontSize: '12px', color: colors.textDim, marginTop: '8px' }}>{petition.description}</div>
                               )}
-                              {petition.telegram_url && (
-                                <a href={petition.telegram_url} target="_blank" rel="noopener noreferrer"
+                              {petition.changeorg_url && (
+                                <a href={petition.changeorg_url} target="_blank" rel="noopener noreferrer"
                                   style={{ fontSize: '11px', color: colors.primary, textDecoration: 'none', display: 'inline-block', marginTop: '6px' }}>
-                                  View on Telegram ↗
+                                  View on Change.org ↗
                                 </a>
                               )}
                             </div>
@@ -2744,22 +2708,31 @@
 
                           <div style={{ marginTop: '15px', marginBottom: '15px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                              <span style={{ fontWeight: 700 }}>{petition.members} members</span>
-                              <span style={{ color: colors.textDimmer }}>Telegram verified</span>
+                              <span style={{ fontWeight: 700 }}>{petition.signatures} signatures</span>
+                              <span style={{ color: colors.textDimmer }}>Goal: {petition.goal}</span>
+                            </div>
+                            <div style={{ height: '10px', backgroundColor: colors.border, borderRadius: '5px' }}>
+                              <div style={{
+                                height: '100%',
+                                width: `${pct}%`,
+                                backgroundColor: petition.signatures >= petition.goal ? colors.success : colors.primary,
+                                borderRadius: '5px',
+                                transition: 'width 0.3s'
+                              }} />
                             </div>
                           </div>
 
                           <div style={{ display: 'flex', gap: '10px' }}>
-                            {petition.status === 'active' && petition.telegram_url && (
-                              <a href={petition.telegram_url} target="_blank" rel="noopener noreferrer"
+                            {petition.status === 'active' && petition.changeorg_url && (
+                              <a href={petition.changeorg_url} target="_blank" rel="noopener noreferrer"
                                 style={{ ...styles.button('secondary'), flex: 1, textAlign: 'center', textDecoration: 'none', display: 'block' }}>
-                                Join on Telegram →
+                                Sign on Change.org →
                               </a>
                             )}
-                            {petition.telegram_url && (
+                            {petition.changeorg_url && (
                               <button onClick={() => handleRefreshPetition(petition)}
                                 style={{ ...styles.button('secondary'), fontSize: '11px', padding: '10px 14px' }}
-                                title="Refresh member count from Telegram">
+                                title="Refresh signature count from Change.org">
                                 ↻ Refresh
                               </button>
                             )}
@@ -2772,21 +2745,21 @@
                     {showPetitionForm && (
                       <div style={styles.modal} className="modal-enter">
                         <div style={{ ...styles.card, maxWidth: '500px', width: '100%' }}>
-                          <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Add Tenant Union</h3>
+                          <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Link Change.org Petition</h3>
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Telegram Group Link *
+                              Change.org URL *
                             </label>
                             <input
                               type="url"
-                              value={newPetition.telegram_url}
-                              onChange={(e) => setNewPetition({ ...newPetition, telegram_url: e.target.value })}
-                              placeholder="https://t.me/your-tenant-union"
+                              value={newPetition.changeorg_url}
+                              onChange={(e) => setNewPetition({ ...newPetition, changeorg_url: e.target.value })}
+                              placeholder="https://www.change.org/p/your-petition"
                               style={styles.input}
                             />
                             <p style={{ fontSize: '10px', color: colors.textDimmest, margin: '5px 0 0 0' }}>
-                              Paste the full public Telegram group link. Member totals will be pulled automatically.
+                              Paste the full URL of your Change.org petition. Signature counts will be pulled automatically.
                             </p>
                           </div>
 
@@ -2835,17 +2808,17 @@
                             </button>
                             <button
                               onClick={handleCreatePetition}
-                              disabled={!newPetition.telegram_url || !newPetition.title || !newPetition.area}
+                              disabled={!newPetition.changeorg_url || !newPetition.title || !newPetition.area}
                               style={{
                                 ...styles.button('primary'), flex: 1,
-                                opacity: (!newPetition.telegram_url || !newPetition.title || !newPetition.area) ? 0.5 : 1,
-                                cursor: (!newPetition.telegram_url || !newPetition.title || !newPetition.area) ? 'not-allowed' : 'pointer'
+                                opacity: (!newPetition.changeorg_url || !newPetition.title || !newPetition.area) ? 0.5 : 1,
+                                cursor: (!newPetition.changeorg_url || !newPetition.title || !newPetition.area) ? 'not-allowed' : 'pointer'
                               }}>
-                              Create Tenant Union
+                              Link Petition
                             </button>
                           </div>
                           <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', marginBottom: 0 }}>
-                            Member totals are pulled from Telegram. Click "Refresh" on any listing to update.
+                            Signatures and goals are pulled directly from Change.org. Click "Refresh" on any petition to update.
                           </p>
                         </div>
                       </div>
