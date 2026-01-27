@@ -51,7 +51,6 @@ function initializeDatabase() {
       industry TEXT NOT NULL,
       company TEXT NOT NULL,
       members INTEGER NOT NULL DEFAULT 0,
-      telegram_url TEXT NOT NULL DEFAULT '',
       issues TEXT NOT NULL DEFAULT '[]',
       active INTEGER NOT NULL DEFAULT 0
     );
@@ -82,7 +81,6 @@ function initializeDatabase() {
       area TEXT NOT NULL,
       description TEXT NOT NULL DEFAULT '',
       changeorg_url TEXT NOT NULL DEFAULT '',
-      telegram_url TEXT NOT NULL DEFAULT '',
       signatures INTEGER NOT NULL DEFAULT 0,
       goal INTEGER NOT NULL DEFAULT 100,
       status TEXT NOT NULL DEFAULT 'active',
@@ -123,18 +121,6 @@ function initializeDatabase() {
       total INTEGER NOT NULL DEFAULT 0
     );
   `);
-
-  const petitionColumns = db.prepare("PRAGMA table_info(petitions)").all();
-  const petitionColumnNames = new Set(petitionColumns.map(column => column.name));
-  if (!petitionColumnNames.has('telegram_url')) {
-    db.exec("ALTER TABLE petitions ADD COLUMN telegram_url TEXT NOT NULL DEFAULT ''");
-  }
-
-  const collectiveColumns = db.prepare("PRAGMA table_info(worker_collectives)").all();
-  const collectiveColumnNames = new Set(collectiveColumns.map(column => column.name));
-  if (!collectiveColumnNames.has('telegram_url')) {
-    db.exec("ALTER TABLE worker_collectives ADD COLUMN telegram_url TEXT NOT NULL DEFAULT ''");
-  }
 
   return db;
 }
@@ -215,17 +201,17 @@ function seedDatabase(db) {
 
   // Seed worker collectives
   const insertCollective = db.prepare(`
-    INSERT INTO worker_collectives (id, industry, company, members, telegram_url, issues, active)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO worker_collectives (id, industry, company, members, issues, active)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
 
   const collectives = [
-    ['w1', 'Retail', 'MegaMart', 127, 'https://t.me/telegram', '["Scheduling","Understaffing"]', 1],
-    ['w2', 'Food Service', 'QuickBite Chain', 89, 'https://t.me/telegram', '["Wage theft","No breaks"]', 1],
-    ['w3', 'Warehouse', 'FastShip Logistics', 234, 'https://t.me/telegram', '["Safety","Quotas"]', 1],
-    ['w4', 'Healthcare', 'CareFirst Hospital', 156, 'https://t.me/telegram', '["Understaffing","Mandatory OT"]', 1],
-    ['w5', 'Tech', 'Anonymous Startup', 45, 'https://t.me/telegram', '["Layoffs","RTO mandate"]', 0],
-    ['w6', 'Education', 'City School District', 312, 'https://t.me/telegram', '["Class sizes","Resources"]', 1],
+    ['w1', 'Retail', 'MegaMart', 127, '["Scheduling","Understaffing"]', 1],
+    ['w2', 'Food Service', 'QuickBite Chain', 89, '["Wage theft","No breaks"]', 1],
+    ['w3', 'Warehouse', 'FastShip Logistics', 234, '["Safety","Quotas"]', 1],
+    ['w4', 'Healthcare', 'CareFirst Hospital', 156, '["Understaffing","Mandatory OT"]', 1],
+    ['w5', 'Tech', 'Anonymous Startup', 45, '["Layoffs","RTO mandate"]', 0],
+    ['w6', 'Education', 'City School District', 312, '["Class sizes","Resources"]', 1],
   ];
 
   const seedCollectives = db.transaction(() => {
@@ -277,16 +263,16 @@ function seedDatabase(db) {
 
   // Seed petitions
   const insertPetition = db.prepare(`
-    INSERT INTO petitions (id, title, area, description, changeorg_url, telegram_url, signatures, goal, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?))
+    INSERT INTO petitions (id, title, area, description, changeorg_url, signatures, goal, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?))
   `);
 
   const petitions = [
-    ['p1', 'Lowered Rents for 123 Main St Tenants', '10001', 'Tenant union organizing against a proposed 15% rent increase.', '', 'https://t.me/tenantunion123main', 142, 0, 'active', '-2 days'],
-    ['p2', 'South Loop Tenant Solidarity', '60601', 'Coordinating repair demands and legal resources for South Loop renters.', '', 'https://t.me/southlooptenants', 387, 0, 'active', '-7 days'],
-    ['p3', 'Oak Ave Safe Streets Coalition', '10001', 'Coalition organizing for safer crosswalks and traffic calming.', '', 'https://t.me/oakavesafety', 512, 0, 'active', '-21 days'],
-    ['p4', 'Atlanta Utility Accountability', '30301', 'Neighbors coordinating rate-hike pushback and council testimony.', '', 'https://t.me/atlutilityaccountability', 268, 0, 'active', '-4 days'],
-    ['p5', 'Downriver Health Access Network', '48127', 'Mutual aid group protecting local clinic access.', '', 'https://t.me/downriverhealthaccess', 194, 0, 'active', '-5 days'],
+    ['p1', 'Stop Rent Increase at 123 Main St', '10001', 'Landlord proposing 15% increase despite no improvements.', 'https://www.change.org/p/stop-rent-increase-123-main-st', 18, 24, 'active', '-2 days'],
+    ['p2', 'Demand Fair Scheduling at MegaMart', '60601', 'End on-call scheduling and provide 2-week advance notice.', 'https://www.change.org/p/demand-fair-scheduling-megamart', 89, 100, 'active', '-7 days'],
+    ['p3', 'Fix Dangerous Intersection on Oak Ave', '10001', 'Traffic light installed after petition delivered to city council.', 'https://www.change.org/p/fix-dangerous-intersection-oak-ave', 156, 150, 'won', '-21 days'],
+    ['p4', 'Oppose Utility Rate Hike', '30301', 'Power company requesting 22% rate increase.', 'https://www.change.org/p/oppose-utility-rate-hike-2024', 423, 500, 'active', '-4 days'],
+    ['p5', 'Keep Community Health Clinic Open', '48127', 'Only clinic serving uninsured residents in the area.', 'https://www.change.org/p/keep-community-health-clinic-open', 267, 300, 'active', '-5 days'],
   ];
 
   const seedPetitions = db.transaction(() => {
