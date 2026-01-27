@@ -1381,7 +1381,7 @@
 
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
-      const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [] });
+      const [newCollective, setNewCollective] = useState({ telegram_url: '', company: '', industry: '', issues: [] });
 
       // ============================================
       // DATA FETCHING
@@ -1649,21 +1649,26 @@
       };
 
       const handleCreateCollective = () => {
-        if (newCollective.company && newCollective.industry) {
+        if (newCollective.telegram_url && newCollective.company && newCollective.industry) {
           fetch(`${API_BASE}/worker-collectives`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newCollective),
           })
-            .then(r => r.json())
+            .then(r => {
+              if (!r.ok) return r.json().then(err => { throw new Error(err.error); });
+              return r.json();
+            })
             .then(collective => {
               setWorkerCollectives([collective, ...workerCollectives]);
               setJoinedCollectives([...joinedCollectives, collective.id]);
-              setNewCollective({ company: '', industry: '', issues: [] });
+              setNewCollective({ telegram_url: '', company: '', industry: '', issues: [] });
               setShowNewCollectiveForm(false);
               showNotification('Collective created - invite your coworkers!');
             })
-            .catch(() => showNotification('Failed to create collective', 'error'));
+            .catch(err => showNotification(err.message || 'Failed to create collective', 'error'));
+        } else {
+          showNotification('Telegram link, company, and industry are required', 'error');
         }
       };
 
@@ -2415,6 +2420,12 @@
                       Anonymous coordination for workplace issues. Find your coworkers.
                     </p>
 
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('secondary')}>
+                        + Create Worker Collective
+                      </button>
+                    </div>
+
                     <div style={styles.grid}>
                       {workerCollectives.map(collective => {
                         const joined = joinedCollectives.includes(collective.id);
@@ -2536,19 +2547,24 @@
                       </div>
                     )}
 
-                    {/* New Collective */}
-                    <div style={{ ...styles.card, marginTop: '30px', textAlign: 'center' }}>
-                      <p style={{ color: colors.textMuted, marginBottom: '15px' }}>Don't see your workplace?</p>
-                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('secondary')}>
-                        + Start a New Collective
-                      </button>
-                    </div>
-
                     {/* New Collective Modal */}
                     {showNewCollectiveForm && (
                       <div style={styles.modal} className="modal-enter">
                         <div style={{ ...styles.card, maxWidth: '500px', width: '100%' }}>
                           <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Start a Worker Collective</h3>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Telegram Link
+                            </label>
+                            <input
+                              type="url"
+                              value={newCollective.telegram_url}
+                              onChange={(e) => setNewCollective({ ...newCollective, telegram_url: e.target.value })}
+                              placeholder="https://t.me/yourcollective"
+                              style={styles.input}
+                            />
+                          </div>
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
