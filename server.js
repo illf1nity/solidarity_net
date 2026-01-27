@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const https = require('https');
 const { getDatabase } = require('./db');
 
 const app = express();
@@ -31,6 +32,115 @@ function timeAgo(dateStr) {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
   return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
+}
+
+// ============================================
+// CHANGE.ORG SCRAPING
+// ============================================
+
+// Cache for Change.org data (URL -> { signatures, goal, timestamp })
+const changeOrgCache = new Map();
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+function fetchChangeOrgData(url) {
+  return new Promise((resolve, reject) => {
+    // Check cache first
+    const cached = changeOrgCache.get(url);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return resolve({ signatures: cached.signatures, goal: cached.goal });
+    }
+
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; SolidarityNet/1.0)',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      timeout: 8000,
+    }, (res) => {
+      // Follow redirects
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return fetchChangeOrgData(res.headers.location).then(resolve).catch(reject);
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode}`));
+      }
+
+      let body = '';
+      res.on('data', chunk => { body += chunk; });
+      res.on('end', () => {
+        try {
+          const data = parseChangeOrgPage(body);
+          if (data.signatures !== null) {
+            changeOrgCache.set(url, { ...data, timestamp: Date.now() });
+          }
+          resolve(data);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
+  });
+}
+
+function parseChangeOrgPage(html) {
+  let signatures = null;
+  let goal = null;
+
+  // Try JSON-LD / embedded JSON patterns
+  const supportersMatch = html.match(/"supporters_count"\s*:\s*(\d+)/);
+  if (supportersMatch) {
+    signatures = parseInt(supportersMatch[1], 10);
+  }
+
+  // Try alternate patterns
+  if (signatures === null) {
+    const totalSigsMatch = html.match(/"total_signatures"\s*:\s*(\d+)/);
+    if (totalSigsMatch) {
+      signatures = parseInt(totalSigsMatch[1], 10);
+    }
+  }
+
+  if (signatures === null) {
+    const sigCountMatch = html.match(/"signatureCount"\s*:\s*{[^}]*"total"\s*:\s*(\d+)/);
+    if (sigCountMatch) {
+      signatures = parseInt(sigCountMatch[1], 10);
+    }
+  }
+
+  // Try to extract from visible text patterns like "1,234 have signed"
+  if (signatures === null) {
+    const visibleMatch = html.match(/([\d,]+)\s+(?:have signed|supporters|signatures)/i);
+    if (visibleMatch) {
+      signatures = parseInt(visibleMatch[1].replace(/,/g, ''), 10);
+    }
+  }
+
+  // Try to find the goal
+  const goalMatch = html.match(/"goal"\s*:\s*(\d+)/);
+  if (goalMatch) {
+    goal = parseInt(goalMatch[1], 10);
+  }
+
+  if (goal === null) {
+    const goalTextMatch = html.match(/(?:goal|target)[:\s]+(?:of\s+)?([\d,]+)/i);
+    if (goalTextMatch) {
+      goal = parseInt(goalTextMatch[1].replace(/,/g, ''), 10);
+    }
+  }
+
+  return { signatures, goal };
+}
+
+function isValidChangeOrgUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === 'www.change.org' || parsed.hostname === 'change.org';
+  } catch {
+    return false;
+  }
 }
 
 // ============================================
@@ -340,6 +450,7 @@ app.get('/api/petitions', (req, res) => {
     title: p.title,
     area: p.area,
     description: p.description,
+    changeorg_url: p.changeorg_url,
     signatures: p.signatures,
     goal: p.goal,
     status: p.status,
@@ -347,37 +458,66 @@ app.get('/api/petitions', (req, res) => {
   })));
 });
 
-// POST /api/petitions - Create a petition
-app.post('/api/petitions', (req, res) => {
-  const { title, area, description, goal } = req.body;
-  if (!title || !area) {
-    return res.status(400).json({ error: 'title and area are required' });
+// POST /api/petitions - Create a petition (requires Change.org URL)
+app.post('/api/petitions', async (req, res) => {
+  const { title, area, description, changeorg_url } = req.body;
+  if (!title || !area || !changeorg_url) {
+    return res.status(400).json({ error: 'title, area, and changeorg_url are required' });
   }
+  if (!isValidChangeOrgUrl(changeorg_url)) {
+    return res.status(400).json({ error: 'A valid Change.org URL is required' });
+  }
+
+  // Try to fetch signature data from Change.org
+  let signatures = 0;
+  let goal = 100;
+  try {
+    const data = await fetchChangeOrgData(changeorg_url);
+    if (data.signatures !== null) signatures = data.signatures;
+    if (data.goal !== null) goal = data.goal;
+  } catch {
+    // Could not reach Change.org — use defaults, will refresh later
+  }
+
   const id = `p${Date.now()}`;
   db.prepare(
-    'INSERT INTO petitions (id, title, area, description, signatures, goal, status) VALUES (?, ?, ?, ?, 1, ?, ?)'
-  ).run(id, title, area, description || '', goal || 100, 'active');
+    'INSERT INTO petitions (id, title, area, description, changeorg_url, signatures, goal, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(id, title, area, description || '', changeorg_url, signatures, goal, 'active');
   res.json({
     id,
     title,
     area,
     description: description || '',
-    signatures: 1,
-    goal: goal || 100,
+    changeorg_url,
+    signatures,
+    goal,
     status: 'active',
     created: 'Just now',
   });
 });
 
-// POST /api/petitions/:id/sign - Sign a petition
-app.post('/api/petitions/:id/sign', (req, res) => {
+// POST /api/petitions/:id/refresh - Refresh signature data from Change.org
+app.post('/api/petitions/:id/refresh', async (req, res) => {
   const { id } = req.params;
   const petition = db.prepare('SELECT * FROM petitions WHERE id = ?').get(id);
   if (!petition) {
     return res.status(404).json({ error: 'Petition not found' });
   }
-  db.prepare('UPDATE petitions SET signatures = signatures + 1 WHERE id = ?').run(id);
-  res.json({ success: true, signatures: petition.signatures + 1 });
+  if (!petition.changeorg_url) {
+    return res.status(400).json({ error: 'No Change.org URL linked' });
+  }
+
+  try {
+    const data = await fetchChangeOrgData(petition.changeorg_url);
+    const newSigs = data.signatures !== null ? data.signatures : petition.signatures;
+    const newGoal = data.goal !== null ? data.goal : petition.goal;
+    const newStatus = newSigs >= newGoal ? 'won' : petition.status;
+    db.prepare('UPDATE petitions SET signatures = ?, goal = ?, status = ? WHERE id = ?')
+      .run(newSigs, newGoal, newStatus, id);
+    res.json({ success: true, signatures: newSigs, goal: newGoal, status: newStatus });
+  } catch {
+    res.json({ success: false, signatures: petition.signatures, goal: petition.goal, status: petition.status });
+  }
 });
 
 // ============================================

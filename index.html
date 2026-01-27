@@ -773,7 +773,7 @@
       const [petitions, setPetitions] = useState([]);
       const [signedPetitions, setSignedPetitions] = useState([]);
       const [showPetitionForm, setShowPetitionForm] = useState(false);
-      const [newPetition, setNewPetition] = useState({ title: '', area: '', description: '', goal: 100 });
+      const [newPetition, setNewPetition] = useState({ title: '', area: '', description: '', changeorg_url: '' });
 
       // Report State
       const [reports, setReports] = useState([]);
@@ -983,37 +983,40 @@
         }
       };
 
-      const handleSignPetition = (petition) => {
-        if (!signedPetitions.includes(petition.id)) {
-          fetch(`${API_BASE}/petitions/${petition.id}/sign`, { method: 'POST' })
-            .then(r => r.json())
-            .then(() => {
-              setSignedPetitions([...signedPetitions, petition.id]);
-              setPetitions(petitions.map(p =>
-                p.id === petition.id ? { ...p, signatures: p.signatures + 1 } : p
-              ));
-              showNotification('Petition signed anonymously');
-            })
-            .catch(() => showNotification('Failed to sign petition', 'error'));
-        }
+      const handleRefreshPetition = (petition) => {
+        fetch(`${API_BASE}/petitions/${petition.id}/refresh`, { method: 'POST' })
+          .then(r => r.json())
+          .then(data => {
+            setPetitions(petitions.map(p =>
+              p.id === petition.id ? { ...p, signatures: data.signatures, goal: data.goal, status: data.status } : p
+            ));
+            if (data.success) {
+              showNotification('Signature count updated from Change.org');
+            } else {
+              showNotification('Could not reach Change.org — showing cached data', 'warning');
+            }
+          })
+          .catch(() => showNotification('Failed to refresh petition', 'error'));
       };
 
       const handleCreatePetition = () => {
-        if (newPetition.title && newPetition.area) {
+        if (newPetition.title && newPetition.area && newPetition.changeorg_url) {
           fetch(`${API_BASE}/petitions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newPetition),
           })
-            .then(r => r.json())
+            .then(r => {
+              if (!r.ok) return r.json().then(err => { throw new Error(err.error); });
+              return r.json();
+            })
             .then(petition => {
               setPetitions([petition, ...petitions]);
-              setSignedPetitions([...signedPetitions, petition.id]);
-              setNewPetition({ title: '', area: '', description: '', goal: 100 });
+              setNewPetition({ title: '', area: '', description: '', changeorg_url: '' });
               setShowPetitionForm(false);
               showNotification('Petition created successfully');
             })
-            .catch(() => showNotification('Failed to create petition', 'error'));
+            .catch(err => showNotification(err.message || 'Failed to create petition', 'error'));
         }
       };
 
@@ -2051,16 +2054,15 @@
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
                       <p style={{ color: colors.textDim, margin: 0 }}>
-                        Simple local petitions. No email harvesting. Just signatures.
+                        Local petitions powered by Change.org. Signatures tracked live.
                       </p>
                       <button onClick={() => setShowPetitionForm(true)} style={styles.button('primary')}>
-                        + Create Petition
+                        + Link Petition
                       </button>
                     </div>
 
                     {petitions.map(petition => {
-                      const signed = signedPetitions.includes(petition.id);
-                      const pct = Math.min((petition.signatures / petition.goal) * 100, 100);
+                      const pct = petition.goal > 0 ? Math.min((petition.signatures / petition.goal) * 100, 100) : 0;
                       return (
                         <div key={petition.id} style={{
                           ...styles.card,
@@ -2072,6 +2074,12 @@
                               <div style={{ fontSize: '11px', color: colors.textDimmer }}>Area: {petition.area} • Created {petition.created}</div>
                               {petition.description && (
                                 <div style={{ fontSize: '12px', color: colors.textDim, marginTop: '8px' }}>{petition.description}</div>
+                              )}
+                              {petition.changeorg_url && (
+                                <a href={petition.changeorg_url} target="_blank" rel="noopener noreferrer"
+                                  style={{ fontSize: '11px', color: colors.primary, textDecoration: 'none', display: 'inline-block', marginTop: '6px' }}>
+                                  View on Change.org ↗
+                                </a>
                               )}
                             </div>
                             {petition.status === 'won' && <span style={styles.badge(colors.success)}>✓ Won!</span>}
@@ -2094,16 +2102,21 @@
                             </div>
                           </div>
 
-                          {petition.status === 'active' && !signed && (
-                            <button onClick={() => handleSignPetition(petition)} style={{ ...styles.button('secondary'), width: '100%' }}>
-                              Sign Petition →
-                            </button>
-                          )}
-                          {signed && (
-                            <div style={{ textAlign: 'center', color: colors.success, fontSize: '12px', padding: '12px' }}>
-                              ✓ You signed this petition
-                            </div>
-                          )}
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            {petition.status === 'active' && petition.changeorg_url && (
+                              <a href={petition.changeorg_url} target="_blank" rel="noopener noreferrer"
+                                style={{ ...styles.button('secondary'), flex: 1, textAlign: 'center', textDecoration: 'none', display: 'block' }}>
+                                Sign on Change.org →
+                              </a>
+                            )}
+                            {petition.changeorg_url && (
+                              <button onClick={() => handleRefreshPetition(petition)}
+                                style={{ ...styles.button('secondary'), fontSize: '11px', padding: '10px 14px' }}
+                                title="Refresh signature count from Change.org">
+                                ↻ Refresh
+                              </button>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -2112,11 +2125,27 @@
                     {showPetitionForm && (
                       <div style={styles.modal} className="modal-enter">
                         <div style={{ ...styles.card, maxWidth: '500px', width: '100%' }}>
-                          <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Create Local Petition</h3>
+                          <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Link Change.org Petition</h3>
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Title
+                              Change.org URL *
+                            </label>
+                            <input
+                              type="url"
+                              value={newPetition.changeorg_url}
+                              onChange={(e) => setNewPetition({ ...newPetition, changeorg_url: e.target.value })}
+                              placeholder="https://www.change.org/p/your-petition"
+                              style={styles.input}
+                            />
+                            <p style={{ fontSize: '10px', color: colors.textDimmest, margin: '5px 0 0 0' }}>
+                              Paste the full URL of your Change.org petition. Signature counts will be pulled automatically.
+                            </p>
+                          </div>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Title *
                             </label>
                             <input
                               type="text"
@@ -2129,7 +2158,7 @@
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Area (ZIP or Neighborhood)
+                              Area (ZIP or Neighborhood) *
                             </label>
                             <input
                               type="text"
@@ -2137,18 +2166,6 @@
                               onChange={(e) => setNewPetition({ ...newPetition, area: e.target.value })}
                               placeholder="Where does this apply?"
                               style={styles.input}
-                            />
-                          </div>
-
-                          <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Signature Goal
-                            </label>
-                            <input
-                              type="number"
-                              value={newPetition.goal}
-                              onChange={(e) => setNewPetition({ ...newPetition, goal: parseInt(e.target.value) || 100 })}
-                              style={{ ...styles.input, width: '120px' }}
                             />
                           </div>
 
@@ -2169,12 +2186,19 @@
                             <button onClick={() => setShowPetitionForm(false)} style={{ ...styles.button('secondary'), flex: 1 }}>
                               Cancel
                             </button>
-                            <button onClick={handleCreatePetition} style={{ ...styles.button('primary'), flex: 1 }}>
-                              Publish
+                            <button
+                              onClick={handleCreatePetition}
+                              disabled={!newPetition.changeorg_url || !newPetition.title || !newPetition.area}
+                              style={{
+                                ...styles.button('primary'), flex: 1,
+                                opacity: (!newPetition.changeorg_url || !newPetition.title || !newPetition.area) ? 0.5 : 1,
+                                cursor: (!newPetition.changeorg_url || !newPetition.title || !newPetition.area) ? 'not-allowed' : 'pointer'
+                              }}>
+                              Link Petition
                             </button>
                           </div>
                           <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', marginBottom: 0 }}>
-                            No email required. Petition tied to browser fingerprint, not identity.
+                            Signatures and goals are pulled directly from Change.org. Click "Refresh" on any petition to update.
                           </p>
                         </div>
                       </div>

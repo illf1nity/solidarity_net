@@ -80,6 +80,7 @@ function initializeDatabase() {
       title TEXT NOT NULL,
       area TEXT NOT NULL,
       description TEXT NOT NULL DEFAULT '',
+      changeorg_url TEXT NOT NULL DEFAULT '',
       signatures INTEGER NOT NULL DEFAULT 0,
       goal INTEGER NOT NULL DEFAULT 100,
       status TEXT NOT NULL DEFAULT 'active',
@@ -262,16 +263,16 @@ function seedDatabase(db) {
 
   // Seed petitions
   const insertPetition = db.prepare(`
-    INSERT INTO petitions (id, title, area, description, signatures, goal, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', ?))
+    INSERT INTO petitions (id, title, area, description, changeorg_url, signatures, goal, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?))
   `);
 
   const petitions = [
-    ['p1', 'Stop Rent Increase at 123 Main St', '10001', 'Landlord proposing 15% increase despite no improvements.', 18, 24, 'active', '-2 days'],
-    ['p2', 'Demand Fair Scheduling at MegaMart', '60601', 'End on-call scheduling and provide 2-week advance notice.', 89, 100, 'active', '-7 days'],
-    ['p3', 'Fix Dangerous Intersection on Oak Ave', '10001', 'Traffic light installed after petition delivered to city council.', 156, 150, 'won', '-21 days'],
-    ['p4', 'Oppose Utility Rate Hike', '30301', 'Power company requesting 22% rate increase.', 423, 500, 'active', '-4 days'],
-    ['p5', 'Keep Community Health Clinic Open', '48127', 'Only clinic serving uninsured residents in the area.', 267, 300, 'active', '-5 days'],
+    ['p1', 'Stop Rent Increase at 123 Main St', '10001', 'Landlord proposing 15% increase despite no improvements.', 'https://www.change.org/p/stop-rent-increase-123-main-st', 18, 24, 'active', '-2 days'],
+    ['p2', 'Demand Fair Scheduling at MegaMart', '60601', 'End on-call scheduling and provide 2-week advance notice.', 'https://www.change.org/p/demand-fair-scheduling-megamart', 89, 100, 'active', '-7 days'],
+    ['p3', 'Fix Dangerous Intersection on Oak Ave', '10001', 'Traffic light installed after petition delivered to city council.', 'https://www.change.org/p/fix-dangerous-intersection-oak-ave', 156, 150, 'won', '-21 days'],
+    ['p4', 'Oppose Utility Rate Hike', '30301', 'Power company requesting 22% rate increase.', 'https://www.change.org/p/oppose-utility-rate-hike-2024', 423, 500, 'active', '-4 days'],
+    ['p5', 'Keep Community Health Clinic Open', '48127', 'Only clinic serving uninsured residents in the area.', 'https://www.change.org/p/keep-community-health-clinic-open', 267, 300, 'active', '-5 days'],
   ];
 
   const seedPetitions = db.transaction(() => {
