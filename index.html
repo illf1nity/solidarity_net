@@ -1649,7 +1649,13 @@
       };
 
       const handleCreateCollective = () => {
-        if (newCollective.telegram_url && newCollective.company && newCollective.industry) {
+        const trimmedCollective = {
+          telegram_url: newCollective.telegram_url.trim(),
+          company: newCollective.company.trim(),
+          industry: newCollective.industry.trim(),
+          issues: newCollective.issues,
+        };
+        if (trimmedCollective.telegram_url && trimmedCollective.company && trimmedCollective.industry) {
           fetch(`${API_BASE}/worker-collectives`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
