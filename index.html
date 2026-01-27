@@ -131,6 +131,62 @@
       'default': 22.45  // National median
     };
 
+    // State median hourly wage (2023 BLS OEWS, rounded)
+    // Source: Bureau of Labor Statistics Occupational Employment and Wage Statistics (statewide)
+    const STATE_WAGE_DATA = {
+      'AL': 20.23,
+      'AK': 26.41,
+      'AZ': 23.08,
+      'AR': 19.66,
+      'CA': 27.88,
+      'CO': 27.12,
+      'CT': 27.45,
+      'DE': 25.38,
+      'FL': 22.12,
+      'GA': 22.18,
+      'HI': 24.89,
+      'ID': 21.58,
+      'IL': 25.12,
+      'IN': 22.06,
+      'IA': 21.97,
+      'KS': 21.68,
+      'KY': 21.32,
+      'LA': 20.34,
+      'ME': 22.64,
+      'MD': 27.02,
+      'MA': 29.32,
+      'MI': 23.54,
+      'MN': 25.98,
+      'MS': 19.32,
+      'MO': 22.21,
+      'MT': 21.48,
+      'NE': 22.11,
+      'NV': 22.34,
+      'NH': 24.85,
+      'NJ': 27.36,
+      'NM': 21.12,
+      'NY': 27.58,
+      'NC': 22.06,
+      'ND': 24.12,
+      'OH': 22.76,
+      'OK': 21.04,
+      'OR': 25.34,
+      'PA': 24.02,
+      'RI': 25.01,
+      'SC': 21.24,
+      'SD': 21.08,
+      'TN': 21.46,
+      'TX': 23.16,
+      'UT': 24.04,
+      'VT': 23.58,
+      'VA': 25.68,
+      'WA': 29.04,
+      'WV': 20.12,
+      'WI': 23.48,
+      'WY': 23.12,
+      'DC': 36.88
+    };
+
     // HUD Fair Market Rents FY2024 (2-bedroom monthly)
     // Source: HUD Office of Policy Development and Research
     const MSA_RENT_DATA = {
@@ -740,9 +796,9 @@
     };
 
     // Calculate total effective tax rate and net hourly wage
-    const calculateTaxData = (hourlyWage, msa) => {
+    const calculateTaxData = (hourlyWage, msa, stateOverride = null) => {
       const annualGross = hourlyWage * 2080; // 40 hrs/wk × 52 weeks
-      const stateCode = MSA_TO_STATE[msa] || MSA_TO_STATE.default;
+      const stateCode = stateOverride || MSA_TO_STATE[msa] || MSA_TO_STATE.default;
 
       const federalTax = calculateFederalTax(annualGross);
       const stateTax = calculateStateTax(annualGross, stateCode);
@@ -1121,6 +1177,30 @@
       '236': 'Virginia Beach-Norfolk-Newport News, VA-NC',
     };
 
+    const findNearestMSAWage = (zipCode) => {
+      const prefix = Number.parseInt(zipCode.substring(0, 3), 10);
+      if (Number.isNaN(prefix)) return null;
+
+      let closest = null;
+      for (const [prefixKey, msa] of Object.entries(ZIP_TO_MSA)) {
+        const wage = MSA_WAGE_DATA[msa];
+        if (!wage) continue;
+        const candidatePrefix = Number.parseInt(prefixKey, 10);
+        if (Number.isNaN(candidatePrefix)) continue;
+        const distance = Math.abs(prefix - candidatePrefix);
+        if (!closest || distance < closest.distance) {
+          closest = {
+            wage,
+            msa,
+            prefix: prefixKey,
+            distance
+          };
+        }
+      }
+
+      return closest;
+    };
+
     // Fetch location data from ZIP code API
     const fetchZipData = async (zipCode) => {
       try {
@@ -1148,7 +1228,18 @@
     // Calculate local cost data based on ZIP
     const calculateLocalData = (zipCode, locationInfo) => {
       const msa = getMSAFromZip(zipCode);
-      const wage = MSA_WAGE_DATA[msa] || MSA_WAGE_DATA.default;
+      const stateCode = locationInfo?.state;
+      const msaWage = MSA_WAGE_DATA[msa] || null;
+      const nearestMSA = msaWage ? null : findNearestMSAWage(zipCode);
+      const stateWage = stateCode ? STATE_WAGE_DATA[stateCode] : null;
+      const resolvedWage = msaWage || nearestMSA?.wage || stateWage || MSA_WAGE_DATA.default;
+      const wageSource = msaWage
+        ? 'MSA-level data'
+        : nearestMSA
+          ? `Nearest MSA (${nearestMSA.msa}) via ZIP prefix ${nearestMSA.prefix}`
+          : stateWage
+            ? `State-level data (${stateCode})`
+            : 'National averages';
       const rent = MSA_RENT_DATA[msa] || MSA_RENT_DATA.default;
       const costs = REGIONAL_COSTS[msa] || REGIONAL_COSTS.default;
 
@@ -1157,10 +1248,10 @@
         : (msa !== 'default' ? msa.split(',')[0] : 'National Average');
 
       // Calculate tax data for this area
-      const taxData = calculateTaxData(wage, msa);
+      const taxData = calculateTaxData(resolvedWage, nearestMSA?.msa || msa, stateWage ? stateCode : null);
 
       return {
-        medianWage: wage,
+        medianWage: resolvedWage,
         netWage: taxData.netHourlyWage,
         taxData: taxData,
         rent: rent,
@@ -1170,7 +1261,7 @@
         utilities: Math.round(NATIONAL_BASELINES.utilities * costs.utilities),
         area: areaName,
         msa: msa !== 'default' ? msa : null,
-        dataQuality: msa !== 'default' ? 'MSA-level data' : 'National averages'
+        dataQuality: wageSource
       };
     };
 
