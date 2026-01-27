@@ -61,82 +61,9 @@
     const { useState, useEffect, useCallback } = React;
 
     // ============================================
-    // MOCK DATA
+    // API BASE URL
     // ============================================
-
-    const MOCK_LOCAL_DATA = {
-      '10001': { medianWage: 22.00, rent: 3200, food: 520, healthcare: 420, transport: 150, utilities: 160, area: "Manhattan, NY" },
-      '90210': { medianWage: 24.00, rent: 2800, food: 580, healthcare: 450, transport: 350, utilities: 140, area: "Beverly Hills, CA" },
-      '48127': { medianWage: 16.50, rent: 1100, food: 380, healthcare: 320, transport: 300, utilities: 200, area: "Dearborn, MI" },
-      '30301': { medianWage: 17.80, rent: 1650, food: 420, healthcare: 380, transport: 320, utilities: 190, area: "Atlanta, GA" },
-      '60601': { medianWage: 19.50, rent: 1850, food: 440, healthcare: 360, transport: 120, utilities: 170, area: "Chicago, IL" },
-      '98101': { medianWage: 23.00, rent: 2100, food: 480, healthcare: 400, transport: 140, utilities: 150, area: "Seattle, WA" },
-      '02101': { medianWage: 21.50, rent: 2400, food: 500, healthcare: 390, transport: 100, utilities: 165, area: "Boston, MA" },
-      '78201': { medianWage: 16.00, rent: 1200, food: 400, healthcare: 340, transport: 280, utilities: 175, area: "San Antonio, TX" },
-      '85001': { medianWage: 17.25, rent: 1400, food: 420, healthcare: 350, transport: 300, utilities: 200, area: "Phoenix, AZ" },
-      'default': { medianWage: 18.50, rent: 1750, food: 450, healthcare: 350, transport: 280, utilities: 180, area: "National Average" }
-    };
-
-    const MOCK_BUILDINGS = {
-      '10001': [
-        { id: 'b1', address: '123 Main St, Apt 1-24', units: 24, members: 8, landlord: 'Greystone Properties', issues: ['Heat', 'Repairs'] },
-        { id: 'b2', address: '456 Oak Ave, Units A-L', units: 12, members: 3, landlord: 'Metro Housing LLC', issues: ['Fees'] },
-        { id: 'b3', address: '789 Park Blvd', units: 48, members: 15, landlord: 'Urban Living Corp', issues: ['Security', 'Pests'] },
-      ],
-      '60601': [
-        { id: 'b4', address: '100 Lake Shore Dr', units: 200, members: 42, landlord: 'Lakeside Management', issues: ['Rent increases'] },
-        { id: 'b5', address: '250 State St', units: 36, members: 11, landlord: 'Downtown Rentals Inc', issues: ['Maintenance'] },
-      ],
-      '90210': [
-        { id: 'b6', address: '9000 Wilshire Blvd', units: 80, members: 22, landlord: 'Luxury Living LA', issues: ['Parking', 'Amenities'] },
-      ],
-      'default': [
-        { id: 'b7', address: '500 Example St', units: 20, members: 5, landlord: 'Sample Properties', issues: ['General'] },
-      ]
-    };
-
-    const MOCK_WORKER_COLLECTIVES = [
-      { id: 'w1', industry: 'Retail', company: 'MegaMart', members: 127, issues: ['Scheduling', 'Understaffing'], active: true, messages: [] },
-      { id: 'w2', industry: 'Food Service', company: 'QuickBite Chain', members: 89, issues: ['Wage theft', 'No breaks'], active: true, messages: [] },
-      { id: 'w3', industry: 'Warehouse', company: 'FastShip Logistics', members: 234, issues: ['Safety', 'Quotas'], active: true, messages: [] },
-      { id: 'w4', industry: 'Healthcare', company: 'CareFirst Hospital', members: 156, issues: ['Understaffing', 'Mandatory OT'], active: true, messages: [] },
-      { id: 'w5', industry: 'Tech', company: 'Anonymous Startup', members: 45, issues: ['Layoffs', 'RTO mandate'], active: false, messages: [] },
-      { id: 'w6', industry: 'Education', company: 'City School District', members: 312, issues: ['Class sizes', 'Resources'], active: true, messages: [] },
-    ];
-
-    const MOCK_CONSUMER_GROUPS = [
-      { id: 'c1', name: 'Internet Access Collective', members: 342, target: 'ISP bulk negotiation', savings: '$15/mo avg', description: 'Negotiating group rates with local ISPs' },
-      { id: 'c2', name: 'Grocery Bulk Buy', members: 89, target: 'Wholesale access', savings: '$80/mo avg', description: 'Weekly bulk orders from wholesalers' },
-      { id: 'c3', name: 'Utility Bill Co-op', members: 156, target: 'Solar installation', savings: '$45/mo avg', description: 'Community solar purchasing program' },
-      { id: 'c4', name: 'Prescription Pool', members: 203, target: 'Medication costs', savings: '$120/mo avg', description: 'Group purchasing for common medications' },
-    ];
-
-    const MOCK_PETITIONS = [
-      { id: 'p1', title: 'Stop Rent Increase at 123 Main St', area: '10001', signatures: 18, goal: 24, status: 'active', created: '2 days ago', description: 'Landlord proposing 15% increase despite no improvements.' },
-      { id: 'p2', title: 'Demand Fair Scheduling at MegaMart', area: '60601', signatures: 89, goal: 100, status: 'active', created: '1 week ago', description: 'End on-call scheduling and provide 2-week advance notice.' },
-      { id: 'p3', title: 'Fix Dangerous Intersection on Oak Ave', area: '10001', signatures: 156, goal: 150, status: 'won', created: '3 weeks ago', description: 'Traffic light installed after petition delivered to city council.' },
-      { id: 'p4', title: 'Oppose Utility Rate Hike', area: '30301', signatures: 423, goal: 500, status: 'active', created: '4 days ago', description: 'Power company requesting 22% rate increase.' },
-      { id: 'p5', title: 'Keep Community Health Clinic Open', area: '48127', signatures: 267, goal: 300, status: 'active', created: '5 days ago', description: 'Only clinic serving uninsured residents in the area.' },
-    ];
-
-    const MOCK_REPORTS = [
-      { id: 'r1', type: 'landlord', name: 'Greystone Properties', address: '123 Main St', issues: ['No repairs', 'Harassment'], reports: 12, lastReport: '2h ago', details: [] },
-      { id: 'r2', type: 'employer', name: 'QuickBite Chain', address: null, issues: ['Wage theft', 'No breaks'], reports: 34, lastReport: '5h ago', details: [] },
-      { id: 'r3', type: 'landlord', name: 'Metro Housing LLC', address: '456 Oak Ave', issues: ['Safety hazard', 'Illegal fees'], reports: 7, lastReport: '1d ago', details: [] },
-      { id: 'r4', type: 'employer', name: 'FastShip Logistics', address: null, issues: ['Unsafe conditions', 'Retaliation'], reports: 56, lastReport: '3h ago', details: [] },
-      { id: 'r5', type: 'landlord', name: 'Urban Living Corp', address: '789 Park Blvd', issues: ['Pest infestation', 'No heat'], reports: 23, lastReport: '8h ago', details: [] },
-    ];
-
-    const MOCK_PRICE_RESISTANCE = [
-      { id: 'pr1', item: 'Gallon of Gas', current: 3.45, resistance: 4.50, votes: 1247, atResistance: 72 },
-      { id: 'pr2', item: 'Dozen Eggs', current: 4.20, resistance: 5.00, votes: 892, atResistance: 85 },
-      { id: 'pr3', item: 'Gallon of Milk', current: 3.80, resistance: 5.00, votes: 756, atResistance: 68 },
-      { id: 'pr4', item: 'Loaf of Bread', current: 3.50, resistance: 4.50, votes: 634, atResistance: 55 },
-      { id: 'pr5', item: 'Internet (Basic)', current: 65, resistance: 80, votes: 1089, atResistance: 45 },
-      { id: 'pr6', item: 'Electricity (avg/mo)', current: 150, resistance: 200, votes: 923, atResistance: 38 },
-      { id: 'pr7', item: 'Ground Beef (1 lb)', current: 5.50, resistance: 7.00, votes: 445, atResistance: 62 },
-      { id: 'pr8', item: 'Streaming Service', current: 15.99, resistance: 20.00, votes: 1567, atResistance: 78 },
-    ];
+    const API_BASE = window.location.origin + '/api';
 
     // ============================================
     // MAIN COMPONENT
@@ -152,51 +79,39 @@
       const [zipCode, setZipCode] = useState('');
       const [localData, setLocalData] = useState(null);
       const [priceVotes, setPriceVotes] = useState({});
+      const [priceResistanceItems, setPriceResistanceItems] = useState([]);
 
       // Formation State
       const [workSentiment, setWorkSentiment] = useState(null);
-      const [sentimentHistory] = useState([
-        { week: 'W1', willing: 45, unwilling: 55, total: 87 },
-        { week: 'W2', willing: 42, unwilling: 58, total: 92 },
-        { week: 'W3', willing: 38, unwilling: 62, total: 103 },
-        { week: 'W4', willing: 31, unwilling: 69, total: 98 },
-      ]);
-      const [todaySentiment, setTodaySentiment] = useState({ willing: 23, unwilling: 67, total: 90 });
+      const [sentimentHistory, setSentimentHistory] = useState([]);
+      const [todaySentiment, setTodaySentiment] = useState({ willing: 0, unwilling: 0, total: 0 });
 
       // Tenant State
+      const [buildings, setBuildings] = useState([]);
       const [selectedBuilding, setSelectedBuilding] = useState(null);
       const [joinedBuildings, setJoinedBuildings] = useState([]);
-      const [tenantMessages, setTenantMessages] = useState([
-        { id: 1, building: 'b1', text: 'Anyone else having issues with heat? Third time this month.', time: '1h ago', replies: 4, author: 'Unit 12' },
-        { id: 2, building: 'b1', text: 'Landlord ignored my repair request for 3 weeks. Documenting everything.', time: '3h ago', replies: 7, author: 'Unit 8' },
-        { id: 3, building: 'b1', text: 'Meeting in lobby Saturday 2pm to discuss organizing. All welcome.', time: '6h ago', replies: 12, author: 'Unit 3', pinned: true },
-        { id: 4, building: 'b4', text: 'They just announced another rent increase. We need to coordinate response.', time: '2h ago', replies: 23, author: 'Floor 15' },
-        { id: 5, building: 'b4', text: 'Has anyone contacted a tenants rights lawyer?', time: '4h ago', replies: 8, author: 'Floor 7' },
-      ]);
+      const [tenantMessages, setTenantMessages] = useState([]);
       const [newTenantMessage, setNewTenantMessage] = useState('');
 
       // Worker State
+      const [workerCollectives, setWorkerCollectives] = useState([]);
       const [joinedCollectives, setJoinedCollectives] = useState([]);
       const [selectedCollective, setSelectedCollective] = useState(null);
-      const [collectiveMessages, setCollectiveMessages] = useState([
-        { id: 1, collective: 'w1', text: 'Meeting Thursday 6pm - discussing schedule changes. Location TBD.', time: '2h ago', pinned: true, author: 'Organizer' },
-        { id: 2, collective: 'w1', text: 'Anyone else get their hours cut this week? Third week in a row for me.', time: '5h ago', replies: 12, author: 'Anonymous' },
-        { id: 3, collective: 'w1', text: 'New hire orientation is lying about break policies. We should document.', time: '8h ago', replies: 6, author: 'Anonymous' },
-        { id: 4, collective: 'w3', text: 'Safety incident on loading dock yesterday. Management said nothing. Anyone have details?', time: '3h ago', replies: 18, author: 'Anonymous' },
-      ]);
+      const [collectiveMessages, setCollectiveMessages] = useState([]);
       const [newCollectiveMessage, setNewCollectiveMessage] = useState('');
 
       // Consumer State
+      const [consumerGroups, setConsumerGroups] = useState([]);
       const [joinedConsumerGroups, setJoinedConsumerGroups] = useState([]);
 
       // Petition State
-      const [petitions, setPetitions] = useState(MOCK_PETITIONS);
+      const [petitions, setPetitions] = useState([]);
       const [signedPetitions, setSignedPetitions] = useState([]);
       const [showPetitionForm, setShowPetitionForm] = useState(false);
       const [newPetition, setNewPetition] = useState({ title: '', area: '', description: '', goal: 100 });
 
       // Report State
-      const [reports, setReports] = useState(MOCK_REPORTS);
+      const [reports, setReports] = useState([]);
       const [reportType, setReportType] = useState('landlord');
       const [reportFilter, setReportFilter] = useState('all');
       const [newReport, setNewReport] = useState({ name: '', address: '', issues: [], description: '', anonymous: true });
@@ -204,6 +119,90 @@
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
       const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [] });
+
+      // ============================================
+      // DATA FETCHING
+      // ============================================
+
+      // Fetch initial data on mount
+      useEffect(() => {
+        // Fetch price resistance items
+        fetch(`${API_BASE}/price-resistance`)
+          .then(r => r.json())
+          .then(data => setPriceResistanceItems(data))
+          .catch(() => {});
+
+        // Fetch sentiment data
+        fetch(`${API_BASE}/sentiment`)
+          .then(r => r.json())
+          .then(data => {
+            setSentimentHistory(data.history);
+            setTodaySentiment(data.today);
+          })
+          .catch(() => {});
+
+        // Fetch worker collectives
+        fetch(`${API_BASE}/worker-collectives`)
+          .then(r => r.json())
+          .then(data => setWorkerCollectives(data))
+          .catch(() => {});
+
+        // Fetch consumer groups
+        fetch(`${API_BASE}/consumer-groups`)
+          .then(r => r.json())
+          .then(data => setConsumerGroups(data))
+          .catch(() => {});
+
+        // Fetch petitions
+        fetch(`${API_BASE}/petitions`)
+          .then(r => r.json())
+          .then(data => setPetitions(data))
+          .catch(() => {});
+
+        // Fetch reports
+        fetch(`${API_BASE}/reports`)
+          .then(r => r.json())
+          .then(data => setReports(data))
+          .catch(() => {});
+      }, []);
+
+      // Fetch buildings when ZIP changes
+      const fetchBuildings = useCallback((zip) => {
+        const code = zip || 'default';
+        fetch(`${API_BASE}/buildings/${code}`)
+          .then(r => r.json())
+          .then(data => setBuildings(data))
+          .catch(() => {});
+      }, []);
+
+      // Fetch messages when a building is selected
+      useEffect(() => {
+        if (selectedBuilding) {
+          fetch(`${API_BASE}/buildings/${selectedBuilding}/messages`)
+            .then(r => r.json())
+            .then(data => setTenantMessages(data))
+            .catch(() => {});
+        }
+      }, [selectedBuilding]);
+
+      // Fetch messages when a collective is selected
+      useEffect(() => {
+        if (selectedCollective) {
+          fetch(`${API_BASE}/worker-collectives/${selectedCollective}/messages`)
+            .then(r => r.json())
+            .then(data => setCollectiveMessages(data))
+            .catch(() => {});
+        }
+      }, [selectedCollective]);
+
+      // Fetch reports when filter changes
+      useEffect(() => {
+        const query = reportFilter !== 'all' ? `?type=${reportFilter}` : '';
+        fetch(`${API_BASE}/reports${query}`)
+          .then(r => r.json())
+          .then(data => setReports(data))
+          .catch(() => {});
+      }, [reportFilter]);
 
       // ============================================
       // HELPERS
@@ -218,118 +217,164 @@
 
       const handleZipSubmit = (e) => {
         e.preventDefault();
-        const data = MOCK_LOCAL_DATA[zipCode] || MOCK_LOCAL_DATA.default;
-        setLocalData(data);
-        showNotification(`Loaded data for ${data.area}`);
+        fetch(`${API_BASE}/local-data/${zipCode || 'default'}`)
+          .then(r => r.json())
+          .then(data => {
+            setLocalData(data);
+            showNotification(`Loaded data for ${data.area}`);
+          })
+          .catch(() => showNotification('Failed to load data', 'error'));
       };
 
       const handleSentimentVote = (vote) => {
-        setWorkSentiment(vote);
-        setTodaySentiment(prev => ({
-          ...prev,
-          [vote === 'yes' ? 'willing' : 'unwilling']: prev[vote === 'yes' ? 'willing' : 'unwilling'] + 1,
-          total: prev.total + 1
-        }));
-        showNotification('Response recorded anonymously');
+        fetch(`${API_BASE}/sentiment/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vote }),
+        })
+          .then(r => r.json())
+          .then(() => {
+            setWorkSentiment(vote);
+            setTodaySentiment(prev => ({
+              ...prev,
+              [vote === 'yes' ? 'willing' : 'unwilling']: prev[vote === 'yes' ? 'willing' : 'unwilling'] + 1,
+              total: prev.total + 1
+            }));
+            showNotification('Response recorded anonymously');
+          })
+          .catch(() => showNotification('Failed to record vote', 'error'));
       };
 
-      const handlePriceVote = (item, threshold) => {
-        setPriceVotes({ ...priceVotes, [item]: threshold });
-        showNotification(`Recorded: Stop buying ${item} at $${threshold}`);
+      const handlePriceVote = (itemName, threshold, itemId) => {
+        fetch(`${API_BASE}/price-resistance/${itemId}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ threshold: parseFloat(threshold) }),
+        })
+          .then(r => r.json())
+          .then(() => {
+            setPriceVotes({ ...priceVotes, [itemName]: threshold });
+            showNotification(`Recorded: Stop buying ${itemName} at $${threshold}`);
+          })
+          .catch(() => showNotification('Failed to record vote', 'error'));
       };
 
       const handleJoinBuilding = (building) => {
         if (!joinedBuildings.includes(building.id)) {
-          setJoinedBuildings([...joinedBuildings, building.id]);
-          showNotification(`Joined tenant group at ${building.address}`);
+          fetch(`${API_BASE}/buildings/${building.id}/join`, { method: 'POST' })
+            .then(r => r.json())
+            .then(() => {
+              setJoinedBuildings([...joinedBuildings, building.id]);
+              showNotification(`Joined tenant group at ${building.address}`);
+            })
+            .catch(() => showNotification('Failed to join', 'error'));
         }
       };
 
       const handleJoinCollective = (collective) => {
         if (!joinedCollectives.includes(collective.id)) {
-          setJoinedCollectives([...joinedCollectives, collective.id]);
-          showNotification(`Joined ${collective.company} worker collective`);
+          fetch(`${API_BASE}/worker-collectives/${collective.id}/join`, { method: 'POST' })
+            .then(r => r.json())
+            .then(() => {
+              setJoinedCollectives([...joinedCollectives, collective.id]);
+              showNotification(`Joined ${collective.company} worker collective`);
+            })
+            .catch(() => showNotification('Failed to join', 'error'));
         }
       };
 
       const handleJoinConsumerGroup = (group) => {
         if (!joinedConsumerGroups.includes(group.id)) {
-          setJoinedConsumerGroups([...joinedConsumerGroups, group.id]);
-          showNotification(`Joined ${group.name}`);
+          fetch(`${API_BASE}/consumer-groups/${group.id}/join`, { method: 'POST' })
+            .then(r => r.json())
+            .then(() => {
+              setJoinedConsumerGroups([...joinedConsumerGroups, group.id]);
+              showNotification(`Joined ${group.name}`);
+            })
+            .catch(() => showNotification('Failed to join', 'error'));
         }
       };
 
       const handleSignPetition = (petition) => {
         if (!signedPetitions.includes(petition.id)) {
-          setSignedPetitions([...signedPetitions, petition.id]);
-          setPetitions(petitions.map(p =>
-            p.id === petition.id ? { ...p, signatures: p.signatures + 1 } : p
-          ));
-          showNotification('Petition signed anonymously');
+          fetch(`${API_BASE}/petitions/${petition.id}/sign`, { method: 'POST' })
+            .then(r => r.json())
+            .then(() => {
+              setSignedPetitions([...signedPetitions, petition.id]);
+              setPetitions(petitions.map(p =>
+                p.id === petition.id ? { ...p, signatures: p.signatures + 1 } : p
+              ));
+              showNotification('Petition signed anonymously');
+            })
+            .catch(() => showNotification('Failed to sign petition', 'error'));
         }
       };
 
       const handleCreatePetition = () => {
         if (newPetition.title && newPetition.area) {
-          const petition = {
-            id: `p${Date.now()}`,
-            ...newPetition,
-            signatures: 1,
-            status: 'active',
-            created: 'Just now'
-          };
-          setPetitions([petition, ...petitions]);
-          setSignedPetitions([...signedPetitions, petition.id]);
-          setNewPetition({ title: '', area: '', description: '', goal: 100 });
-          setShowPetitionForm(false);
-          showNotification('Petition created successfully');
+          fetch(`${API_BASE}/petitions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newPetition),
+          })
+            .then(r => r.json())
+            .then(petition => {
+              setPetitions([petition, ...petitions]);
+              setSignedPetitions([...signedPetitions, petition.id]);
+              setNewPetition({ title: '', area: '', description: '', goal: 100 });
+              setShowPetitionForm(false);
+              showNotification('Petition created successfully');
+            })
+            .catch(() => showNotification('Failed to create petition', 'error'));
         }
       };
 
       const handleSubmitReport = () => {
         if (newReport.name && newReport.issues.length > 0) {
-          const existingReport = reports.find(r => 
-            r.name.toLowerCase() === newReport.name.toLowerCase() && r.type === reportType
-          );
-          
-          if (existingReport) {
-            setReports(reports.map(r =>
-              r.id === existingReport.id ? { ...r, reports: r.reports + 1, lastReport: 'Just now' } : r
-            ));
-            showNotification('Report added to existing record');
-          } else {
-            const report = {
-              id: `r${Date.now()}`,
+          fetch(`${API_BASE}/reports`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
               type: reportType,
               name: newReport.name,
               address: newReport.address,
               issues: newReport.issues,
-              reports: 1,
-              lastReport: 'Just now'
-            };
-            setReports([report, ...reports]);
-            showNotification('Report submitted successfully');
-          }
-          setNewReport({ name: '', address: '', issues: [], description: '', anonymous: true });
+              description: newReport.description,
+            }),
+          })
+            .then(r => r.json())
+            .then(result => {
+              if (result.merged) {
+                setReports(reports.map(r =>
+                  r.id === result.id ? { ...r, reports: result.reports, lastReport: 'Just now' } : r
+                ));
+                showNotification('Report added to existing record');
+              } else {
+                setReports([result, ...reports]);
+                showNotification('Report submitted successfully');
+              }
+              setNewReport({ name: '', address: '', issues: [], description: '', anonymous: true });
+            })
+            .catch(() => showNotification('Failed to submit report', 'error'));
         }
       };
 
       const handleCreateCollective = () => {
         if (newCollective.company && newCollective.industry) {
-          const collective = {
-            id: `w${Date.now()}`,
-            company: newCollective.company,
-            industry: newCollective.industry,
-            issues: newCollective.issues,
-            members: 1,
-            active: false,
-            messages: []
-          };
-          MOCK_WORKER_COLLECTIVES.unshift(collective);
-          setJoinedCollectives([...joinedCollectives, collective.id]);
-          setNewCollective({ company: '', industry: '', issues: [] });
-          setShowNewCollectiveForm(false);
-          showNotification('Collective created - invite your coworkers!');
+          fetch(`${API_BASE}/worker-collectives`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newCollective),
+          })
+            .then(r => r.json())
+            .then(collective => {
+              setWorkerCollectives([collective, ...workerCollectives]);
+              setJoinedCollectives([...joinedCollectives, collective.id]);
+              setNewCollective({ company: '', industry: '', issues: [] });
+              setShowNewCollectiveForm(false);
+              showNotification('Collective created - invite your coworkers!');
+            })
+            .catch(() => showNotification('Failed to create collective', 'error'));
         }
       };
 
@@ -362,11 +407,6 @@
       const availableHours = 160;
       const deficit = availableHours - totalMonthlyHours;
       const weeksToAffordMonth = localData ? (totalMonthlyHours / 40).toFixed(1) : 0;
-      const buildings = MOCK_BUILDINGS[zipCode] || MOCK_BUILDINGS.default;
-
-      const filteredReports = reportFilter === 'all' 
-        ? reports 
-        : reports.filter(r => r.type === reportFilter);
 
       // ============================================
       // STYLES
@@ -697,7 +737,7 @@
                   </p>
 
                   <div style={styles.grid}>
-                    {MOCK_PRICE_RESISTANCE.map(item => (
+                    {priceResistanceItems.map(item => (
                       <div key={item.id} style={styles.card}>
                         <div style={{ fontSize: '13px', color: colors.textMuted, marginBottom: '12px', fontWeight: 500 }}>{item.item}</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
@@ -729,7 +769,7 @@
                             return (
                               <button
                                 key={mult}
-                                onClick={() => handlePriceVote(item.item, threshold)}
+                                onClick={() => handlePriceVote(item.item, threshold, item.id)}
                                 style={{
                                   padding: '8px 12px',
                                   backgroundColor: isSelected ? colors.primary : colors.bgLighter,
@@ -872,7 +912,7 @@
                         placeholder="Enter ZIP to find buildings"
                         style={{ ...styles.input, width: '200px' }}
                       />
-                      <button onClick={() => showNotification(`Showing buildings in ${zipCode || 'your area'}`)} style={styles.button('secondary')}>
+                      <button onClick={() => { fetchBuildings(zipCode); showNotification(`Showing buildings in ${zipCode || 'your area'}`); }} style={styles.button('secondary')}>
                         Search Buildings
                       </button>
                     </div>
@@ -968,24 +1008,36 @@
                             style={{ ...styles.input, flex: 1 }}
                             onKeyPress={(e) => {
                               if (e.key === 'Enter' && newTenantMessage) {
-                                setTenantMessages([
-                                  { id: Date.now(), building: selectedBuilding, text: newTenantMessage, time: 'Just now', replies: 0, author: 'You' },
-                                  ...tenantMessages
-                                ]);
-                                setNewTenantMessage('');
-                                showNotification('Message posted anonymously');
+                                fetch(`${API_BASE}/buildings/${selectedBuilding}/messages`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ text: newTenantMessage, author: 'You' }),
+                                })
+                                  .then(r => r.json())
+                                  .then(msg => {
+                                    setTenantMessages([msg, ...tenantMessages]);
+                                    setNewTenantMessage('');
+                                    showNotification('Message posted anonymously');
+                                  })
+                                  .catch(() => showNotification('Failed to post message', 'error'));
                               }
                             }}
                           />
                           <button
                             onClick={() => {
                               if (newTenantMessage) {
-                                setTenantMessages([
-                                  { id: Date.now(), building: selectedBuilding, text: newTenantMessage, time: 'Just now', replies: 0, author: 'You' },
-                                  ...tenantMessages
-                                ]);
-                                setNewTenantMessage('');
-                                showNotification('Message posted anonymously');
+                                fetch(`${API_BASE}/buildings/${selectedBuilding}/messages`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ text: newTenantMessage, author: 'You' }),
+                                })
+                                  .then(r => r.json())
+                                  .then(msg => {
+                                    setTenantMessages([msg, ...tenantMessages]);
+                                    setNewTenantMessage('');
+                                    showNotification('Message posted anonymously');
+                                  })
+                                  .catch(() => showNotification('Failed to post message', 'error'));
                               }
                             }}
                             style={styles.button('primary')}
@@ -1010,7 +1062,7 @@
                     </p>
 
                     <div style={styles.grid}>
-                      {MOCK_WORKER_COLLECTIVES.map(collective => {
+                      {workerCollectives.map(collective => {
                         const joined = joinedCollectives.includes(collective.id);
                         return (
                           <div key={collective.id} style={{
@@ -1062,7 +1114,7 @@
                     {selectedCollective && joinedCollectives.includes(selectedCollective) && (
                       <div style={{ ...styles.card, marginTop: '25px' }}>
                         <h3 style={{ margin: '0 0 20px 0', fontSize: '14px' }}>
-                          {MOCK_WORKER_COLLECTIVES.find(c => c.id === selectedCollective)?.company} — Worker Discussion
+                          {workerCollectives.find(c => c.id === selectedCollective)?.company} — Worker Discussion
                         </h3>
 
                         {collectiveMessages.filter(m => m.collective === selectedCollective).map(msg => (
@@ -1090,24 +1142,36 @@
                             style={{ ...styles.input, flex: 1 }}
                             onKeyPress={(e) => {
                               if (e.key === 'Enter' && newCollectiveMessage) {
-                                setCollectiveMessages([
-                                  { id: Date.now(), collective: selectedCollective, text: newCollectiveMessage, time: 'Just now', replies: 0, author: 'Anonymous' },
-                                  ...collectiveMessages
-                                ]);
-                                setNewCollectiveMessage('');
-                                showNotification('Message posted anonymously');
+                                fetch(`${API_BASE}/worker-collectives/${selectedCollective}/messages`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ text: newCollectiveMessage }),
+                                })
+                                  .then(r => r.json())
+                                  .then(msg => {
+                                    setCollectiveMessages([msg, ...collectiveMessages]);
+                                    setNewCollectiveMessage('');
+                                    showNotification('Message posted anonymously');
+                                  })
+                                  .catch(() => showNotification('Failed to post message', 'error'));
                               }
                             }}
                           />
                           <button
                             onClick={() => {
                               if (newCollectiveMessage) {
-                                setCollectiveMessages([
-                                  { id: Date.now(), collective: selectedCollective, text: newCollectiveMessage, time: 'Just now', replies: 0, author: 'Anonymous' },
-                                  ...collectiveMessages
-                                ]);
-                                setNewCollectiveMessage('');
-                                showNotification('Message posted anonymously');
+                                fetch(`${API_BASE}/worker-collectives/${selectedCollective}/messages`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ text: newCollectiveMessage }),
+                                })
+                                  .then(r => r.json())
+                                  .then(msg => {
+                                    setCollectiveMessages([msg, ...collectiveMessages]);
+                                    setNewCollectiveMessage('');
+                                    showNotification('Message posted anonymously');
+                                  })
+                                  .catch(() => showNotification('Failed to post message', 'error'));
                               }
                             }}
                             style={styles.button('primary')}
@@ -1212,7 +1276,7 @@
                     </p>
 
                     <div style={styles.grid}>
-                      {MOCK_CONSUMER_GROUPS.map(group => {
+                      {consumerGroups.map(group => {
                         const joined = joinedConsumerGroups.includes(group.id);
                         return (
                           <div key={group.id} style={{
@@ -1537,7 +1601,7 @@
                     ))}
                   </div>
 
-                  {filteredReports.map(report => (
+                  {reports.map(report => (
                     <div key={report.id} style={{
                       ...styles.card,
                       display: 'flex',
