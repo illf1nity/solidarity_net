@@ -1649,13 +1649,7 @@
       };
 
       const handleCreateCollective = () => {
-        const trimmedCollective = {
-          ...newCollective,
-          telegram_url: newCollective.telegram_url.trim(),
-          company: newCollective.company.trim(),
-          industry: newCollective.industry.trim(),
-        };
-        if (trimmedCollective.telegram_url && trimmedCollective.company && trimmedCollective.industry) {
+        if (newCollective.telegram_url && newCollective.company && newCollective.industry) {
           fetch(`${API_BASE}/worker-collectives`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2427,7 +2421,7 @@
                     </p>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('primary')}>
+                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('secondary')}>
                         + Create Worker Collective
                       </button>
                     </div>
@@ -2568,7 +2562,6 @@
                               value={newCollective.telegram_url}
                               onChange={(e) => setNewCollective({ ...newCollective, telegram_url: e.target.value })}
                               placeholder="https://t.me/yourcollective"
-                              required
                               style={styles.input}
                             />
                           </div>
