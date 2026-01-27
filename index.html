@@ -131,6 +131,62 @@
       'default': 22.45  // National median
     };
 
+    // State median hourly wage (2023 BLS OEWS, rounded)
+    // Source: Bureau of Labor Statistics Occupational Employment and Wage Statistics (statewide)
+    const STATE_WAGE_DATA = {
+      'AL': 20.23,
+      'AK': 26.41,
+      'AZ': 23.08,
+      'AR': 19.66,
+      'CA': 27.88,
+      'CO': 27.12,
+      'CT': 27.45,
+      'DE': 25.38,
+      'FL': 22.12,
+      'GA': 22.18,
+      'HI': 24.89,
+      'ID': 21.58,
+      'IL': 25.12,
+      'IN': 22.06,
+      'IA': 21.97,
+      'KS': 21.68,
+      'KY': 21.32,
+      'LA': 20.34,
+      'ME': 22.64,
+      'MD': 27.02,
+      'MA': 29.32,
+      'MI': 23.54,
+      'MN': 25.98,
+      'MS': 19.32,
+      'MO': 22.21,
+      'MT': 21.48,
+      'NE': 22.11,
+      'NV': 22.34,
+      'NH': 24.85,
+      'NJ': 27.36,
+      'NM': 21.12,
+      'NY': 27.58,
+      'NC': 22.06,
+      'ND': 24.12,
+      'OH': 22.76,
+      'OK': 21.04,
+      'OR': 25.34,
+      'PA': 24.02,
+      'RI': 25.01,
+      'SC': 21.24,
+      'SD': 21.08,
+      'TN': 21.46,
+      'TX': 23.16,
+      'UT': 24.04,
+      'VT': 23.58,
+      'VA': 25.68,
+      'WA': 29.04,
+      'WV': 20.12,
+      'WI': 23.48,
+      'WY': 23.12,
+      'DC': 36.88
+    };
+
     // HUD Fair Market Rents FY2024 (2-bedroom monthly)
     // Source: HUD Office of Policy Development and Research
     const MSA_RENT_DATA = {
@@ -740,9 +796,9 @@
     };
 
     // Calculate total effective tax rate and net hourly wage
-    const calculateTaxData = (hourlyWage, msa) => {
+    const calculateTaxData = (hourlyWage, msa, stateOverride = null) => {
       const annualGross = hourlyWage * 2080; // 40 hrs/wk × 52 weeks
-      const stateCode = MSA_TO_STATE[msa] || MSA_TO_STATE.default;
+      const stateCode = stateOverride || MSA_TO_STATE[msa] || MSA_TO_STATE.default;
 
       const federalTax = calculateFederalTax(annualGross);
       const stateTax = calculateStateTax(annualGross, stateCode);
@@ -1121,6 +1177,30 @@
       '236': 'Virginia Beach-Norfolk-Newport News, VA-NC',
     };
 
+    const findNearestMSAWage = (zipCode) => {
+      const prefix = Number.parseInt(zipCode.substring(0, 3), 10);
+      if (Number.isNaN(prefix)) return null;
+
+      let closest = null;
+      for (const [prefixKey, msa] of Object.entries(ZIP_TO_MSA)) {
+        const wage = MSA_WAGE_DATA[msa];
+        if (!wage) continue;
+        const candidatePrefix = Number.parseInt(prefixKey, 10);
+        if (Number.isNaN(candidatePrefix)) continue;
+        const distance = Math.abs(prefix - candidatePrefix);
+        if (!closest || distance < closest.distance) {
+          closest = {
+            wage,
+            msa,
+            prefix: prefixKey,
+            distance
+          };
+        }
+      }
+
+      return closest;
+    };
+
     // Fetch location data from ZIP code API
     const fetchZipData = async (zipCode) => {
       try {
@@ -1148,7 +1228,18 @@
     // Calculate local cost data based on ZIP
     const calculateLocalData = (zipCode, locationInfo) => {
       const msa = getMSAFromZip(zipCode);
-      const wage = MSA_WAGE_DATA[msa] || MSA_WAGE_DATA.default;
+      const stateCode = locationInfo?.state;
+      const msaWage = MSA_WAGE_DATA[msa] || null;
+      const nearestMSA = msaWage ? null : findNearestMSAWage(zipCode);
+      const stateWage = stateCode ? STATE_WAGE_DATA[stateCode] : null;
+      const resolvedWage = msaWage || nearestMSA?.wage || stateWage || MSA_WAGE_DATA.default;
+      const wageSource = msaWage
+        ? 'MSA-level data'
+        : nearestMSA
+          ? `Nearest MSA (${nearestMSA.msa}) via ZIP prefix ${nearestMSA.prefix}`
+          : stateWage
+            ? `State-level data (${stateCode})`
+            : 'National averages';
       const rent = MSA_RENT_DATA[msa] || MSA_RENT_DATA.default;
       const costs = REGIONAL_COSTS[msa] || REGIONAL_COSTS.default;
 
@@ -1157,10 +1248,10 @@
         : (msa !== 'default' ? msa.split(',')[0] : 'National Average');
 
       // Calculate tax data for this area
-      const taxData = calculateTaxData(wage, msa);
+      const taxData = calculateTaxData(resolvedWage, nearestMSA?.msa || msa, stateWage ? stateCode : null);
 
       return {
-        medianWage: wage,
+        medianWage: resolvedWage,
         netWage: taxData.netHourlyWage,
         taxData: taxData,
         rent: rent,
@@ -1170,7 +1261,7 @@
         utilities: Math.round(NATIONAL_BASELINES.utilities * costs.utilities),
         area: areaName,
         msa: msa !== 'default' ? msa : null,
-        dataQuality: msa !== 'default' ? 'MSA-level data' : 'National averages'
+        dataQuality: wageSource
       };
     };
 
@@ -1209,11 +1300,11 @@
     ];
 
     const MOCK_PETITIONS = [
-      { id: 'p1', title: 'Stop Rent Increase at 123 Main St', area: '10001', signatures: 18, goal: 24, status: 'active', created: '2 days ago', description: 'Landlord proposing 15% increase despite no improvements.' },
-      { id: 'p2', title: 'Demand Fair Scheduling at MegaMart', area: '60601', signatures: 89, goal: 100, status: 'active', created: '1 week ago', description: 'End on-call scheduling and provide 2-week advance notice.' },
-      { id: 'p3', title: 'Fix Dangerous Intersection on Oak Ave', area: '10001', signatures: 156, goal: 150, status: 'won', created: '3 weeks ago', description: 'Traffic light installed after petition delivered to city council.' },
-      { id: 'p4', title: 'Oppose Utility Rate Hike', area: '30301', signatures: 423, goal: 500, status: 'active', created: '4 days ago', description: 'Power company requesting 22% rate increase.' },
-      { id: 'p5', title: 'Keep Community Health Clinic Open', area: '48127', signatures: 267, goal: 300, status: 'active', created: '5 days ago', description: 'Only clinic serving uninsured residents in the area.' },
+      { id: 'p1', title: 'Lowered Rents for 123 Main St Tenants', area: '10001', members: 142, status: 'active', created: '2 days ago', description: 'Tenant union organizing against a proposed 15% rent increase.', telegram_url: 'https://t.me/tenantunion123main' },
+      { id: 'p2', title: 'South Loop Tenant Solidarity', area: '60601', members: 387, status: 'active', created: '1 week ago', description: 'Coordinating repair demands and legal resources for South Loop renters.', telegram_url: 'https://t.me/southlooptenants' },
+      { id: 'p3', title: 'Oak Ave Safe Streets Coalition', area: '10001', members: 512, status: 'active', created: '3 weeks ago', description: 'Coalition organizing for safer crosswalks and traffic calming.', telegram_url: 'https://t.me/oakavesafety' },
+      { id: 'p4', title: 'Atlanta Utility Accountability', area: '30301', members: 268, status: 'active', created: '4 days ago', description: 'Neighbors coordinating rate-hike pushback and council testimony.', telegram_url: 'https://t.me/atlutilityaccountability' },
+      { id: 'p5', title: 'Downriver Health Access Network', area: '48127', members: 194, status: 'active', created: '5 days ago', description: 'Mutual aid group protecting local clinic access.', telegram_url: 'https://t.me/downriverhealthaccess' },
     ];
 
     const MOCK_REPORTS = [
@@ -1280,7 +1371,7 @@
       const [petitions, setPetitions] = useState([]);
       const [signedPetitions, setSignedPetitions] = useState([]);
       const [showPetitionForm, setShowPetitionForm] = useState(false);
-      const [newPetition, setNewPetition] = useState({ title: '', area: '', description: '', changeorg_url: '' });
+      const [newPetition, setNewPetition] = useState({ title: '', area: '', description: '', telegram_url: '' });
 
       // Report State
       const [reports, setReports] = useState([]);
@@ -1495,19 +1586,19 @@
           .then(r => r.json())
           .then(data => {
             setPetitions(petitions.map(p =>
-              p.id === petition.id ? { ...p, signatures: data.signatures, goal: data.goal, status: data.status } : p
+              p.id === petition.id ? { ...p, members: data.members, status: data.status } : p
             ));
             if (data.success) {
-              showNotification('Signature count updated from Change.org');
+              showNotification('Telegram member count updated');
             } else {
-              showNotification('Could not reach Change.org — showing cached data', 'warning');
+              showNotification('Could not reach Telegram — showing cached data', 'warning');
             }
           })
           .catch(() => showNotification('Failed to refresh petition', 'error'));
       };
 
       const handleCreatePetition = () => {
-        if (newPetition.title && newPetition.area && newPetition.changeorg_url) {
+        if (newPetition.title && newPetition.area && newPetition.telegram_url) {
           fetch(`${API_BASE}/petitions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1519,9 +1610,9 @@
             })
             .then(petition => {
               setPetitions([petition, ...petitions]);
-              setNewPetition({ title: '', area: '', description: '', changeorg_url: '' });
+              setNewPetition({ title: '', area: '', description: '', telegram_url: '' });
               setShowPetitionForm(false);
-              showNotification('Petition created successfully');
+              showNotification('Tenant union added successfully');
             })
             .catch(err => showNotification(err.message || 'Failed to create petition', 'error'));
         }
@@ -2579,19 +2670,18 @@
                 {/* Petitions */}
                 {activeSubTab === 'petition' && (
                   <section>
-                    <h2 style={styles.sectionHeader}>Local Petitions</h2>
+                    <h2 style={styles.sectionHeader}>Local Tenant Unions</h2>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
                       <p style={{ color: colors.textDim, margin: 0 }}>
-                        Local petitions powered by Change.org. Signatures tracked live.
+                        Tenant unions and organizations verified via Telegram. Member totals update live.
                       </p>
                       <button onClick={() => setShowPetitionForm(true)} style={styles.button('primary')}>
-                        + Link Petition
+                        + Add Tenant Union
                       </button>
                     </div>
 
                     {petitions.map(petition => {
-                      const pct = petition.goal > 0 ? Math.min((petition.signatures / petition.goal) * 100, 100) : 0;
                       return (
                         <div key={petition.id} style={{
                           ...styles.card,
@@ -2604,10 +2694,10 @@
                               {petition.description && (
                                 <div style={{ fontSize: '12px', color: colors.textDim, marginTop: '8px' }}>{petition.description}</div>
                               )}
-                              {petition.changeorg_url && (
-                                <a href={petition.changeorg_url} target="_blank" rel="noopener noreferrer"
+                              {petition.telegram_url && (
+                                <a href={petition.telegram_url} target="_blank" rel="noopener noreferrer"
                                   style={{ fontSize: '11px', color: colors.primary, textDecoration: 'none', display: 'inline-block', marginTop: '6px' }}>
-                                  View on Change.org ↗
+                                  View on Telegram ↗
                                 </a>
                               )}
                             </div>
@@ -2617,31 +2707,22 @@
 
                           <div style={{ marginTop: '15px', marginBottom: '15px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                              <span style={{ fontWeight: 700 }}>{petition.signatures} signatures</span>
-                              <span style={{ color: colors.textDimmer }}>Goal: {petition.goal}</span>
-                            </div>
-                            <div style={{ height: '10px', backgroundColor: colors.border, borderRadius: '5px' }}>
-                              <div style={{
-                                height: '100%',
-                                width: `${pct}%`,
-                                backgroundColor: petition.signatures >= petition.goal ? colors.success : colors.primary,
-                                borderRadius: '5px',
-                                transition: 'width 0.3s'
-                              }} />
+                              <span style={{ fontWeight: 700 }}>{petition.members} members</span>
+                              <span style={{ color: colors.textDimmer }}>Telegram verified</span>
                             </div>
                           </div>
 
                           <div style={{ display: 'flex', gap: '10px' }}>
-                            {petition.status === 'active' && petition.changeorg_url && (
-                              <a href={petition.changeorg_url} target="_blank" rel="noopener noreferrer"
+                            {petition.status === 'active' && petition.telegram_url && (
+                              <a href={petition.telegram_url} target="_blank" rel="noopener noreferrer"
                                 style={{ ...styles.button('secondary'), flex: 1, textAlign: 'center', textDecoration: 'none', display: 'block' }}>
-                                Sign on Change.org →
+                                Join on Telegram →
                               </a>
                             )}
-                            {petition.changeorg_url && (
+                            {petition.telegram_url && (
                               <button onClick={() => handleRefreshPetition(petition)}
                                 style={{ ...styles.button('secondary'), fontSize: '11px', padding: '10px 14px' }}
-                                title="Refresh signature count from Change.org">
+                                title="Refresh member count from Telegram">
                                 ↻ Refresh
                               </button>
                             )}
@@ -2654,21 +2735,21 @@
                     {showPetitionForm && (
                       <div style={styles.modal} className="modal-enter">
                         <div style={{ ...styles.card, maxWidth: '500px', width: '100%' }}>
-                          <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Link Change.org Petition</h3>
+                          <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Add Tenant Union</h3>
 
                           <div style={{ marginBottom: '15px' }}>
                             <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Change.org URL *
+                              Telegram Group Link *
                             </label>
                             <input
                               type="url"
-                              value={newPetition.changeorg_url}
-                              onChange={(e) => setNewPetition({ ...newPetition, changeorg_url: e.target.value })}
-                              placeholder="https://www.change.org/p/your-petition"
+                              value={newPetition.telegram_url}
+                              onChange={(e) => setNewPetition({ ...newPetition, telegram_url: e.target.value })}
+                              placeholder="https://t.me/your-tenant-union"
                               style={styles.input}
                             />
                             <p style={{ fontSize: '10px', color: colors.textDimmest, margin: '5px 0 0 0' }}>
-                              Paste the full URL of your Change.org petition. Signature counts will be pulled automatically.
+                              Paste the full public Telegram group link. Member totals will be pulled automatically.
                             </p>
                           </div>
 
@@ -2717,17 +2798,17 @@
                             </button>
                             <button
                               onClick={handleCreatePetition}
-                              disabled={!newPetition.changeorg_url || !newPetition.title || !newPetition.area}
+                              disabled={!newPetition.telegram_url || !newPetition.title || !newPetition.area}
                               style={{
                                 ...styles.button('primary'), flex: 1,
-                                opacity: (!newPetition.changeorg_url || !newPetition.title || !newPetition.area) ? 0.5 : 1,
-                                cursor: (!newPetition.changeorg_url || !newPetition.title || !newPetition.area) ? 'not-allowed' : 'pointer'
+                                opacity: (!newPetition.telegram_url || !newPetition.title || !newPetition.area) ? 0.5 : 1,
+                                cursor: (!newPetition.telegram_url || !newPetition.title || !newPetition.area) ? 'not-allowed' : 'pointer'
                               }}>
-                              Link Petition
+                              Create Tenant Union
                             </button>
                           </div>
                           <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', marginBottom: 0 }}>
-                            Signatures and goals are pulled directly from Change.org. Click "Refresh" on any petition to update.
+                            Member totals are pulled from Telegram. Click "Refresh" on any listing to update.
                           </p>
                         </div>
                       </div>
