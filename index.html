@@ -1800,7 +1800,7 @@
           minHeight: '100vh',
           backgroundColor: colors.bg,
           color: colors.text,
-          fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+          fontFamily: selectedFont,
           fontSize: '14px',
           lineHeight: '1.6'
         },
@@ -1974,6 +1974,58 @@
               </button>
             ))}
           </nav>
+
+          {/* Text Customization Panel — Global */}
+          <div style={{ padding: '0 40px', borderBottom: `1px solid ${colors.border}` }}>
+            <button
+              onClick={() => setShowTextPanel(!showTextPanel)}
+              style={{
+                padding: '8px 14px',
+                backgroundColor: 'transparent',
+                color: showTextPanel ? colors.warning : colors.textDimmer,
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                transition: 'color 0.15s'
+              }}
+            >
+              {showTextPanel ? '\u25BC' : '\u25B6'} Text Customization
+            </button>
+
+            {showTextPanel && (
+              <div style={{
+                padding: '15px 0 20px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                  <label style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Font Family
+                  </label>
+                  <select
+                    value={selectedFont}
+                    onChange={(e) => setSelectedFont(e.target.value)}
+                    style={{
+                      backgroundColor: colors.bgLighter,
+                      border: `1px solid ${colors.borderLight}`,
+                      color: '#fff',
+                      padding: '8px 12px',
+                      fontFamily: 'inherit',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="'IBM Plex Mono', 'Courier New', monospace">IBM Plex Mono (Default)</option>
+                    <option value="'Times New Roman', Georgia, serif">Times New Roman</option>
+                  </select>
+                  <div style={{ padding: '8px 14px', backgroundColor: colors.bgLighter, border: `1px dashed ${colors.border}`, fontFamily: selectedFont, fontSize: '13px', color: colors.textMuted }}>
+                    Preview: Solidarity through collective action.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Main Content */}
           <main style={styles.main}>
@@ -2164,107 +2216,56 @@
                     {customTexts.sectionDesc}
                   </p>
 
-                  {/* Text Customization Panel */}
-                  <div style={{ marginBottom: '25px' }}>
-                    <button
-                      onClick={() => setShowTextPanel(!showTextPanel)}
-                      style={{
-                        padding: '10px 16px',
-                        backgroundColor: showTextPanel ? colors.bgLighter : 'transparent',
-                        color: showTextPanel ? colors.warning : colors.textDim,
-                        border: `1px solid ${showTextPanel ? colors.warning : colors.borderLight}`,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: '11px',
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      {showTextPanel ? 'Hide' : 'Show'} Text Customization
-                    </button>
-
-                    {showTextPanel && (
-                      <div style={{
-                        marginTop: '15px',
-                        padding: '25px',
-                        backgroundColor: colors.bgLight,
-                        border: `1px solid ${colors.border}`,
-                      }}>
-                        <div style={{ fontSize: '10px', color: colors.warning, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', borderBottom: `1px solid ${colors.border}`, paddingBottom: '10px' }}>
-                          Text Customization Panel
-                        </div>
-
-                        {/* Font Selection */}
-                        <div style={{ marginBottom: '20px', paddingBottom: '20px', borderBottom: `1px solid ${colors.border}` }}>
-                          <label style={{ display: 'block', fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                            Font Family
-                          </label>
-                          <select
-                            value={selectedFont}
-                            onChange={(e) => setSelectedFont(e.target.value)}
-                            style={{
-                              backgroundColor: colors.bgLighter,
-                              border: `1px solid ${colors.borderLight}`,
-                              color: '#fff',
-                              padding: '10px 12px',
-                              fontFamily: 'inherit',
-                              fontSize: '13px',
-                              width: '100%',
-                              maxWidth: '350px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <option value="'IBM Plex Mono', 'Courier New', monospace">IBM Plex Mono (Default)</option>
-                            <option value="'Times New Roman', Georgia, serif">Times New Roman</option>
-                          </select>
-                          <div style={{ marginTop: '8px', padding: '12px', backgroundColor: colors.bgLighter, border: `1px dashed ${colors.border}`, fontFamily: selectedFont, fontSize: '14px', color: colors.textMuted }}>
-                            Preview: The inflationary cost of living has increased significantly since 1985.
-                          </div>
-                        </div>
-
-                        {/* Customizable Text Fields */}
-                        <div style={{ display: 'grid', gap: '15px' }}>
-                          {[
-                            { key: 'sectionTitle', label: 'Section Title' },
-                            { key: 'sectionDesc', label: 'Section Description' },
-                            { key: 'buttonLabel', label: 'Calculate Button Label' },
-                            { key: 'heroHeader', label: 'Results Header (use {workingYears} for dynamic value)' },
-                            { key: 'heroSubtext', label: 'Results Subtext (use {yearsOfWork} for dynamic value)' },
-                            { key: 'futureProjection', label: 'Future Projection (use {futureAmount} for dynamic value)' },
-                            { key: 'housingLabel', label: 'Housing Metric Label' },
-                            { key: 'housingDetail', label: 'Housing Detail (use {yearsNow}, {years1985})' },
-                            { key: 'earningsLabel', label: 'Earnings Metric Label' },
-                            { key: 'earningsDetail', label: 'Earnings Detail (use {productivity}, {wageGrowth})' },
-                            { key: 'debtLabel', label: 'Debt Metric Label' },
-                            { key: 'debtDetail', label: 'Debt Detail' },
-                            { key: 'rentLabel', label: 'Rent Metric Label' },
-                            { key: 'rentDetail', label: 'Rent Detail (use {rentNow}, {rentThen})' },
-                            { key: 'pctSuffix', label: 'Percentage Suffix Text' },
-                            { key: 'ctaTitle', label: 'Call-to-Action Title' },
-                            { key: 'ctaSubtitle', label: 'Call-to-Action Subtitle' },
-                          ].map(({ key, label }) => (
-                            <div key={key}>
-                              <label style={{ display: 'block', fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                                {label}
-                              </label>
-                              <input
-                                type="text"
-                                value={customTexts[key]}
-                                onChange={(e) => updateCustomText(key, e.target.value)}
-                                style={{
-                                  ...styles.input,
-                                  fontSize: '12px',
-                                  padding: '8px 10px',
-                                  fontFamily: selectedFont
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
+                  {/* Calculator Text Customization Fields */}
+                  {showTextPanel && (
+                    <div style={{
+                      marginBottom: '25px',
+                      padding: '20px',
+                      backgroundColor: colors.bgLight,
+                      border: `1px solid ${colors.border}`,
+                    }}>
+                      <div style={{ fontSize: '10px', color: colors.warning, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '15px', borderBottom: `1px solid ${colors.border}`, paddingBottom: '10px' }}>
+                        Calculator Text Fields
                       </div>
-                    )}
-                  </div>
+                      <div style={{ display: 'grid', gap: '15px' }}>
+                        {[
+                          { key: 'sectionTitle', label: 'Section Title' },
+                          { key: 'sectionDesc', label: 'Section Description' },
+                          { key: 'buttonLabel', label: 'Calculate Button Label' },
+                          { key: 'heroHeader', label: 'Results Header (use {workingYears} for dynamic value)' },
+                          { key: 'heroSubtext', label: 'Results Subtext (use {yearsOfWork} for dynamic value)' },
+                          { key: 'futureProjection', label: 'Future Projection (use {futureAmount} for dynamic value)' },
+                          { key: 'housingLabel', label: 'Housing Metric Label' },
+                          { key: 'housingDetail', label: 'Housing Detail (use {yearsNow}, {years1985})' },
+                          { key: 'earningsLabel', label: 'Earnings Metric Label' },
+                          { key: 'earningsDetail', label: 'Earnings Detail (use {productivity}, {wageGrowth})' },
+                          { key: 'debtLabel', label: 'Debt Metric Label' },
+                          { key: 'debtDetail', label: 'Debt Detail' },
+                          { key: 'rentLabel', label: 'Rent Metric Label' },
+                          { key: 'rentDetail', label: 'Rent Detail (use {rentNow}, {rentThen})' },
+                          { key: 'pctSuffix', label: 'Percentage Suffix Text' },
+                          { key: 'ctaTitle', label: 'Call-to-Action Title' },
+                          { key: 'ctaSubtitle', label: 'Call-to-Action Subtitle' },
+                        ].map(({ key, label }) => (
+                          <div key={key}>
+                            <label style={{ display: 'block', fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
+                              {label}
+                            </label>
+                            <input
+                              type="text"
+                              value={customTexts[key]}
+                              onChange={(e) => updateCustomText(key, e.target.value)}
+                              style={{
+                                ...styles.input,
+                                fontSize: '12px',
+                                padding: '8px 10px',
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <form onSubmit={handleTheftCalculate} style={{ marginBottom: '30px' }}>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -2310,7 +2311,7 @@
                   </form>
 
                   {theftResults && (
-                    <div style={{ fontFamily: selectedFont }}>
+                    <div>
                       {/* Hero total */}
                       <div style={{
                         textAlign: 'center',
@@ -2382,7 +2383,7 @@
                               <div style={{ textAlign: 'center', padding: '8px 12px', backgroundColor: '#ff333315', marginLeft: '5px' }}>
                                 <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '4px' }}>EXTRA</div>
                                 <div style={{ fontSize: '24px', fontWeight: 700, color: colors.primary }}>+{h.extraYears}</div>
-                                <div style={{ fontSize: '10px', color: colors.textDimmest }}>years of income</div>
+                                <div style={{ fontSize: '10px', color: colors.textDimmest }}>years of income needed to afford a home</div>
                               </div>
                             </div>
                           </div>
