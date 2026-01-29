@@ -52,7 +52,8 @@ function initializeDatabase() {
       company TEXT NOT NULL,
       members INTEGER NOT NULL DEFAULT 0,
       issues TEXT NOT NULL DEFAULT '[]',
-      active INTEGER NOT NULL DEFAULT 0
+      active INTEGER NOT NULL DEFAULT 0,
+      telegram_url TEXT NOT NULL DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS collective_messages (
@@ -136,6 +137,13 @@ function initializeDatabase() {
     );
   `);
 
+  // Migration: Add telegram_url column if it doesn't exist
+  const columns = db.prepare("PRAGMA table_info(worker_collectives)").all();
+  const hasTelegramUrl = columns.some(col => col.name === 'telegram_url');
+  if (!hasTelegramUrl) {
+    db.exec("ALTER TABLE worker_collectives ADD COLUMN telegram_url TEXT NOT NULL DEFAULT ''");
+  }
+
   return db;
 }
 
@@ -215,17 +223,17 @@ function seedDatabase(db) {
 
   // Seed worker collectives
   const insertCollective = db.prepare(`
-    INSERT INTO worker_collectives (id, industry, company, members, issues, active)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO worker_collectives (id, industry, company, members, issues, active, telegram_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
   const collectives = [
-    ['w1', 'Retail', 'MegaMart', 127, '["Scheduling","Understaffing"]', 1],
-    ['w2', 'Food Service', 'QuickBite Chain', 89, '["Wage theft","No breaks"]', 1],
-    ['w3', 'Warehouse', 'FastShip Logistics', 234, '["Safety","Quotas"]', 1],
-    ['w4', 'Healthcare', 'CareFirst Hospital', 156, '["Understaffing","Mandatory OT"]', 1],
-    ['w5', 'Tech', 'Anonymous Startup', 45, '["Layoffs","RTO mandate"]', 0],
-    ['w6', 'Education', 'City School District', 312, '["Class sizes","Resources"]', 1],
+    ['w1', 'Retail', 'MegaMart', 127, '["Scheduling","Understaffing"]', 1, 'https://t.me/megamart_workers'],
+    ['w2', 'Food Service', 'QuickBite Chain', 89, '["Wage theft","No breaks"]', 1, 'https://t.me/quickbite_unite'],
+    ['w3', 'Warehouse', 'FastShip Logistics', 234, '["Safety","Quotas"]', 1, 'https://t.me/fastship_safety'],
+    ['w4', 'Healthcare', 'CareFirst Hospital', 156, '["Understaffing","Mandatory OT"]', 1, ''],
+    ['w5', 'Tech', 'Anonymous Startup', 45, '["Layoffs","RTO mandate"]', 0, 'https://t.me/tech_workers_anon'],
+    ['w6', 'Education', 'City School District', 312, '["Class sizes","Resources"]', 1, 'https://t.me/cityschool_teachers'],
   ];
 
   const seedCollectives = db.transaction(() => {

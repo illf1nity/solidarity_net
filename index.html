@@ -1388,7 +1388,7 @@
 
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
-      const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [] });
+      const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [], telegram_url: '' });
 
       // ============================================
       // TEXT CUSTOMIZATION PANEL
@@ -1995,9 +1995,13 @@
           })
             .then(r => r.json())
             .then(collective => {
+              if (collective.error) {
+                showNotification(collective.error, 'error');
+                return;
+              }
               setWorkerCollectives([collective, ...workerCollectives]);
               setJoinedCollectives([...joinedCollectives, collective.id]);
-              setNewCollective({ company: '', industry: '', issues: [] });
+              setNewCollective({ company: '', industry: '', issues: [], telegram_url: '' });
               setShowNewCollectiveForm(false);
               showNotification('Collective created - invite your coworkers!');
             })
@@ -3023,6 +3027,32 @@
                               <span style={{ fontSize: '12px', color: colors.textDim, marginLeft: '8px' }}>members</span>
                             </div>
 
+                            {collective.telegram_url && (
+                              <a
+                                href={collective.telegram_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '10px 12px',
+                                  marginBottom: '15px',
+                                  backgroundColor: '#0088cc15',
+                                  border: '1px solid #0088cc40',
+                                  color: '#0088cc',
+                                  textDecoration: 'none',
+                                  fontSize: '12px',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.009-1.252-.242-1.865-.442-.751-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.015 3.333-1.386 4.025-1.627 4.477-1.635.099-.002.321.023.465.14.121.099.154.232.17.325.015.094.034.31.019.478z"/>
+                                </svg>
+                                Join Telegram Channel
+                              </a>
+                            )}
+
                             {!joined ? (
                               <button onClick={() => handleJoinCollective(collective)} style={{ ...styles.button('secondary'), width: '100%' }}>
                                 Join Collective →
@@ -3137,6 +3167,22 @@
                               placeholder="Where do you work?"
                               style={styles.input}
                             />
+                          </div>
+
+                          <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                              Telegram Channel <span style={{ color: colors.textDimmer, fontWeight: 400 }}>(optional)</span>
+                            </label>
+                            <input
+                              type="url"
+                              value={newCollective.telegram_url}
+                              onChange={(e) => setNewCollective({ ...newCollective, telegram_url: e.target.value })}
+                              placeholder="https://t.me/your_channel"
+                              style={styles.input}
+                            />
+                            <div style={{ fontSize: '10px', color: colors.textDimmer, marginTop: '4px' }}>
+                              Link a Telegram channel for organizing outside this site
+                            </div>
                           </div>
 
                           <div style={{ marginBottom: '15px' }}>
