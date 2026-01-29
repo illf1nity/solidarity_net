@@ -1398,6 +1398,13 @@
       // Corporate Conquest Map State
       const [mapData, setMapData] = useState(null);
 
+      // The One Bad Day - Emergency Simulation State
+      const [emergencyType, setEmergencyType] = useState(null);
+
+      // The Corporate Infection - Selected State
+      const [selectedState, setSelectedState] = useState(null);
+      const [infectedHouses, setInfectedHouses] = useState([]);
+
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
       const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [], telegram_url: '' });
@@ -2504,6 +2511,79 @@
                         <span>{deficit} hrs</span>
                       </div>
 
+                      {/* The One Bad Day - Emergency Simulation */}
+                      <div style={{ marginTop: '30px', padding: '25px', backgroundColor: '#0a0a0a', border: `1px solid ${colors.border}` }}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text, marginBottom: '15px', textAlign: 'center' }}>
+                          THE ONE BAD DAY
+                        </div>
+                        <div style={{ fontSize: '11px', color: colors.textDim, marginBottom: '20px', textAlign: 'center' }}>
+                          Your stability is one emergency away from collapse.
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '20px' }}>
+                          {[
+                            { id: 'tire', label: 'Flat Tire', cost: 200 },
+                            { id: 'er', label: 'ER Visit', cost: 1200 },
+                            { id: 'rent', label: 'Rent +10%', cost: Math.round(localData.rent * 0.1) }
+                          ].map(emergency => (
+                            <button
+                              key={emergency.id}
+                              onClick={() => setEmergencyType(emergencyType === emergency.id ? null : emergency.id)}
+                              style={{
+                                padding: '12px 20px',
+                                backgroundColor: emergencyType === emergency.id ? colors.primary : 'transparent',
+                                color: emergencyType === emergency.id ? '#000' : colors.primary,
+                                border: `2px solid ${colors.primary}`,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                fontWeight: 700,
+                                fontSize: '11px',
+                                textTransform: 'uppercase',
+                                transition: 'all 0.1s',
+                                letterSpacing: '1px'
+                              }}
+                            >
+                              {emergency.label}<br/>${emergency.cost}
+                            </button>
+                          ))}
+                        </div>
+                        {emergencyType && (() => {
+                          const emergencyData = {
+                            tire: { cost: 200, label: 'Flat Tire' },
+                            er: { cost: 1200, label: 'ER Visit' },
+                            rent: { cost: Math.round(localData.rent * 0.1), label: 'Rent Hike (10%)' }
+                          }[emergencyType];
+                          const emergencyHours = Math.round(emergencyData.cost / effectiveWage);
+                          const newDeficit = deficit - emergencyHours;
+                          return (
+                            <div style={{
+                              padding: '20px',
+                              backgroundColor: newDeficit < 0 ? '#1a0505' : '#051005',
+                              border: `2px solid ${newDeficit < 0 ? colors.primary : colors.warning}`,
+                              animation: 'fadeIn 0.15s ease-out'
+                            }}>
+                              <div style={{ fontSize: '12px', color: colors.textMuted, marginBottom: '10px', textAlign: 'center' }}>
+                                AFTER {emergencyData.label.toUpperCase()}:
+                              </div>
+                              <div style={{ fontSize: '42px', fontWeight: 700, color: newDeficit < 0 ? colors.primary : colors.warning, textAlign: 'center', lineHeight: 1 }}>
+                                {newDeficit} hrs
+                              </div>
+                              <div style={{ fontSize: '11px', color: colors.textDim, marginTop: '10px', textAlign: 'center' }}>
+                                {newDeficit < 0 ? (
+                                  <>You need <strong style={{ color: colors.primary }}>{Math.abs(newDeficit)} extra hours</strong> that don't exist.</>
+                                ) : (
+                                  <>Your margin dropped from {deficit}h to {newDeficit}h.</>
+                                )}
+                              </div>
+                              {deficit >= 0 && newDeficit < 0 && (
+                                <div style={{ fontSize: '13px', color: colors.primary, marginTop: '15px', textAlign: 'center', fontWeight: 700 }}>
+                                  ⚠ SURPLUS → DEFICIT
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+
                       <div style={{ marginTop: '20px', padding: '15px', backgroundColor: colors.bg, fontSize: '11px', color: colors.textDimmest }}>
                         <div style={{ marginBottom: '8px' }}>
                           <strong>Data quality:</strong>{' '}
@@ -2729,6 +2809,142 @@
                           </div>
                           <div style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '8px' }}>
                             Estimated median home price at your income: ${impactResults.metrics.housing.median_home_price.toLocaleString()}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* The Ghost of 1985 - Floor Plan Visualization */}
+                      {impactResults.metrics.housing && (
+                        <div style={{
+                          ...styles.card,
+                          padding: '30px',
+                          marginBottom: '15px',
+                          backgroundColor: '#0a0a0a',
+                          borderLeft: `3px solid ${colors.success}`
+                        }}>
+                          <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text, marginBottom: '10px', textAlign: 'center' }}>
+                            THE GHOST OF 1985
+                          </div>
+                          <div style={{ fontSize: '11px', color: colors.textDim, marginBottom: '25px', textAlign: 'center' }}>
+                            What a 3-bedroom house looked like to 1985 wages vs. your wages today
+                          </div>
+
+                          {(() => {
+                            // Calculate the percentage of house that's "lost"
+                            // Using baseline_ratio (1985) vs current_ratio
+                            // If baseline was 3.5x and current is 7x, you can afford ~50% less
+                            const lostPercentage = impactResults.metrics.housing.detail.includes('longer') ? 50 : 35;
+
+                            return (
+                              <div style={{ position: 'relative', maxWidth: '600px', margin: '0 auto' }}>
+                                {/* SVG Floor Plan */}
+                                <svg viewBox="0 0 400 300" style={{ width: '100%', height: 'auto' }}>
+                                  {/* Background */}
+                                  <rect x="0" y="0" width="400" height="300" fill={colors.bg} />
+
+                                  {/* 1985 Floor Plan - Dashed Green Outline (The Past) */}
+                                  <g stroke={colors.success} strokeWidth="2" strokeDasharray="5,5" fill="none">
+                                    {/* Master Bedroom */}
+                                    <rect x="20" y="20" width="160" height="120" />
+                                    <text x="100" y="85" fill={colors.success} fontSize="12" textAnchor="middle" opacity="0.7">Master Bed</text>
+
+                                    {/* Bedroom 2 */}
+                                    <rect x="200" y="20" width="100" height="100" />
+                                    <text x="250" y="75" fill={colors.success} fontSize="12" textAnchor="middle" opacity="0.7">Bed 2</text>
+
+                                    {/* Bedroom 3 */}
+                                    <rect x="320" y="20" width="60" height="100" />
+                                    <text x="350" y="75" fill={colors.success} fontSize="10" textAnchor="middle" opacity="0.7">Bed 3</text>
+
+                                    {/* Bath 1 */}
+                                    <rect x="200" y="140" width="80" height="60" />
+                                    <text x="240" y="175" fill={colors.success} fontSize="10" textAnchor="middle" opacity="0.7">Bath 1</text>
+
+                                    {/* Bath 2 */}
+                                    <rect x="300" y="140" width="80" height="60" />
+                                    <text x="340" y="175" fill={colors.success} fontSize="10" textAnchor="middle" opacity="0.7">Bath 2</text>
+
+                                    {/* Kitchen */}
+                                    <rect x="20" y="160" width="100" height="120" />
+                                    <text x="70" y="225" fill={colors.success} fontSize="12" textAnchor="middle" opacity="0.7">Kitchen</text>
+
+                                    {/* Living Room */}
+                                    <rect x="140" y="220" width="140" height="60" />
+                                    <text x="210" y="255" fill={colors.success} fontSize="12" textAnchor="middle" opacity="0.7">Living</text>
+
+                                    {/* Dining */}
+                                    <rect x="300" y="220" width="80" height="60" />
+                                    <text x="340" y="255" fill={colors.success} fontSize="10" textAnchor="middle" opacity="0.7">Dining</text>
+                                  </g>
+
+                                  {/* The Reality - Black Mask (Lost Rooms) */}
+                                  <g fill="#0a0a0a" opacity="0.95">
+                                    {/* Master Bedroom - LOST */}
+                                    <rect x="20" y="20" width="160" height="120" />
+                                    <line x1="20" y1="20" x2="180" y2="140" stroke={colors.textDimmest} strokeWidth="1" opacity="0.3" />
+                                    <line x1="180" y1="20" x2="20" y2="140" stroke={colors.textDimmest} strokeWidth="1" opacity="0.3" />
+
+                                    {/* Bath 2 - LOST */}
+                                    <rect x="300" y="140" width="80" height="60" />
+                                    <line x1="300" y1="140" x2="380" y2="200" stroke={colors.textDimmest} strokeWidth="1" opacity="0.3" />
+                                    <line x1="380" y1="140" x2="300" y2="200" stroke={colors.textDimmest} strokeWidth="1" opacity="0.3" />
+
+                                    {/* Dining - LOST */}
+                                    <rect x="300" y="220" width="80" height="60" />
+                                    <line x1="300" y1="220" x2="380" y2="280" stroke={colors.textDimmest} strokeWidth="1" opacity="0.3" />
+                                    <line x1="380" y1="220" x2="300" y2="280" stroke={colors.textDimmest} strokeWidth="1" opacity="0.3" />
+                                  </g>
+
+                                  {/* What You Can Still "See" - Solid White Outlines */}
+                                  <g stroke={colors.text} strokeWidth="2" fill="none">
+                                    {/* Bedroom 2 */}
+                                    <rect x="200" y="20" width="100" height="100" />
+                                    <text x="250" y="75" fill={colors.text} fontSize="12" textAnchor="middle" fontWeight="700">Bed 2</text>
+
+                                    {/* Bedroom 3 */}
+                                    <rect x="320" y="20" width="60" height="100" />
+                                    <text x="350" y="75" fill={colors.text} fontSize="10" textAnchor="middle" fontWeight="700">Bed 3</text>
+
+                                    {/* Bath 1 */}
+                                    <rect x="200" y="140" width="80" height="60" />
+                                    <text x="240" y="175" fill={colors.text} fontSize="10" textAnchor="middle" fontWeight="700">Bath</text>
+
+                                    {/* Kitchen */}
+                                    <rect x="20" y="160" width="100" height="120" />
+                                    <text x="70" y="225" fill={colors.text} fontSize="12" textAnchor="middle" fontWeight="700">Kitchen</text>
+
+                                    {/* Living Room */}
+                                    <rect x="140" y="220" width="140" height="60" />
+                                    <text x="210" y="255" fill={colors.text} fontSize="12" textAnchor="middle" fontWeight="700">Living</text>
+                                  </g>
+                                </svg>
+
+                                {/* Legend */}
+                                <div style={{ marginTop: '25px', display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ width: '20px', height: '3px', border: `1px dashed ${colors.success}` }} />
+                                    <span style={{ fontSize: '11px', color: colors.success }}>1985 Purchasing Power</span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ width: '20px', height: '20px', backgroundColor: '#0a0a0a', border: `1px solid ${colors.textDimmest}` }} />
+                                    <span style={{ fontSize: '11px', color: colors.primary }}>Lost to Wage Stagnation</span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          <div style={{
+                            marginTop: '25px',
+                            padding: '20px',
+                            backgroundColor: '#1a0505',
+                            border: `2px solid ${colors.primary}`,
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontSize: '15px', color: colors.text, lineHeight: 1.8 }}>
+                              The <span style={{ color: colors.success, fontWeight: 700 }}>dashed green outline</span> shows what 1985 wages could afford.<br/>
+                              The <span style={{ color: colors.primary, fontWeight: 700 }}>black rooms</span> still exist, but your wages can't "see" them anymore.
+                            </div>
                           </div>
                         </div>
                       )}
@@ -2972,11 +3188,11 @@
                   </div>
                 </section>
 
-                {/* The Shelter Tax */}
+                {/* The Calendar of Servitude */}
                 <section style={{ marginTop: '60px' }}>
-                  <h2 style={styles.sectionHeader}>The Shelter Tax</h2>
+                  <h2 style={styles.sectionHeader}>The Calendar of Servitude</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                    Compare housing costs in Time, not Dollars. How many hours of your life does rent claim?
+                    Which days of the month do you work for your landlord? Which days do you work for yourself?
                   </p>
 
                   <form onSubmit={calculateShelterTax} style={{ marginBottom: '30px' }}>
@@ -3007,56 +3223,77 @@
 
                   {shelterResults && (
                     <div style={{ ...styles.card, padding: '30px' }}>
-                      {/* Visualization Bar */}
+                      {/* The Calendar of Servitude */}
                       <div style={{ marginBottom: '25px' }}>
-                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                          Hours per Month (160 = Full-Time)
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: colors.text, marginBottom: '15px', textAlign: 'center' }}>
+                          THE CALENDAR OF SERVITUDE
                         </div>
-                        <div style={{ position: 'relative', height: '60px', backgroundColor: colors.bgLight, border: `1px solid ${colors.border}` }}>
-                          {/* Your rent hours (red fill) */}
-                          <div style={{
-                            position: 'absolute',
-                            left: 0,
-                            top: 0,
-                            height: '100%',
-                            width: `${Math.min((shelterResults.hoursRentNow / shelterResults.fullTimeMonth) * 100, 100)}%`,
-                            backgroundColor: 'rgba(255, 51, 51, 0.7)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <span style={{ color: '#fff', fontWeight: 700, fontSize: '14px', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                              {shelterResults.hoursRentNow}h
-                            </span>
-                          </div>
-                          {/* 1985 Standard Line (40 hours = 25%) */}
-                          <div style={{
-                            position: 'absolute',
-                            left: `${(40 / 160) * 100}%`,
-                            top: 0,
-                            height: '100%',
-                            width: '2px',
-                            backgroundColor: colors.success
-                          }} />
-                          <div style={{
-                            position: 'absolute',
-                            left: `${(40 / 160) * 100}%`,
-                            top: '-20px',
-                            transform: 'translateX(-50%)',
-                            fontSize: '10px',
-                            color: colors.success,
-                            whiteSpace: 'nowrap'
-                          }}>
-                            1985 Standard (40h)
-                          </div>
+                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center' }}>
+                          30-Day Month · {shelterResults.percentOfMonth}% of your labor belongs to the landlord
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: '10px', color: colors.textDimmest }}>
-                          <span>0h</span>
-                          <span>40h</span>
-                          <span>80h</span>
-                          <span>120h</span>
-                          <span>160h</span>
-                        </div>
+                        {(() => {
+                          const daysForLandlord = Math.round((shelterResults.percentOfMonth / 100) * 30);
+                          const freedomDay = daysForLandlord + 1;
+                          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                          const currentMonth = monthNames[new Date().getMonth()];
+
+                          return (
+                            <>
+                              {/* Calendar Grid */}
+                              <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(7, 1fr)',
+                                gap: '6px',
+                                marginBottom: '20px',
+                                padding: '15px',
+                                backgroundColor: colors.bg
+                              }}>
+                                {/* Day headers */}
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                                  <div key={i} style={{ fontSize: '10px', color: colors.textDimmest, textAlign: 'center', paddingBottom: '5px' }}>
+                                    {day}
+                                  </div>
+                                ))}
+                                {/* Days of month */}
+                                {Array.from({ length: 30 }, (_, i) => i + 1).map(day => {
+                                  const isLandlordDay = day <= daysForLandlord;
+                                  return (
+                                    <div
+                                      key={day}
+                                      style={{
+                                        aspectRatio: '1',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '12px',
+                                        fontWeight: 700,
+                                        backgroundColor: isLandlordDay ? colors.primary : 'transparent',
+                                        color: isLandlordDay ? '#000' : colors.textDim,
+                                        border: `1px solid ${isLandlordDay ? colors.primary : colors.border}`,
+                                        transition: 'all 0.2s'
+                                      }}
+                                    >
+                                      {day}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* The Punchline */}
+                              <div style={{
+                                padding: '20px',
+                                backgroundColor: '#1a0a0a',
+                                border: `2px solid ${colors.primary}`,
+                                textAlign: 'center'
+                              }}>
+                                <div style={{ fontSize: '15px', color: colors.text, lineHeight: 1.8 }}>
+                                  You work for your landlord until <strong style={{ color: colors.primary }}>{currentMonth} {freedomDay}</strong>.<br/>
+                                  You work for yourself after that.
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
 
                       {/* Results Text */}
@@ -3108,109 +3345,135 @@
                   )}
                 </section>
 
-                {/* Corporate Conquest Map */}
+                {/* The Corporate Infection */}
                 <section style={{ marginTop: '60px' }}>
-                  <h2 style={styles.sectionHeader}>Corporate Conquest Map</h2>
+                  <h2 style={styles.sectionHeader}>The Corporate Infection</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                    State-by-state corporate investor ownership of housing. Red = High corporate ownership.
+                    You're not bidding against neighbors. You're bidding against hedge funds.
                   </p>
 
                   {mapData && (
                     <div>
-                      {/* State Risk Grid */}
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-                        gap: '8px',
-                        marginBottom: '20px'
-                      }}>
-                        {Object.entries(mapData)
-                          .filter(([state]) => state !== 'default')
-                          .sort((a, b) => b[1].corporate_pct - a[1].corporate_pct)
-                          .map(([state, data]) => {
-                            // Color coding: higher corporate % = more red
-                            const pct = data.corporate_pct;
-                            const hue = Math.max(0, 120 - (pct * 4)); // 0 = red, 120 = green
-                            const bgColor = `hsl(${hue}, 70%, 25%)`;
-                            const borderColor = `hsl(${hue}, 70%, 40%)`;
-
-                            return (
-                              <div
+                      {/* State Selector */}
+                      <div style={{ marginBottom: '30px' }}>
+                        <div style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          SELECT A STATE TO VISUALIZE:
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          gap: '8px',
+                          flexWrap: 'wrap'
+                        }}>
+                          {Object.entries(mapData)
+                            .filter(([state]) => state !== 'default')
+                            .sort((a, b) => b[1].corporate_pct - a[1].corporate_pct)
+                            .slice(0, 12)
+                            .map(([state, data]) => (
+                              <button
                                 key={state}
-                                style={{
-                                  padding: '12px 8px',
-                                  backgroundColor: bgColor,
-                                  border: `2px solid ${borderColor}`,
-                                  textAlign: 'center',
-                                  cursor: 'default',
-                                  position: 'relative'
+                                onClick={() => {
+                                  setSelectedState(state);
+                                  const pct = data.corporate_pct;
+                                  const numHouses = Math.round((pct / 100) * 100);
+                                  const infected = [];
+                                  while (infected.length < numHouses) {
+                                    const idx = Math.floor(Math.random() * 100);
+                                    if (!infected.includes(idx)) {
+                                      infected.push(idx);
+                                    }
+                                  }
+                                  setInfectedHouses(infected);
                                 }}
-                                title={`${pct}% of homes in ${state} are owned by investors. Price-to-income ratio: ${data.price_to_income}x`}
+                                style={{
+                                  padding: '10px 15px',
+                                  backgroundColor: selectedState === state ? colors.primary : 'transparent',
+                                  color: selectedState === state ? '#000' : colors.text,
+                                  border: `1px solid ${selectedState === state ? colors.primary : colors.border}`,
+                                  cursor: 'pointer',
+                                  fontFamily: 'inherit',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  transition: 'all 0.15s'
+                                }}
                               >
-                                <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>{state}</div>
-                                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
-                                  {pct}%
-                                </div>
-                              </div>
-                            );
-                          })}
-                      </div>
-
-                      {/* Legend */}
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        gap: '20px',
-                        marginBottom: '20px',
-                        flexWrap: 'wrap'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(0, 70%, 25%)', border: '1px solid hsl(0, 70%, 40%)' }} />
-                          <span style={{ fontSize: '11px', color: colors.textMuted }}>High (30%+)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(40, 70%, 25%)', border: '1px solid hsl(40, 70%, 40%)' }} />
-                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Medium (20-29%)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(80, 70%, 25%)', border: '1px solid hsl(80, 70%, 40%)' }} />
-                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Low (10-19%)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(120, 70%, 25%)', border: '1px solid hsl(120, 70%, 40%)' }} />
-                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Lowest (&lt;10%)</span>
+                                {state} ({data.corporate_pct}%)
+                              </button>
+                            ))}
                         </div>
                       </div>
 
-                      {/* Detail Cards */}
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '15px'
-                      }}>
-                        {Object.entries(mapData)
-                          .filter(([state]) => state !== 'default')
-                          .sort((a, b) => b[1].corporate_pct - a[1].corporate_pct)
-                          .slice(0, 5)
-                          .map(([state, data]) => (
-                            <div key={state} style={{
-                              ...styles.card,
-                              borderLeft: `3px solid ${colors.primary}`,
-                              padding: '15px'
-                            }}>
-                              <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text, marginBottom: '8px' }}>
-                                {state}
-                              </div>
-                              <div style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '5px' }}>
-                                <strong style={{ color: colors.warning }}>{data.corporate_pct}%</strong> of homes owned by investors
-                              </div>
-                              <div style={{ fontSize: '11px', color: colors.textDim }}>
-                                Price-to-income ratio: {data.price_to_income}x
-                              </div>
+                      {selectedState && mapData[selectedState] && (
+                        <div style={{ ...styles.card, padding: '30px' }}>
+                          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text, marginBottom: '8px' }}>
+                              {selectedState} — A TYPICAL NEIGHBORHOOD (100 HOMES)
                             </div>
-                          ))}
-                      </div>
+                            <div style={{ fontSize: '12px', color: colors.textMuted }}>
+                              <span style={{ color: colors.primary, fontWeight: 700 }}>{mapData[selectedState].corporate_pct}%</span> are owned by Wall Street
+                            </div>
+                          </div>
+
+                          {/* 10x10 House Grid */}
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(10, 1fr)',
+                            gap: '8px',
+                            padding: '20px',
+                            backgroundColor: colors.bg,
+                            marginBottom: '20px'
+                          }}>
+                            {Array.from({ length: 100 }, (_, i) => {
+                              const isInfected = infectedHouses.includes(i);
+                              const [isHovered, setIsHovered] = React.useState(false);
+
+                              return (
+                                <div
+                                  key={i}
+                                  onMouseEnter={() => setIsHovered(true)}
+                                  onMouseLeave={() => setIsHovered(false)}
+                                  style={{
+                                    aspectRatio: '1',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '20px',
+                                    cursor: 'default',
+                                    transition: 'all 0.2s',
+                                    filter: isHovered && !isInfected ? `drop-shadow(0 0 8px ${colors.success})` : 'none'
+                                  }}
+                                >
+                                  {/* House icon */}
+                                  <svg viewBox="0 0 24 24" style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    fill: isInfected ? colors.primary : (isHovered ? colors.success : '#333')
+                                  }}>
+                                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                                  </svg>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div style={{
+                            padding: '20px',
+                            backgroundColor: '#1a0a0a',
+                            border: `2px solid ${colors.primary}`,
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontSize: '15px', color: colors.text, lineHeight: 1.8 }}>
+                              The <span style={{ color: colors.primary, fontWeight: 700 }}>red houses</span> are owned by Wall Street.<br/>
+                              You aren't bidding against neighbors. You're bidding against hedge funds.
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {!selectedState && (
+                        <div style={{ ...styles.card, textAlign: 'center', padding: '40px', color: colors.textMuted }}>
+                          Select a state above to visualize corporate ownership in a typical 100-home neighborhood.
+                        </div>
+                      )}
 
                       <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
                         Sources: CoreLogic, ATTOM Data, Redfin investor activity reports. "Corporate" includes institutional investors, REITs, and investment LLCs.
