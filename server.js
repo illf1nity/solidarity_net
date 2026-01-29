@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const https = require('https');
-const { getDatabase, YEARLY_ECONOMIC_DATA } = require('./db');
+const { getDatabase, YEARLY_ECONOMIC_DATA, STATE_META } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -272,6 +272,11 @@ app.get('/api/local-data/:zipCode', (req, res) => {
   });
 });
 
+// GET /api/map-data - Corporate ownership data by state for the Corporate Conquest Map
+app.get('/api/map-data', (req, res) => {
+  res.json(STATE_META);
+});
+
 // POST /api/impact-calculator - Calculate personalized economic impact metrics using year-over-year data
 // This endpoint calculates the cumulative economic gap between productivity gains and wage growth
 // over the user's working career, using rolling year-over-year economic data.
@@ -300,10 +305,10 @@ app.post('/api/impact-calculator', (req, res) => {
   const yearsWorked = currentYear - startYear;
 
   // ============================================
-  // COMPOUNDED GROWTH & NORMALIZATION MODEL
+  // INTERPOLATED GROWTH MODEL (Productivity-Wage Gap)
   // ============================================
-  // Step 1: Simulate yearly salary path with inflation and seniority
-  const simulatedIncomes = [];
+  // Step 1: Generate "Standard Path" - baseline curve using CPI + seniority
+  const standardPath = [];
   let simulatedSalary = startSalary;
 
   for (let year = startYear; year <= currentYear; year++) {
@@ -311,30 +316,41 @@ app.post('/api/impact-calculator', (req, res) => {
     if (!economicData) continue; // Skip years without data
 
     if (year === startYear) {
-      // First year: use starting salary
-      simulatedIncomes.push({ year, simulatedIncome: startSalary });
+      // First year: use starting salary exactly
+      standardPath.push({ year, standardIncome: startSalary });
     } else {
-      // Apply inflation from previous year
+      // Apply CPI inflation from current year's data
       const inflationFactor = 1 + economicData.cpi_inflation;
       simulatedSalary *= inflationFactor;
 
-      // Apply seniority multiplier
+      // Apply seniority growth factor (2.5% for first 15 years, 1% after)
       const yearsOfExperience = year - startYear;
       const seniorityGrowth = yearsOfExperience <= 15 ? 0.025 : 0.010;
       simulatedSalary *= (1 + seniorityGrowth);
 
-      simulatedIncomes.push({ year, simulatedIncome: simulatedSalary });
+      standardPath.push({ year, standardIncome: simulatedSalary });
     }
   }
 
-  // Step 2: Curve normalization - scale to match actual endpoints
-  const simulatedFinalSalary = simulatedIncomes[simulatedIncomes.length - 1].simulatedIncome;
-  const scalingFactor = currentSalary / simulatedFinalSalary;
+  // Step 2: Calculate "Reality Ratio" - how actual growth compares to simulated
+  const simulatedEnd = standardPath[standardPath.length - 1].standardIncome;
+  const realityRatio = currentSalary / simulatedEnd;
 
-  const incomePerYear = simulatedIncomes.map(({ year, simulatedIncome }) => ({
-    year,
-    income: simulatedIncome * scalingFactor
-  }));
+  // Step 3: Distribute variance with linear interpolation
+  // This ensures Year 1 = start_salary exactly and Year N = current_salary exactly
+  const totalYears = standardPath.length;
+  const incomePerYear = standardPath.map(({ year, standardIncome }, index) => {
+    // Linear interpolation: Actual_Income_i = Standard_Path_i * (1 + (R - 1) * (i / Total_Years))
+    // At i=0: factor = 1, so income = standardIncome (start_salary)
+    // At i=N-1: factor = realityRatio, so income = standardIncome * R = current_salary
+    const interpolationFactor = 1 + (realityRatio - 1) * (index / (totalYears - 1 || 1));
+    const actualIncome = standardIncome * interpolationFactor;
+    return {
+      year,
+      income: actualIncome,
+      standardIncome // Keep for reference
+    };
+  });
 
   // ============================================
   // CALCULATE UNPAID LABOR VALUE (VALUE GAP)
@@ -343,15 +359,15 @@ app.post('/api/impact-calculator', (req, res) => {
   let cumulativeRentBurden = 0;
   const yearlyBreakdown = [];
 
-  for (const { year, income } of incomePerYear) {
+  for (const { year, income, standardIncome } of incomePerYear) {
     const economicData = YEARLY_ECONOMIC_DATA[year];
     if (!economicData) continue; // Skip years without data
 
-    // Value Gap Formula: Fair Compensation = Actual Income * (productivity_index / wage_index)
-    // Unpaid Labor Value = Fair Compensation - Actual Income
+    // Fair Value Formula: Fair Compensation = Actual Income * (productivity_index / wage_index)
+    // Unpaid Labor = Fair Value - Actual Income
     const productivityWageRatio = economicData.productivity_index / economicData.wage_index;
-    const fairCompensation = income * productivityWageRatio;
-    const yearlyUnpaidLaborValue = fairCompensation - income;
+    const fairValue = income * productivityWageRatio;
+    const unpaidLabor = fairValue - income;
 
     // Calculate excess rent burden for this year
     // Only count if user's current rent burden exceeds historical baseline
@@ -359,16 +375,17 @@ app.post('/api/impact-calculator', (req, res) => {
     const excessBurden = Math.max(0, userRentBurden - economicData.baseline_rent_burden);
     const yearlyExcessRent = income * excessBurden;
 
-    cumulativeProductivityGap += yearlyUnpaidLaborValue;
+    cumulativeProductivityGap += unpaidLabor;
     cumulativeRentBurden += yearlyExcessRent;
 
     yearlyBreakdown.push({
       year,
       income: Math.round(income),
+      standard_path: Math.round(standardIncome),
       productivity_index: economicData.productivity_index,
       wage_index: economicData.wage_index,
-      fair_compensation: Math.round(fairCompensation),
-      unpaid_labor_value: Math.round(yearlyUnpaidLaborValue),
+      fair_value: Math.round(fairValue),
+      unpaid_labor: Math.round(unpaidLabor),
       excess_rent: Math.round(yearlyExcessRent),
     });
   }
@@ -405,6 +422,8 @@ app.post('/api/impact-calculator', (req, res) => {
       current_salary: currentSalary,
       current_rent: currentRent,
       years_worked: yearsWorked,
+      reality_ratio: parseFloat(realityRatio.toFixed(3)),
+      simulated_end_salary: Math.round(simulatedEnd),
     },
     summary: {
       cumulative_economic_impact: Math.round(cumulativeEconomicImpact),
