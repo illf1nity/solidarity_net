@@ -251,6 +251,260 @@ function fetchTelegramData(url) {
 }
 
 // ============================================
+// GOVERNMENT API INTEGRATION (BLS, HUD)
+// ============================================
+
+// API Configuration - Users should set these as environment variables
+const BLS_API_KEY = process.env.BLS_API_KEY || '';
+const HUD_API_KEY = process.env.HUD_API_KEY || '';
+
+// Cache for API responses (key -> { data, timestamp })
+const apiCache = new Map();
+const API_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours (government data updates infrequently)
+
+// Helper function for HTTPS requests
+function httpsRequest(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'SolidarityNet/1.0',
+        'Accept': 'application/json',
+        ...options.headers
+      },
+      timeout: 10000,
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+        }
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          reject(new Error(`Invalid JSON: ${e.message}`));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
+  });
+}
+
+// POST request helper for BLS API
+function httpsPost(url, payload, options = {}) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(payload);
+    const urlObj = new URL(url);
+
+    const reqOptions = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname + urlObj.search,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': data.length,
+        ...options.headers
+      },
+      timeout: 10000,
+    };
+
+    const req = https.request(reqOptions, (res) => {
+      let responseData = '';
+      res.on('data', chunk => responseData += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode}: ${responseData}`));
+        }
+        try {
+          resolve(JSON.parse(responseData));
+        } catch (e) {
+          reject(new Error(`Invalid JSON: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
+    req.write(data);
+    req.end();
+  });
+}
+
+// Fetch CPI inflation data from BLS API
+async function fetchCPIData(startYear, endYear) {
+  const cacheKey = `cpi_${startYear}_${endYear}`;
+  const cached = apiCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < API_CACHE_TTL) {
+    return cached.data;
+  }
+
+  try {
+    // CPI-U All Items series ID
+    const seriesId = 'CUUR0000SA0';
+    const url = BLS_API_KEY
+      ? 'https://api.bls.gov/publicAPI/v2/timeseries/data/'
+      : 'https://api.bls.gov/publicAPI/v1/timeseries/data/';
+
+    const payload = {
+      seriesid: [seriesId],
+      startyear: startYear.toString(),
+      endyear: endYear.toString(),
+      ...(BLS_API_KEY && { registrationkey: BLS_API_KEY })
+    };
+
+    const response = await httpsPost(url, payload);
+
+    if (response.status !== 'REQUEST_SUCCEEDED') {
+      throw new Error(`BLS API error: ${response.message || 'Unknown error'}`);
+    }
+
+    const data = {};
+    if (response.Results && response.Results.series && response.Results.series[0]) {
+      const series = response.Results.series[0].data;
+
+      // Calculate year-over-year inflation rates
+      const yearlyData = {};
+      series.forEach(entry => {
+        const year = parseInt(entry.year);
+        const period = entry.period;
+        const value = parseFloat(entry.value);
+
+        // Use December values for annual comparison
+        if (period === 'M12' || period === 'M13') {
+          yearlyData[year] = value;
+        }
+      });
+
+      // Calculate inflation rates
+      const years = Object.keys(yearlyData).map(Number).sort();
+      for (let i = 1; i < years.length; i++) {
+        const currentYear = years[i];
+        const previousYear = years[i - 1];
+        const inflationRate = (yearlyData[currentYear] - yearlyData[previousYear]) / yearlyData[previousYear];
+        data[currentYear] = inflationRate;
+      }
+    }
+
+    apiCache.set(cacheKey, { data, timestamp: Date.now() });
+    return data;
+  } catch (error) {
+    console.error('BLS CPI API error:', error.message);
+    return null;
+  }
+}
+
+// Fetch wage data from BLS OEWS API
+async function fetchBLSWageData(areaCode) {
+  const cacheKey = `bls_wage_${areaCode}`;
+  const cached = apiCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < API_CACHE_TTL) {
+    return cached.data;
+  }
+
+  try {
+    // OEWS series IDs are complex - for now, we'll use a fallback approach
+    // The BLS API doesn't provide easy access to OEWS data by MSA
+    // Users would need to construct specific series IDs from BLS documentation
+    // For production, consider using BLS bulk data files or maintaining series ID mappings
+
+    console.warn('BLS OEWS API integration requires series ID mapping - using fallback');
+    return null;
+  } catch (error) {
+    console.error('BLS OEWS API error:', error.message);
+    return null;
+  }
+}
+
+// Fetch Fair Market Rent data from HUD API
+async function fetchHUDRentData(zipCode) {
+  const cacheKey = `hud_fmr_${zipCode}`;
+  const cached = apiCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < API_CACHE_TTL) {
+    return cached.data;
+  }
+
+  if (!HUD_API_KEY) {
+    console.warn('HUD_API_KEY not configured - cannot fetch FMR data');
+    return null;
+  }
+
+  try {
+    // HUD API expects a 5-digit ZIP code format
+    const formattedZip = zipCode.toString().padStart(5, '0').slice(0, 5);
+    const year = new Date().getFullYear();
+
+    const url = `https://www.huduser.gov/hudapi/public/fmr/data/${formattedZip}?year=${year}`;
+
+    const data = await httpsRequest(url, {
+      headers: {
+        'Authorization': `Bearer ${HUD_API_KEY}`
+      }
+    });
+
+    if (data && data.data && data.data.basicdata) {
+      const fmrData = {
+        rent_0br: parseInt(data.data.basicdata.rent_0br) || 0,
+        rent_1br: parseInt(data.data.basicdata.rent_1br) || 0,
+        rent_2br: parseInt(data.data.basicdata.rent_2br) || 0,
+        rent_3br: parseInt(data.data.basicdata.rent_3br) || 0,
+        rent_4br: parseInt(data.data.basicdata.rent_4br) || 0,
+        area_name: data.data.basicdata.area_name || '',
+        county_name: data.data.basicdata.county_name || '',
+        state_alpha: data.data.basicdata.state_alpha || ''
+      };
+
+      apiCache.set(cacheKey, { data: fmrData, timestamp: Date.now() });
+      return fmrData;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('HUD API error:', error.message);
+    return null;
+  }
+}
+
+// Fetch HUD FMR data by state
+async function fetchHUDStateData(stateCode) {
+  const cacheKey = `hud_state_${stateCode}`;
+  const cached = apiCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < API_CACHE_TTL) {
+    return cached.data;
+  }
+
+  if (!HUD_API_KEY) {
+    console.warn('HUD_API_KEY not configured - cannot fetch state FMR data');
+    return null;
+  }
+
+  try {
+    const year = new Date().getFullYear();
+    const url = `https://www.huduser.gov/hudapi/public/fmr/statedata/${stateCode}?year=${year}`;
+
+    const data = await httpsRequest(url, {
+      headers: {
+        'Authorization': `Bearer ${HUD_API_KEY}`
+      }
+    });
+
+    if (data && data.data) {
+      apiCache.set(cacheKey, { data: data.data, timestamp: Date.now() });
+      return data.data;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('HUD State API error:', error.message);
+    return null;
+  }
+}
+
+// ============================================
 // INFORMATION ENDPOINTS
 // ============================================
 
@@ -277,10 +531,97 @@ app.get('/api/map-data', (req, res) => {
   res.json(STATE_META);
 });
 
+// GET /api/economic-data/cpi - Fetch CPI inflation data from BLS
+app.get('/api/economic-data/cpi', async (req, res) => {
+  const { startYear, endYear } = req.query;
+  const start = parseInt(startYear) || 1975;
+  const end = parseInt(endYear) || new Date().getFullYear();
+
+  try {
+    const cpiData = await fetchCPIData(start, end);
+
+    if (cpiData) {
+      res.json({ source: 'BLS_API', data: cpiData });
+    } else {
+      // Fallback to local data
+      const localData = {};
+      for (let year = start; year <= end; year++) {
+        if (YEARLY_ECONOMIC_DATA[year]) {
+          localData[year] = YEARLY_ECONOMIC_DATA[year].cpi_inflation;
+        }
+      }
+      res.json({ source: 'LOCAL_FALLBACK', data: localData });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/economic-data/yearly - Get yearly economic data (productivity, wages, rent burden)
+app.get('/api/economic-data/yearly', (req, res) => {
+  const { startYear, endYear } = req.query;
+  const start = parseInt(startYear) || 1975;
+  const end = parseInt(endYear) || new Date().getFullYear();
+
+  const data = {};
+  for (let year = start; year <= end; year++) {
+    if (YEARLY_ECONOMIC_DATA[year]) {
+      data[year] = YEARLY_ECONOMIC_DATA[year];
+    }
+  }
+
+  res.json({ source: 'LOCAL', data });
+});
+
+// GET /api/rent-data/hud/:zipCode - Fetch HUD Fair Market Rent data
+app.get('/api/rent-data/hud/:zipCode', async (req, res) => {
+  const { zipCode } = req.params;
+
+  try {
+    const hudData = await fetchHUDRentData(zipCode);
+
+    if (hudData) {
+      res.json({ source: 'HUD_API', data: hudData });
+    } else {
+      // Fallback to local data
+      let localData = db.prepare('SELECT * FROM local_data WHERE zip_code = ?').get(zipCode);
+      if (!localData) {
+        localData = db.prepare('SELECT * FROM local_data WHERE zip_code = ?').get('default');
+      }
+      res.json({
+        source: 'LOCAL_FALLBACK',
+        data: {
+          rent_2br: localData.rent,
+          area_name: localData.area,
+        }
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/rent-data/hud/state/:stateCode - Fetch HUD state-wide FMR data
+app.get('/api/rent-data/hud/state/:stateCode', async (req, res) => {
+  const { stateCode } = req.params;
+
+  try {
+    const hudData = await fetchHUDStateData(stateCode);
+
+    if (hudData) {
+      res.json({ source: 'HUD_API', data: hudData });
+    } else {
+      res.json({ source: 'NO_DATA', data: null });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /api/impact-calculator - Calculate personalized economic impact metrics using year-over-year data
 // This endpoint calculates the cumulative economic gap between productivity gains and wage growth
 // over the user's working career, using rolling year-over-year economic data.
-app.post('/api/impact-calculator', (req, res) => {
+app.post('/api/impact-calculator', async (req, res) => {
   const { start_year, start_salary, current_salary, current_rent } = req.body;
 
   const startYear = parseInt(start_year, 10);
@@ -305,6 +646,29 @@ app.post('/api/impact-calculator', (req, res) => {
   const yearsWorked = currentYear - startYear;
 
   // ============================================
+  // FETCH LIVE CPI DATA FROM BLS API
+  // ============================================
+  let cpiDataSource = 'LOCAL';
+  const liveCPIData = await fetchCPIData(startYear, currentYear);
+
+  // Merge live CPI data with local economic data
+  const mergedEconomicData = {};
+  for (let year = startYear; year <= currentYear; year++) {
+    if (YEARLY_ECONOMIC_DATA[year]) {
+      mergedEconomicData[year] = {
+        ...YEARLY_ECONOMIC_DATA[year],
+        // Override CPI inflation with live data if available
+        ...(liveCPIData && liveCPIData[year] !== undefined && {
+          cpi_inflation: liveCPIData[year]
+        })
+      };
+      if (liveCPIData && liveCPIData[year] !== undefined) {
+        cpiDataSource = 'BLS_API';
+      }
+    }
+  }
+
+  // ============================================
   // INTERPOLATED GROWTH MODEL (Productivity-Wage Gap)
   // ============================================
   // Step 1: Generate "Standard Path" - baseline curve using CPI + seniority
@@ -312,14 +676,14 @@ app.post('/api/impact-calculator', (req, res) => {
   let simulatedSalary = startSalary;
 
   for (let year = startYear; year <= currentYear; year++) {
-    const economicData = YEARLY_ECONOMIC_DATA[year];
+    const economicData = mergedEconomicData[year];
     if (!economicData) continue; // Skip years without data
 
     if (year === startYear) {
       // First year: use starting salary exactly
       standardPath.push({ year, standardIncome: startSalary });
     } else {
-      // Apply CPI inflation from current year's data
+      // Apply CPI inflation from merged data (BLS API if available, else local)
       const inflationFactor = 1 + economicData.cpi_inflation;
       simulatedSalary *= inflationFactor;
 
@@ -360,7 +724,7 @@ app.post('/api/impact-calculator', (req, res) => {
   const yearlyBreakdown = [];
 
   for (const { year, income, standardIncome } of incomePerYear) {
-    const economicData = YEARLY_ECONOMIC_DATA[year];
+    const economicData = mergedEconomicData[year];
     if (!economicData) continue; // Skip years without data
 
     // Fair Value Formula: Fair Compensation = Actual Income * (productivity_index / wage_index)
@@ -396,8 +760,8 @@ app.post('/api/impact-calculator', (req, res) => {
     : '0.0';
 
   // Get first and last year data for summary statistics
-  const firstYearData = YEARLY_ECONOMIC_DATA[startYear] || YEARLY_ECONOMIC_DATA[1975];
-  const lastYearData = YEARLY_ECONOMIC_DATA[currentYear] || YEARLY_ECONOMIC_DATA[2024];
+  const firstYearData = mergedEconomicData[startYear] || YEARLY_ECONOMIC_DATA[1975];
+  const lastYearData = mergedEconomicData[currentYear] || YEARLY_ECONOMIC_DATA[2024];
 
   const totalProductivityGrowth = ((lastYearData.productivity_index / firstYearData.productivity_index - 1) * 100).toFixed(1);
   const totalWageGrowth = ((lastYearData.wage_index / firstYearData.wage_index - 1) * 100).toFixed(1);
@@ -462,9 +826,13 @@ app.post('/api/impact-calculator', (req, res) => {
       },
     },
     yearly_breakdown: yearlyBreakdown,
+    data_sources: {
+      cpi_inflation: cpiDataSource,
+      productivity_wage: 'LOCAL',
+    },
     sources: [
       'Economic Policy Institute (productivity-wage gap data)',
-      'Bureau of Labor Statistics (wage and CPI data)',
+      `Bureau of Labor Statistics (CPI data${cpiDataSource === 'BLS_API' ? ' - Live API' : ' - Local fallback'})`,
       'Federal Reserve (economic indicators)',
       'Census Bureau (housing cost trends)',
     ],
