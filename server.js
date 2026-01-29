@@ -144,6 +144,113 @@ function isValidChangeOrgUrl(url) {
 }
 
 // ============================================
+// TELEGRAM INTEGRATION
+// ============================================
+
+// Cache for Telegram data (URL -> { members, timestamp })
+const telegramCache = new Map();
+const TELEGRAM_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+function isValidTelegramUrl(url) {
+  if (!url || url.trim() === '') return true; // Empty is valid (optional)
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === 't.me' || parsed.hostname === 'telegram.me';
+  } catch {
+    return false;
+  }
+}
+
+function parseTelegramCount(text) {
+  // Parse counts like "1.2K", "234", "1.5M"
+  if (!text) return null;
+  const match = text.match(/([\d.]+)\s*([KMB])?/i);
+  if (!match) return null;
+  let num = parseFloat(match[1]);
+  const suffix = (match[2] || '').toUpperCase();
+  if (suffix === 'K') num *= 1000;
+  if (suffix === 'M') num *= 1000000;
+  if (suffix === 'B') num *= 1000000000;
+  return Math.round(num);
+}
+
+function parseTelegramPage(html) {
+  let members = null;
+
+  // Try to find subscriber/member count from page HTML
+  // Pattern: "X subscribers" or "X members"
+  const subscribersMatch = html.match(/([\d.,]+[KMB]?)\s*(?:subscribers|members)/i);
+  if (subscribersMatch) {
+    members = parseTelegramCount(subscribersMatch[1].replace(/,/g, ''));
+  }
+
+  // Try JSON data patterns
+  if (members === null) {
+    const membersJsonMatch = html.match(/"members_count"\s*:\s*(\d+)/);
+    if (membersJsonMatch) {
+      members = parseInt(membersJsonMatch[1], 10);
+    }
+  }
+
+  // Try meta description pattern
+  if (members === null) {
+    const metaMatch = html.match(/content="[^"]*?([\d.,]+[KMB]?)\s*(?:subscribers|members)[^"]*"/i);
+    if (metaMatch) {
+      members = parseTelegramCount(metaMatch[1].replace(/,/g, ''));
+    }
+  }
+
+  return { members };
+}
+
+function fetchTelegramData(url) {
+  return new Promise((resolve, reject) => {
+    if (!url || url.trim() === '') {
+      return resolve({ members: null });
+    }
+
+    // Check cache first
+    const cached = telegramCache.get(url);
+    if (cached && Date.now() - cached.timestamp < TELEGRAM_CACHE_TTL) {
+      return resolve({ members: cached.members });
+    }
+
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; SolidarityNet/1.0)',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      timeout: 8000,
+    }, (res) => {
+      // Follow redirects
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return fetchTelegramData(res.headers.location).then(resolve).catch(reject);
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode}`));
+      }
+
+      let body = '';
+      res.on('data', chunk => { body += chunk; });
+      res.on('end', () => {
+        try {
+          const data = parseTelegramPage(body);
+          if (data.members !== null) {
+            telegramCache.set(url, { ...data, timestamp: Date.now() });
+          }
+          resolve(data);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Request timeout')); });
+  });
+}
+
+// ============================================
 // INFORMATION ENDPOINTS
 // ============================================
 
@@ -442,19 +549,23 @@ app.get('/api/worker-collectives', (req, res) => {
     members: c.members,
     issues: JSON.parse(c.issues),
     active: c.active === 1,
+    telegram_url: c.telegram_url || '',
   })));
 });
 
 // POST /api/worker-collectives - Create a new collective
 app.post('/api/worker-collectives', (req, res) => {
-  const { company, industry, issues } = req.body;
+  const { company, industry, issues, telegram_url } = req.body;
   if (!company || !industry) {
     return res.status(400).json({ error: 'company and industry are required' });
   }
+  if (telegram_url && !isValidTelegramUrl(telegram_url)) {
+    return res.status(400).json({ error: 'Invalid Telegram URL. Must be a t.me or telegram.me link' });
+  }
   const id = `w${Date.now()}`;
   db.prepare(
-    'INSERT INTO worker_collectives (id, industry, company, members, issues, active) VALUES (?, ?, ?, 1, ?, 0)'
-  ).run(id, industry, company, JSON.stringify(issues || []));
+    'INSERT INTO worker_collectives (id, industry, company, members, issues, active, telegram_url) VALUES (?, ?, ?, 1, ?, 0, ?)'
+  ).run(id, industry, company, JSON.stringify(issues || []), telegram_url || '');
   res.json({
     id,
     industry,
@@ -462,6 +573,7 @@ app.post('/api/worker-collectives', (req, res) => {
     members: 1,
     issues: issues || [],
     active: false,
+    telegram_url: telegram_url || '',
   });
 });
 

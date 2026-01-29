@@ -1,2 +1,4 @@
 node_modules/
 solidarity.db
+solidarity.db-shm
+solidarity.db-wal
