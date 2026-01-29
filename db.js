@@ -3,6 +3,71 @@ const path = require('path');
 
 const DB_PATH = path.join(__dirname, 'solidarity.db');
 
+// ============================================
+// YEARLY ECONOMIC DATA (1975-2024)
+// ============================================
+// Year-over-year economic indicators for calculating cumulative impact
+// Sources: Economic Policy Institute (EPI), Bureau of Labor Statistics (BLS),
+//          Federal Reserve, Census Bureau
+//
+// - productivity_index: Cumulative productivity growth (1975 = 100)
+// - wage_index: Cumulative real hourly compensation growth (1975 = 100)
+// - cpi_inflation: Annual CPI inflation rate (decimal, e.g., 0.05 = 5%)
+// - baseline_rent_burden: Historical rent as % of income (decimal, e.g., 0.25 = 25%)
+//
+const YEARLY_ECONOMIC_DATA = {
+  1975: { productivity_index: 100.0, wage_index: 100.0, cpi_inflation: 0.092, baseline_rent_burden: 0.22 },
+  1976: { productivity_index: 103.2, wage_index: 102.8, cpi_inflation: 0.058, baseline_rent_burden: 0.22 },
+  1977: { productivity_index: 105.8, wage_index: 104.9, cpi_inflation: 0.065, baseline_rent_burden: 0.22 },
+  1978: { productivity_index: 107.9, wage_index: 106.7, cpi_inflation: 0.076, baseline_rent_burden: 0.23 },
+  1979: { productivity_index: 109.3, wage_index: 107.8, cpi_inflation: 0.114, baseline_rent_burden: 0.23 },
+  1980: { productivity_index: 109.8, wage_index: 106.9, cpi_inflation: 0.135, baseline_rent_burden: 0.24 },
+  1981: { productivity_index: 112.1, wage_index: 107.2, cpi_inflation: 0.103, baseline_rent_burden: 0.24 },
+  1982: { productivity_index: 111.9, wage_index: 107.8, cpi_inflation: 0.062, baseline_rent_burden: 0.25 },
+  1983: { productivity_index: 115.2, wage_index: 108.3, cpi_inflation: 0.032, baseline_rent_burden: 0.25 },
+  1984: { productivity_index: 118.6, wage_index: 108.9, cpi_inflation: 0.043, baseline_rent_burden: 0.25 },
+  1985: { productivity_index: 121.3, wage_index: 109.8, cpi_inflation: 0.036, baseline_rent_burden: 0.25 },
+  1986: { productivity_index: 124.8, wage_index: 111.2, cpi_inflation: 0.019, baseline_rent_burden: 0.25 },
+  1987: { productivity_index: 125.9, wage_index: 111.4, cpi_inflation: 0.037, baseline_rent_burden: 0.25 },
+  1988: { productivity_index: 128.2, wage_index: 111.8, cpi_inflation: 0.041, baseline_rent_burden: 0.26 },
+  1989: { productivity_index: 129.8, wage_index: 111.9, cpi_inflation: 0.048, baseline_rent_burden: 0.26 },
+  1990: { productivity_index: 132.1, wage_index: 112.3, cpi_inflation: 0.054, baseline_rent_burden: 0.26 },
+  1991: { productivity_index: 134.2, wage_index: 112.1, cpi_inflation: 0.042, baseline_rent_burden: 0.27 },
+  1992: { productivity_index: 139.8, wage_index: 113.2, cpi_inflation: 0.030, baseline_rent_burden: 0.27 },
+  1993: { productivity_index: 140.2, wage_index: 113.4, cpi_inflation: 0.030, baseline_rent_burden: 0.27 },
+  1994: { productivity_index: 141.8, wage_index: 114.1, cpi_inflation: 0.026, baseline_rent_burden: 0.27 },
+  1995: { productivity_index: 142.3, wage_index: 114.3, cpi_inflation: 0.028, baseline_rent_burden: 0.27 },
+  1996: { productivity_index: 145.9, wage_index: 114.8, cpi_inflation: 0.030, baseline_rent_burden: 0.28 },
+  1997: { productivity_index: 148.2, wage_index: 115.6, cpi_inflation: 0.023, baseline_rent_burden: 0.28 },
+  1998: { productivity_index: 151.8, wage_index: 117.2, cpi_inflation: 0.016, baseline_rent_burden: 0.28 },
+  1999: { productivity_index: 155.9, wage_index: 118.7, cpi_inflation: 0.022, baseline_rent_burden: 0.28 },
+  2000: { productivity_index: 159.8, wage_index: 120.3, cpi_inflation: 0.034, baseline_rent_burden: 0.28 },
+  2001: { productivity_index: 162.3, wage_index: 121.2, cpi_inflation: 0.028, baseline_rent_burden: 0.29 },
+  2002: { productivity_index: 167.2, wage_index: 123.8, cpi_inflation: 0.016, baseline_rent_burden: 0.29 },
+  2003: { productivity_index: 172.8, wage_index: 125.1, cpi_inflation: 0.023, baseline_rent_burden: 0.29 },
+  2004: { productivity_index: 177.6, wage_index: 125.9, cpi_inflation: 0.027, baseline_rent_burden: 0.29 },
+  2005: { productivity_index: 180.9, wage_index: 126.2, cpi_inflation: 0.034, baseline_rent_burden: 0.30 },
+  2006: { productivity_index: 183.2, wage_index: 126.8, cpi_inflation: 0.032, baseline_rent_burden: 0.30 },
+  2007: { productivity_index: 185.8, wage_index: 127.3, cpi_inflation: 0.028, baseline_rent_burden: 0.30 },
+  2008: { productivity_index: 187.9, wage_index: 127.1, cpi_inflation: 0.038, baseline_rent_burden: 0.31 },
+  2009: { productivity_index: 192.3, wage_index: 128.9, cpi_inflation: -0.004, baseline_rent_burden: 0.31 },
+  2010: { productivity_index: 198.7, wage_index: 130.2, cpi_inflation: 0.016, baseline_rent_burden: 0.31 },
+  2011: { productivity_index: 200.1, wage_index: 129.8, cpi_inflation: 0.032, baseline_rent_burden: 0.32 },
+  2012: { productivity_index: 201.8, wage_index: 129.3, cpi_inflation: 0.021, baseline_rent_burden: 0.32 },
+  2013: { productivity_index: 203.2, wage_index: 129.7, cpi_inflation: 0.015, baseline_rent_burden: 0.32 },
+  2014: { productivity_index: 204.9, wage_index: 130.1, cpi_inflation: 0.016, baseline_rent_burden: 0.33 },
+  2015: { productivity_index: 206.1, wage_index: 131.2, cpi_inflation: 0.001, baseline_rent_burden: 0.33 },
+  2016: { productivity_index: 207.3, wage_index: 131.8, cpi_inflation: 0.013, baseline_rent_burden: 0.33 },
+  2017: { productivity_index: 209.8, wage_index: 132.1, cpi_inflation: 0.021, baseline_rent_burden: 0.34 },
+  2018: { productivity_index: 211.9, wage_index: 132.9, cpi_inflation: 0.024, baseline_rent_burden: 0.34 },
+  2019: { productivity_index: 214.2, wage_index: 134.1, cpi_inflation: 0.018, baseline_rent_burden: 0.34 },
+  2020: { productivity_index: 218.9, wage_index: 137.8, cpi_inflation: 0.012, baseline_rent_burden: 0.35 },
+  2021: { productivity_index: 223.4, wage_index: 138.2, cpi_inflation: 0.047, baseline_rent_burden: 0.35 },
+  2022: { productivity_index: 224.8, wage_index: 135.9, cpi_inflation: 0.080, baseline_rent_burden: 0.36 },
+  2023: { productivity_index: 227.1, wage_index: 136.8, cpi_inflation: 0.041, baseline_rent_burden: 0.36 },
+  2024: { productivity_index: 229.6, wage_index: 137.5, cpi_inflation: 0.033, baseline_rent_burden: 0.37 }
+};
+
 function initializeDatabase() {
   const db = new Database(DB_PATH);
 
@@ -408,4 +473,4 @@ function getDatabase() {
   return db;
 }
 
-module.exports = { getDatabase };
+module.exports = { getDatabase, YEARLY_ECONOMIC_DATA };

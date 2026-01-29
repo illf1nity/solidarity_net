@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const https = require('https');
-const { getDatabase } = require('./db');
+const { getDatabase, YEARLY_ECONOMIC_DATA } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -272,110 +272,130 @@ app.get('/api/local-data/:zipCode', (req, res) => {
   });
 });
 
-// GET /api/theft-calculator - Calculate personalized economic theft metrics
-app.get('/api/theft-calculator', (req, res) => {
-  const { age, income, zip } = req.query;
-  const userAge = parseInt(age, 10);
-  const userIncome = parseFloat(income);
+// POST /api/impact-calculator - Calculate personalized economic impact metrics using year-over-year data
+// This endpoint calculates the cumulative economic gap between productivity gains and wage growth
+// over the user's working career, using rolling year-over-year economic data.
+app.post('/api/impact-calculator', (req, res) => {
+  const { start_year, start_salary, current_salary, current_rent } = req.body;
 
-  if (!userAge || userAge < 18 || userAge > 100) {
-    return res.status(400).json({ error: 'age must be between 18 and 100' });
+  const startYear = parseInt(start_year, 10);
+  const startSalary = parseFloat(start_salary);
+  const currentSalary = parseFloat(current_salary);
+  const currentRent = parseFloat(current_rent) || 0;
+  const currentYear = new Date().getFullYear();
+
+  // Input validation
+  if (!startYear || startYear < 1975 || startYear > currentYear) {
+    return res.status(400).json({
+      error: `start_year must be between 1975 and ${currentYear}`
+    });
   }
-  if (!userIncome || userIncome <= 0) {
-    return res.status(400).json({ error: 'income must be a positive number' });
+  if (!startSalary || startSalary <= 0) {
+    return res.status(400).json({ error: 'start_salary must be a positive number' });
+  }
+  if (!currentSalary || currentSalary <= 0) {
+    return res.status(400).json({ error: 'current_salary must be a positive number' });
   }
 
-  // Fetch historical data from DB
-  const historical = db.prepare('SELECT * FROM historical_economic_data WHERE id = 1').get();
-  // Fetch location-specific data if zip provided
-  let locationData = null;
-  if (zip) {
-    locationData = db.prepare('SELECT * FROM local_data WHERE zip_code = ?').get(zip);
-    if (!locationData) {
-      locationData = db.prepare('SELECT * FROM local_data WHERE zip_code = ?').get('default');
-    }
+  const yearsWorked = currentYear - startYear;
+
+  // Calculate linear income progression for each year
+  // This estimates the user's income in each year of their career
+  const incomePerYear = [];
+  for (let year = startYear; year <= currentYear; year++) {
+    const progress = (year - startYear) / Math.max(1, yearsWorked);
+    const estimatedIncome = startSalary + (currentSalary - startSalary) * progress;
+    incomePerYear.push({ year, income: estimatedIncome });
   }
 
-  const workingYears = userAge - 18;
-  const yearsToRetirement = Math.max(0, 65 - userAge);
+  // Calculate cumulative economic impact year-over-year
+  let cumulativeProductivityGap = 0;
+  let cumulativeRentBurden = 0;
+  const yearlyBreakdown = [];
 
-  // -- HOUSING (time-based, not dollars) --
-  // In 1985, median home cost 3.5 years of income. Now it costs 7.5 years.
-  // Show the extra working years needed — not a dollar figure.
-  const historicalHomeRatio = historical.home_price_to_income_1985;
-  const currentHomeRatio = historical.home_price_to_income_now;
-  const extraYearsToBuyHome = currentHomeRatio - historicalHomeRatio;
+  for (const { year, income } of incomePerYear) {
+    const economicData = YEARLY_ECONOMIC_DATA[year];
+    if (!economicData) continue; // Skip years without data
 
-  // -- WAGE THEFT (productivity vs pay gap) --
-  // Since 1979, productivity rose ~70% but wages only ~17%.
-  const productivityGap = historical.productivity_growth_since_1979;
-  const wageGrowth = historical.wage_growth_since_1979;
-  const wageGapPct = productivityGap - wageGrowth;
-  const annualWageTheft = Math.round(userIncome * (wageGapPct / 100));
-  const lifetimeEarningsTheft = annualWageTheft * workingYears;
+    // Calculate productivity-wage gap for this year
+    // Formula: unrealized_gains = income * ((productivity_index / wage_index) - 1)
+    // This shows what the worker would have earned if wages tracked productivity
+    const productivityWageRatio = economicData.productivity_index / economicData.wage_index;
+    const yearlyUnrealizedGains = income * (productivityWageRatio - 1);
 
-  // -- DEBT BURDEN --
-  // Average student + medical debt normalized by income relative to median
-  const medianIncome = historical.median_household_income;
-  const incomeRatio = userIncome / medianIncome;
-  const avgStudentDebt = historical.avg_student_debt;
-  const avgMedicalDebt = historical.avg_medical_debt;
-  const debtBurden = Math.round((avgStudentDebt + avgMedicalDebt) * Math.min(incomeRatio, 1.5));
+    // Calculate excess rent burden for this year
+    // Only count if user's current rent burden exceeds historical baseline
+    const userRentBurden = currentRent > 0 ? (currentRent * 12) / currentSalary : 0;
+    const excessBurden = Math.max(0, userRentBurden - economicData.baseline_rent_burden);
+    const yearlyExcessRent = income * excessBurden;
 
-  // -- RENT EXTRACTION --
-  // In 1985 rent was ~25% of income; now it's ~35% nationally.
-  const rentPctThen = historical.rent_pct_income_1985;
-  const rentPctNow = historical.rent_pct_income_now;
-  const excessRentPct = (rentPctNow - rentPctThen) / 100;
-  const annualRentTheft = Math.round(userIncome * excessRentPct);
-  const lifetimeRentTheft = annualRentTheft * workingYears;
+    cumulativeProductivityGap += yearlyUnrealizedGains;
+    cumulativeRentBurden += yearlyExcessRent;
 
-  // -- TOTALS (dollars: earnings + debt + rent only) --
-  const totalLifetimeTheft = lifetimeEarningsTheft + debtBurden + lifetimeRentTheft;
-  const yearsOfWorkStolen = totalLifetimeTheft > 0 ? (totalLifetimeTheft / userIncome).toFixed(1) : '0.0';
-  const projectedFutureTheft = (annualWageTheft + annualRentTheft) * yearsToRetirement;
+    yearlyBreakdown.push({
+      year,
+      income: Math.round(income),
+      productivity_index: economicData.productivity_index,
+      wage_index: economicData.wage_index,
+      unrealized_gains: Math.round(yearlyUnrealizedGains),
+      excess_rent: Math.round(yearlyExcessRent),
+    });
+  }
+
+  const cumulativeEconomicImpact = cumulativeProductivityGap + cumulativeRentBurden;
+  const yearsOfWorkEquivalent = cumulativeEconomicImpact > 0
+    ? (cumulativeEconomicImpact / currentSalary).toFixed(1)
+    : '0.0';
+
+  // Get first and last year data for summary statistics
+  const firstYearData = YEARLY_ECONOMIC_DATA[startYear] || YEARLY_ECONOMIC_DATA[1975];
+  const lastYearData = YEARLY_ECONOMIC_DATA[currentYear] || YEARLY_ECONOMIC_DATA[2024];
+
+  const totalProductivityGrowth = ((lastYearData.productivity_index / firstYearData.productivity_index - 1) * 100).toFixed(1);
+  const totalWageGrowth = ((lastYearData.wage_index / firstYearData.wage_index - 1) * 100).toFixed(1);
 
   res.json({
-    inputs: { age: userAge, income: userIncome, zip: zip || null },
+    inputs: {
+      start_year: startYear,
+      start_salary: startSalary,
+      current_salary: currentSalary,
+      current_rent: currentRent,
+      years_worked: yearsWorked,
+    },
+    summary: {
+      cumulative_economic_impact: Math.round(cumulativeEconomicImpact),
+      unrealized_productivity_gains: Math.round(cumulativeProductivityGap),
+      excess_rent_burden: Math.round(cumulativeRentBurden),
+      years_of_work_equivalent: parseFloat(yearsOfWorkEquivalent),
+    },
     metrics: {
-      housing: {
-        label: 'Housing Affordability Lost',
-        yearsIn1985: historicalHomeRatio,
-        yearsNow: currentHomeRatio,
-        extraYears: extraYearsToBuyHome,
-        detail: `A home costs ${currentHomeRatio.toFixed(1)} years of income today vs ${historicalHomeRatio.toFixed(1)} in 1985`,
+      productivity: {
+        label: 'Productivity Growth Over Career',
+        value: `${totalProductivityGrowth}%`,
+        detail: `Productivity index grew from ${firstYearData.productivity_index.toFixed(1)} to ${lastYearData.productivity_index.toFixed(1)}`,
       },
-      earnings: {
-        label: 'Wages Stolen by Productivity Gap',
-        amount: lifetimeEarningsTheft,
-        annualAmount: annualWageTheft,
-        detail: `Productivity up ${productivityGap}% since 1979, wages only up ${wageGrowth}%`,
+      wages: {
+        label: 'Real Wage Growth Over Career',
+        value: `${totalWageGrowth}%`,
+        detail: `Wage index grew from ${firstYearData.wage_index.toFixed(1)} to ${lastYearData.wage_index.toFixed(1)}`,
       },
-      debt: {
-        label: 'Systemic Debt Burden',
-        amount: debtBurden,
-        detail: `Student + medical debt normalized to your income level`,
+      gap: {
+        label: 'Productivity-Wage Gap',
+        value: `${(parseFloat(totalProductivityGrowth) - parseFloat(totalWageGrowth)).toFixed(1)}%`,
+        detail: `If wages had tracked productivity, your cumulative earnings would be ${Math.round(cumulativeProductivityGap)} higher`,
       },
       rent: {
-        label: 'Excess Rent Extracted',
-        amount: lifetimeRentTheft,
-        annualAmount: annualRentTheft,
-        detail: `Rent takes ${rentPctNow}% of income now vs ${rentPctThen}% in 1985`,
+        label: 'Rent Burden Increase',
+        value: `${((lastYearData.baseline_rent_burden - firstYearData.baseline_rent_burden) * 100).toFixed(1)}%`,
+        detail: `Baseline rent burden increased from ${(firstYearData.baseline_rent_burden * 100).toFixed(0)}% to ${(lastYearData.baseline_rent_burden * 100).toFixed(0)}% of income`,
       },
     },
-    totals: {
-      lifetimeTheft: totalLifetimeTheft,
-      yearsOfWorkStolen: parseFloat(yearsOfWorkStolen),
-      projectedFutureTheft: projectedFutureTheft,
-      workingYears: workingYears,
-      yearsToRetirement: yearsToRetirement,
-    },
+    yearly_breakdown: yearlyBreakdown,
     sources: [
-      'Economic Policy Institute (productivity-pay gap)',
-      'Federal Reserve (household debt data)',
-      'Census Bureau (median income)',
-      'HUD / Zillow (housing cost trends)',
-      'BLS (rent & CPI data)',
+      'Economic Policy Institute (productivity-wage gap data)',
+      'Bureau of Labor Statistics (wage and CPI data)',
+      'Federal Reserve (economic indicators)',
+      'Census Bureau (housing cost trends)',
     ],
   });
 });
