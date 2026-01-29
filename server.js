@@ -809,6 +809,232 @@ app.post('/api/reports', (req, res) => {
 });
 
 // ============================================
+// MODERATION ENDPOINTS
+// ============================================
+
+// Simple admin key check (in production, use proper authentication)
+const ADMIN_KEY = process.env.ADMIN_KEY || 'solidarity-admin-2024';
+
+function checkAdminKey(req, res, next) {
+  const key = req.headers['x-admin-key'];
+  if (key !== ADMIN_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+// GET /api/moderation/content - Get all content for moderation
+app.get('/api/moderation/content', checkAdminKey, (req, res) => {
+  const tenantMessages = db.prepare(`
+    SELECT tm.*, b.address as building_address
+    FROM tenant_messages tm
+    LEFT JOIN buildings b ON tm.building_id = b.id
+    ORDER BY tm.created_at DESC
+  `).all();
+
+  const collectiveMessages = db.prepare(`
+    SELECT cm.*, wc.company as collective_name
+    FROM collective_messages cm
+    LEFT JOIN worker_collectives wc ON cm.collective_id = wc.id
+    ORDER BY cm.created_at DESC
+  `).all();
+
+  const petitions = db.prepare('SELECT * FROM petitions ORDER BY created_at DESC').all();
+  const reports = db.prepare('SELECT * FROM reports ORDER BY last_report DESC').all();
+  const collectives = db.prepare('SELECT * FROM worker_collectives ORDER BY members DESC').all();
+  const bannedAuthors = db.prepare('SELECT * FROM banned_authors ORDER BY banned_at DESC').all();
+  const moderationLog = db.prepare('SELECT * FROM moderation_log ORDER BY created_at DESC LIMIT 100').all();
+
+  res.json({
+    tenantMessages: tenantMessages.map(m => ({
+      ...m,
+      pinned: m.pinned === 1,
+      time: timeAgo(m.created_at),
+    })),
+    collectiveMessages: collectiveMessages.map(m => ({
+      ...m,
+      pinned: m.pinned === 1,
+      time: timeAgo(m.created_at),
+    })),
+    petitions: petitions.map(p => ({
+      ...p,
+      created: timeAgo(p.created_at),
+    })),
+    reports: reports.map(r => ({
+      ...r,
+      issues: JSON.parse(r.issues),
+      lastReport: timeAgo(r.last_report),
+    })),
+    collectives: collectives.map(c => ({
+      ...c,
+      issues: JSON.parse(c.issues),
+      active: c.active === 1,
+    })),
+    bannedAuthors,
+    moderationLog: moderationLog.map(l => ({
+      ...l,
+      time: timeAgo(l.created_at),
+    })),
+  });
+});
+
+// DELETE /api/moderation/tenant-messages/:id - Delete a tenant message
+app.delete('/api/moderation/tenant-messages/:id', checkAdminKey, (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const message = db.prepare('SELECT * FROM tenant_messages WHERE id = ?').get(id);
+  if (!message) {
+    return res.status(404).json({ error: 'Message not found' });
+  }
+
+  db.prepare('INSERT INTO moderation_log (action, content_type, content_id, content_preview, reason) VALUES (?, ?, ?, ?, ?)')
+    .run('delete', 'tenant_message', id, message.text.substring(0, 100), reason || null);
+  db.prepare('DELETE FROM tenant_messages WHERE id = ?').run(id);
+
+  res.json({ success: true });
+});
+
+// DELETE /api/moderation/collective-messages/:id - Delete a collective message
+app.delete('/api/moderation/collective-messages/:id', checkAdminKey, (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const message = db.prepare('SELECT * FROM collective_messages WHERE id = ?').get(id);
+  if (!message) {
+    return res.status(404).json({ error: 'Message not found' });
+  }
+
+  db.prepare('INSERT INTO moderation_log (action, content_type, content_id, content_preview, reason) VALUES (?, ?, ?, ?, ?)')
+    .run('delete', 'collective_message', id, message.text.substring(0, 100), reason || null);
+  db.prepare('DELETE FROM collective_messages WHERE id = ?').run(id);
+
+  res.json({ success: true });
+});
+
+// DELETE /api/moderation/petitions/:id - Delete a petition
+app.delete('/api/moderation/petitions/:id', checkAdminKey, (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const petition = db.prepare('SELECT * FROM petitions WHERE id = ?').get(id);
+  if (!petition) {
+    return res.status(404).json({ error: 'Petition not found' });
+  }
+
+  db.prepare('INSERT INTO moderation_log (action, content_type, content_id, content_preview, reason) VALUES (?, ?, ?, ?, ?)')
+    .run('delete', 'petition', id, petition.title.substring(0, 100), reason || null);
+  db.prepare('DELETE FROM petitions WHERE id = ?').run(id);
+
+  res.json({ success: true });
+});
+
+// DELETE /api/moderation/reports/:id - Delete a report
+app.delete('/api/moderation/reports/:id', checkAdminKey, (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const report = db.prepare('SELECT * FROM reports WHERE id = ?').get(id);
+  if (!report) {
+    return res.status(404).json({ error: 'Report not found' });
+  }
+
+  db.prepare('INSERT INTO moderation_log (action, content_type, content_id, content_preview, reason) VALUES (?, ?, ?, ?, ?)')
+    .run('delete', 'report', id, report.name.substring(0, 100), reason || null);
+  db.prepare('DELETE FROM reports WHERE id = ?').run(id);
+
+  res.json({ success: true });
+});
+
+// DELETE /api/moderation/collectives/:id - Delete a worker collective
+app.delete('/api/moderation/collectives/:id', checkAdminKey, (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const collective = db.prepare('SELECT * FROM worker_collectives WHERE id = ?').get(id);
+  if (!collective) {
+    return res.status(404).json({ error: 'Collective not found' });
+  }
+
+  // Also delete associated messages
+  db.prepare('DELETE FROM collective_messages WHERE collective_id = ?').run(id);
+  db.prepare('INSERT INTO moderation_log (action, content_type, content_id, content_preview, reason) VALUES (?, ?, ?, ?, ?)')
+    .run('delete', 'collective', id, collective.company.substring(0, 100), reason || null);
+  db.prepare('DELETE FROM worker_collectives WHERE id = ?').run(id);
+
+  res.json({ success: true });
+});
+
+// POST /api/moderation/ban - Ban an author
+app.post('/api/moderation/ban', checkAdminKey, (req, res) => {
+  const { author_name, fingerprint, reason } = req.body;
+  if (!author_name && !fingerprint) {
+    return res.status(400).json({ error: 'author_name or fingerprint required' });
+  }
+
+  try {
+    db.prepare('INSERT INTO banned_authors (author_name, fingerprint, reason) VALUES (?, ?, ?)')
+      .run(author_name || '', fingerprint || null, reason || null);
+    db.prepare('INSERT INTO moderation_log (action, content_type, content_id, content_preview, reason) VALUES (?, ?, ?, ?, ?)')
+      .run('ban', 'author', author_name || fingerprint, author_name || fingerprint, reason || null);
+    res.json({ success: true });
+  } catch (e) {
+    if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ error: 'Author already banned' });
+    }
+    throw e;
+  }
+});
+
+// DELETE /api/moderation/ban/:id - Unban an author
+app.delete('/api/moderation/ban/:id', checkAdminKey, (req, res) => {
+  const { id } = req.params;
+  const banned = db.prepare('SELECT * FROM banned_authors WHERE id = ?').get(id);
+  if (!banned) {
+    return res.status(404).json({ error: 'Banned author not found' });
+  }
+
+  db.prepare('INSERT INTO moderation_log (action, content_type, content_id, content_preview, reason) VALUES (?, ?, ?, ?, ?)')
+    .run('unban', 'author', id, banned.author_name || banned.fingerprint, null);
+  db.prepare('DELETE FROM banned_authors WHERE id = ?').run(id);
+
+  res.json({ success: true });
+});
+
+// POST /api/moderation/pin/:type/:id - Toggle pin status
+app.post('/api/moderation/pin/:type/:id', checkAdminKey, (req, res) => {
+  const { type, id } = req.params;
+
+  let table, idColumn;
+  if (type === 'tenant') {
+    table = 'tenant_messages';
+    idColumn = 'id';
+  } else if (type === 'collective') {
+    table = 'collective_messages';
+    idColumn = 'id';
+  } else {
+    return res.status(400).json({ error: 'Invalid type' });
+  }
+
+  const message = db.prepare(`SELECT * FROM ${table} WHERE ${idColumn} = ?`).get(id);
+  if (!message) {
+    return res.status(404).json({ error: 'Message not found' });
+  }
+
+  const newPinned = message.pinned === 1 ? 0 : 1;
+  db.prepare(`UPDATE ${table} SET pinned = ? WHERE ${idColumn} = ?`).run(newPinned, id);
+  db.prepare('INSERT INTO moderation_log (action, content_type, content_id, content_preview, reason) VALUES (?, ?, ?, ?, ?)')
+    .run(newPinned ? 'pin' : 'unpin', type + '_message', id, message.text.substring(0, 100), null);
+
+  res.json({ success: true, pinned: newPinned === 1 });
+});
+
+// POST /api/moderation/verify - Verify admin key
+app.post('/api/moderation/verify', (req, res) => {
+  const key = req.headers['x-admin-key'];
+  if (key === ADMIN_KEY) {
+    res.json({ valid: true });
+  } else {
+    res.status(401).json({ valid: false });
+  }
+});
+
+// ============================================
 // START SERVER
 // ============================================
 

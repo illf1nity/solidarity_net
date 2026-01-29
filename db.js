@@ -135,6 +135,26 @@ function initializeDatabase() {
       rent_pct_income_now REAL NOT NULL,
       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS moderation_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action TEXT NOT NULL CHECK(action IN ('delete', 'ban', 'unban', 'pin', 'unpin')),
+      content_type TEXT NOT NULL,
+      content_id TEXT NOT NULL,
+      content_preview TEXT,
+      reason TEXT,
+      moderator TEXT NOT NULL DEFAULT 'admin',
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS banned_authors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      author_name TEXT NOT NULL,
+      fingerprint TEXT,
+      reason TEXT,
+      banned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(author_name, fingerprint)
+    );
   `);
 
   // Migration: Add telegram_url column if it doesn't exist
