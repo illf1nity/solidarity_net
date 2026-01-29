@@ -1387,6 +1387,8 @@
       const [impactResults, setImpactResults] = useState(null);
       const [impactLoading, setImpactLoading] = useState(false);
       const [impactError, setImpactError] = useState(null);
+      const [unionRaisePercent, setUnionRaisePercent] = useState(0);
+      const [showInflationResume, setShowInflationResume] = useState(false);
 
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
@@ -1446,8 +1448,8 @@
         sol_monthly_result: 'MONTHLY DEFICIT / SURPLUS',
         sol_data_quality: 'Data quality:',
 
-        // Economic Impact Calculator
-        impact_section_title: 'Economic Impact Calculator',
+        // The Exploitation Calculator
+        impact_section_title: 'The Exploitation Calculator',
         impact_description: 'See how the productivity-wage gap has affected your earnings over your career.',
         impact_start_year_label: 'YEAR STARTED WORKING:',
         impact_start_salary_label: 'STARTING SALARY ($):',
@@ -1458,10 +1460,10 @@
         impact_current_salary_placeholder: '65000',
         impact_current_rent_placeholder: '1500',
         impact_calculate_btn: 'Calculate Impact',
-        impact_cumulative_label: 'Cumulative Economic Gap',
-        impact_unrealized_label: 'Unrealized Wage Growth',
+        impact_cumulative_label: 'Unpaid Labor Value',
+        impact_unrealized_label: 'Productivity-Wage Deficit',
         impact_rent_label: 'Excess Rent Burden',
-        impact_years_label: 'Years of Work Equivalent',
+        impact_years_label: 'Time Owed to You',
 
         // Consumer Price Resistance
         price_section_title: 'Consumer Price Resistance',
@@ -2487,6 +2489,19 @@
                     {textConfig.impact_description}
                   </p>
 
+                  {/* Disclaimer */}
+                  <div style={{
+                    padding: '15px 20px',
+                    marginBottom: '20px',
+                    backgroundColor: 'rgba(255, 165, 0, 0.08)',
+                    border: `1px solid ${colors.warning}`,
+                    fontSize: '12px',
+                    color: colors.textDim,
+                    lineHeight: '1.6'
+                  }}>
+                    <strong style={{ color: colors.text }}>Methodology:</strong> This tool measures the delta between your actual compensation and the value created by your labor. "Fairness" is subjective; these numbers are based on objective historical data from the BLS and EPI.
+                  </div>
+
                   <form onSubmit={handleImpactCalculate} style={{ marginBottom: '30px' }}>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '15px' }}>
                       <label style={{ color: colors.textMuted, fontSize: '11px' }}>{textConfig.impact_start_year_label}</label>
@@ -2644,6 +2659,166 @@
                             {impactResults.metrics.rent.detail}
                           </div>
                         </div>
+                      </div>
+
+                      {/* Housing Opportunity Cost */}
+                      {impactResults.metrics.housing && (
+                        <div style={{
+                          ...styles.card,
+                          borderLeft: `3px solid #ff4444`,
+                          padding: '20px',
+                          marginBottom: '15px'
+                        }}>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                            🏠 {impactResults.metrics.housing.label}
+                          </div>
+                          <div style={{ fontSize: '28px', fontWeight: 700, color: '#ff4444', marginBottom: '8px' }}>
+                            {impactResults.metrics.housing.value}
+                          </div>
+                          <div style={{ fontSize: '11px', color: colors.textDim }}>
+                            {impactResults.metrics.housing.detail}
+                          </div>
+                          <div style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '8px' }}>
+                            Estimated median home price at your income: ${impactResults.metrics.housing.median_home_price.toLocaleString()}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Time Buy-Back Simulator */}
+                      <div style={{
+                        ...styles.card,
+                        padding: '25px',
+                        marginBottom: '15px',
+                        backgroundColor: '#0a1a0a',
+                        borderLeft: `3px solid ${colors.success}`
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text, marginBottom: '15px' }}>
+                          ⚡ Union Negotiation Simulator
+                        </div>
+                        <div style={{ marginBottom: '20px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                            <span style={{ fontSize: '12px', color: colors.textMuted }}>Raise Percentage:</span>
+                            <span style={{ fontSize: '18px', fontWeight: 700, color: colors.success }}>{unionRaisePercent}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="30"
+                            step="1"
+                            value={unionRaisePercent}
+                            onChange={(e) => setUnionRaisePercent(parseInt(e.target.value))}
+                            style={{
+                              width: '100%',
+                              height: '8px',
+                              borderRadius: '4px',
+                              outline: 'none',
+                              background: `linear-gradient(to right, ${colors.success} 0%, ${colors.success} ${(unionRaisePercent / 30) * 100}%, #333 ${(unionRaisePercent / 30) * 100}%, #333 100%)`,
+                              WebkitAppearance: 'none',
+                              appearance: 'none',
+                              cursor: 'pointer'
+                            }}
+                          />
+                        </div>
+                        <div style={{ padding: '15px', backgroundColor: colors.bg, borderRadius: '4px' }}>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '8px' }}>
+                            IF YOU NEGOTIATED A {unionRaisePercent}% RAISE THROUGH COLLECTIVE BARGAINING:
+                          </div>
+                          <div style={{ fontSize: '13px', color: colors.text, marginBottom: '6px' }}>
+                            New Annual Salary: <strong style={{ color: colors.success }}>
+                              ${(impactResults.inputs.current_salary * (1 + unionRaisePercent / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            </strong>
+                          </div>
+                          <div style={{ fontSize: '13px', color: colors.text, marginBottom: '6px' }}>
+                            Monthly Raise: <strong style={{ color: colors.success }}>
+                              ${((impactResults.inputs.current_salary * (unionRaisePercent / 100)) / 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            </strong>
+                          </div>
+                          <div style={{ fontSize: '13px', color: colors.text }}>
+                            Hours of Life Per Month "Bought Back": <strong style={{ color: colors.success }}>
+                              {(() => {
+                                const currentMonthlyIncome = impactResults.inputs.current_salary / 12;
+                                const newMonthlyIncome = currentMonthlyIncome * (1 + unionRaisePercent / 100);
+                                const monthlyRaise = newMonthlyIncome - currentMonthlyIncome;
+                                const hourlyWage = impactResults.inputs.current_salary / 2080; // Assume 2080 hours/year
+                                const hoursBoughtBack = monthlyRaise / hourlyWage;
+                                return hoursBoughtBack.toFixed(1);
+                              })()}
+                            </strong> hours
+                          </div>
+                          <div style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '10px', fontStyle: 'italic' }}>
+                            "Buying back time" means reclaiming hours you would otherwise need to work to maintain your current standard of living. A raise gives you the same purchasing power in fewer hours.
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Inflation-Adjusted Resume */}
+                      <div style={{
+                        ...styles.card,
+                        padding: '20px',
+                        marginBottom: '15px'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                          <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text }}>
+                            📊 Your Inflation-Adjusted Resume
+                          </div>
+                          <button
+                            onClick={() => setShowInflationResume(!showInflationResume)}
+                            style={{
+                              ...styles.button('secondary'),
+                              padding: '6px 12px',
+                              fontSize: '11px'
+                            }}
+                          >
+                            {showInflationResume ? 'Hide' : 'Show'}
+                          </button>
+                        </div>
+                        {showInflationResume && (
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{
+                              width: '100%',
+                              borderCollapse: 'collapse',
+                              fontSize: '11px',
+                              color: colors.textMuted
+                            }}>
+                              <thead>
+                                <tr style={{ borderBottom: `1px solid ${colors.border}` }}>
+                                  <th style={{ padding: '8px', textAlign: 'left', color: colors.textDimmer }}>Year</th>
+                                  <th style={{ padding: '8px', textAlign: 'right', color: colors.textDimmer }}>Nominal $</th>
+                                  <th style={{ padding: '8px', textAlign: 'right', color: colors.textDimmer }}>Inflation-Adjusted $ (2024)</th>
+                                  <th style={{ padding: '8px', textAlign: 'right', color: colors.textDimmer }}>Real Value Change</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {impactResults.yearly_breakdown.map((yearData, idx) => {
+                                  const currentYearCPI = 1.033; // 2024 baseline
+                                  const yearCPI = 1 + (yearData.year - 2024) * 0.03; // Rough approximation
+                                  const inflationAdjusted = yearData.income / yearCPI * currentYearCPI;
+                                  const previousYear = idx > 0 ? impactResults.yearly_breakdown[idx - 1] : null;
+                                  const changePercent = previousYear
+                                    ? ((inflationAdjusted - (previousYear.income / (1 + (previousYear.year - 2024) * 0.03) * currentYearCPI)) / (previousYear.income / (1 + (previousYear.year - 2024) * 0.03) * currentYearCPI) * 100).toFixed(1)
+                                    : '0.0';
+                                  return (
+                                    <tr key={yearData.year} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                                      <td style={{ padding: '8px' }}>{yearData.year}</td>
+                                      <td style={{ padding: '8px', textAlign: 'right' }}>${yearData.income.toLocaleString()}</td>
+                                      <td style={{ padding: '8px', textAlign: 'right', color: colors.text }}>${inflationAdjusted.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                                      <td style={{
+                                        padding: '8px',
+                                        textAlign: 'right',
+                                        color: parseFloat(changePercent) > 0 ? colors.success : parseFloat(changePercent) < 0 ? colors.primary : colors.textDimmer
+                                      }}>
+                                        {parseFloat(changePercent) > 0 ? '+' : ''}{changePercent}%
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                            <div style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '10px' }}>
+                              All values adjusted to 2024 dollars using CPI inflation data. "Real Value Change" shows year-over-year change in purchasing power.
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* CTA to organize */}
