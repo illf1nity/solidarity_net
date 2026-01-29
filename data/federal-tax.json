@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "year": 2024,
+    "sources": [
+      "IRS Revenue Procedure 2023-34",
+      "SSA (Social Security Administration)",
+      "IRS Topic 751"
+    ],
+    "filer_type": "Single Filer",
+    "description": "2024 Federal Income Tax Brackets, Standard Deduction, and FICA Rates"
+  },
+  "standardDeduction": 14600,
+  "brackets": [
+    {
+      "min": 0,
+      "max": 11600,
+      "rate": 0.10
+    },
+    {
+      "min": 11600,
+      "max": 47150,
+      "rate": 0.12
+    },
+    {
+      "min": 47150,
+      "max": 100525,
+      "rate": 0.22
+    },
+    {
+      "min": 100525,
+      "max": 191950,
+      "rate": 0.24
+    },
+    {
+      "min": 191950,
+      "max": 243725,
+      "rate": 0.32
+    },
+    {
+      "min": 243725,
+      "max": 609350,
+      "rate": 0.35
+    },
+    {
+      "min": 609350,
+      "max": null,
+      "rate": 0.37
+    }
+  ],
+  "fica": {
+    "socialSecurity": {
+      "rate": 0.062,
+      "description": "Social Security tax rate (employee share)",
+      "wageCapLimit": 168600,
+      "wageCapLimitDescription": "Social Security wage base limit 2024"
+    },
+    "medicare": {
+      "rate": 0.0145,
+      "description": "Medicare tax rate (employee share)"
+    }
+  }
+}

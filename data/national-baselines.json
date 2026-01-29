@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "year": "2024",
+    "description": "National baseline costs (monthly)",
+    "sources": [
+      "USDA Thrifty Food Plan, single adult",
+      "Average marketplace premium + out-of-pocket",
+      "AAA average vehicle ownership cost",
+      "EIA average residential utilities"
+    ]
+  },
+  "data": {
+    "food": 475,
+    "healthcare": 385,
+    "transport": 285,
+    "utilities": 175
+  }
+}

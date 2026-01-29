@@ -1,0 +1,384 @@
+{
+  "meta": {
+    "description": "Regional Cost Multipliers (relative to national average = 1.0)",
+    "categories": [
+      "food",
+      "healthcare",
+      "transport",
+      "utilities"
+    ],
+    "sources": [
+      {
+        "category": "food",
+        "source": "USDA Thrifty Food Plan",
+        "baseline_monthly": 475,
+        "description": "Single adult monthly baseline"
+      },
+      {
+        "category": "healthcare",
+        "source": "BLS Consumer Price Index",
+        "baseline_monthly": 385,
+        "description": "Average marketplace premium + out-of-pocket"
+      },
+      {
+        "category": "transport",
+        "source": "AAA Average Vehicle Ownership Cost",
+        "baseline_monthly": 285,
+        "description": "Average vehicle ownership cost"
+      },
+      {
+        "category": "utilities",
+        "source": "EIA - Energy Information Administration",
+        "baseline_monthly": 175,
+        "description": "Average residential utilities"
+      }
+    ],
+    "data_year": 2024,
+    "reference_baseline": 1.0,
+    "note": "Multipliers represent regional cost variance from national average. Values below 1.0 indicate lower regional costs; above 1.0 indicate higher regional costs."
+  },
+  "data": {
+    "New York-Newark-Jersey City, NY-NJ-PA": {
+      "food": 1.15,
+      "healthcare": 1.12,
+      "transport": 0.85,
+      "utilities": 1.08
+    },
+    "Los Angeles-Long Beach-Anaheim, CA": {
+      "food": 1.08,
+      "healthcare": 1.15,
+      "transport": 1.25,
+      "utilities": 1.05
+    },
+    "Chicago-Naperville-Elgin, IL-IN-WI": {
+      "food": 0.98,
+      "healthcare": 1.02,
+      "transport": 0.90,
+      "utilities": 0.95
+    },
+    "Dallas-Fort Worth-Arlington, TX": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.15,
+      "utilities": 1.02
+    },
+    "Houston-The Woodlands-Sugar Land, TX": {
+      "food": 0.93,
+      "healthcare": 0.95,
+      "transport": 1.18,
+      "utilities": 1.05
+    },
+    "Washington-Arlington-Alexandria, DC-VA-MD-WV": {
+      "food": 1.05,
+      "healthcare": 1.08,
+      "transport": 0.92,
+      "utilities": 1.02
+    },
+    "Miami-Fort Lauderdale-Pompano Beach, FL": {
+      "food": 1.02,
+      "healthcare": 1.05,
+      "transport": 1.12,
+      "utilities": 0.98
+    },
+    "Philadelphia-Camden-Wilmington, PA-NJ-DE-MD": {
+      "food": 1.02,
+      "healthcare": 1.05,
+      "transport": 0.88,
+      "utilities": 1.08
+    },
+    "Atlanta-Sandy Springs-Alpharetta, GA": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.15,
+      "utilities": 0.95
+    },
+    "Boston-Cambridge-Newton, MA-NH": {
+      "food": 1.10,
+      "healthcare": 1.12,
+      "transport": 0.85,
+      "utilities": 1.15
+    },
+    "Phoenix-Mesa-Chandler, AZ": {
+      "food": 0.98,
+      "healthcare": 1.02,
+      "transport": 1.10,
+      "utilities": 1.08
+    },
+    "San Francisco-Oakland-Berkeley, CA": {
+      "food": 1.18,
+      "healthcare": 1.20,
+      "transport": 0.92,
+      "utilities": 1.12
+    },
+    "Riverside-San Bernardino-Ontario, CA": {
+      "food": 1.02,
+      "healthcare": 1.05,
+      "transport": 1.22,
+      "utilities": 1.02
+    },
+    "Detroit-Warren-Dearborn, MI": {
+      "food": 0.92,
+      "healthcare": 0.95,
+      "transport": 1.10,
+      "utilities": 1.05
+    },
+    "Seattle-Tacoma-Bellevue, WA": {
+      "food": 1.08,
+      "healthcare": 1.10,
+      "transport": 0.95,
+      "utilities": 0.92
+    },
+    "Minneapolis-St. Paul-Bloomington, MN-WI": {
+      "food": 0.95,
+      "healthcare": 1.02,
+      "transport": 1.02,
+      "utilities": 1.02
+    },
+    "San Diego-Chula Vista-Carlsbad, CA": {
+      "food": 1.10,
+      "healthcare": 1.12,
+      "transport": 1.15,
+      "utilities": 1.05
+    },
+    "Tampa-St. Petersburg-Clearwater, FL": {
+      "food": 0.98,
+      "healthcare": 1.00,
+      "transport": 1.12,
+      "utilities": 0.95
+    },
+    "Denver-Aurora-Lakewood, CO": {
+      "food": 1.02,
+      "healthcare": 1.05,
+      "transport": 1.05,
+      "utilities": 0.95
+    },
+    "St. Louis, MO-IL": {
+      "food": 0.92,
+      "healthcare": 0.95,
+      "transport": 1.05,
+      "utilities": 0.98
+    },
+    "Baltimore-Columbia-Towson, MD": {
+      "food": 1.00,
+      "healthcare": 1.05,
+      "transport": 0.95,
+      "utilities": 1.02
+    },
+    "Orlando-Kissimmee-Sanford, FL": {
+      "food": 0.98,
+      "healthcare": 1.02,
+      "transport": 1.15,
+      "utilities": 0.95
+    },
+    "Charlotte-Concord-Gastonia, NC-SC": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.10,
+      "utilities": 0.92
+    },
+    "San Antonio-New Braunfels, TX": {
+      "food": 0.92,
+      "healthcare": 0.95,
+      "transport": 1.12,
+      "utilities": 1.02
+    },
+    "Portland-Vancouver-Hillsboro, OR-WA": {
+      "food": 1.05,
+      "healthcare": 1.08,
+      "transport": 1.00,
+      "utilities": 0.88
+    },
+    "Sacramento-Roseville-Folsom, CA": {
+      "food": 1.05,
+      "healthcare": 1.08,
+      "transport": 1.15,
+      "utilities": 1.02
+    },
+    "Pittsburgh, PA": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.05,
+      "utilities": 1.02
+    },
+    "Las Vegas-Henderson-Paradise, NV": {
+      "food": 1.00,
+      "healthcare": 1.02,
+      "transport": 1.08,
+      "utilities": 1.05
+    },
+    "Austin-Round Rock-Georgetown, TX": {
+      "food": 0.98,
+      "healthcare": 1.00,
+      "transport": 1.12,
+      "utilities": 1.02
+    },
+    "Cincinnati, OH-KY-IN": {
+      "food": 0.90,
+      "healthcare": 0.95,
+      "transport": 1.05,
+      "utilities": 0.98
+    },
+    "Kansas City, MO-KS": {
+      "food": 0.92,
+      "healthcare": 0.95,
+      "transport": 1.08,
+      "utilities": 0.98
+    },
+    "Columbus, OH": {
+      "food": 0.92,
+      "healthcare": 0.98,
+      "transport": 1.05,
+      "utilities": 0.95
+    },
+    "Indianapolis-Carmel-Anderson, IN": {
+      "food": 0.90,
+      "healthcare": 0.95,
+      "transport": 1.08,
+      "utilities": 0.95
+    },
+    "Cleveland-Elyria, OH": {
+      "food": 0.92,
+      "healthcare": 0.98,
+      "transport": 1.02,
+      "utilities": 1.00
+    },
+    "San Jose-Sunnyvale-Santa Clara, CA": {
+      "food": 1.22,
+      "healthcare": 1.25,
+      "transport": 1.00,
+      "utilities": 1.15
+    },
+    "Nashville-Davidson-Murfreesboro-Franklin, TN": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.12,
+      "utilities": 0.92
+    },
+    "Virginia Beach-Norfolk-Newport News, VA-NC": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.10,
+      "utilities": 0.98
+    },
+    "Providence-Warwick, RI-MA": {
+      "food": 1.02,
+      "healthcare": 1.05,
+      "transport": 0.95,
+      "utilities": 1.08
+    },
+    "Milwaukee-Waukesha, WI": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.00,
+      "utilities": 0.98
+    },
+    "Jacksonville, FL": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.15,
+      "utilities": 0.95
+    },
+    "Memphis, TN-MS-AR": {
+      "food": 0.88,
+      "healthcare": 0.92,
+      "transport": 1.10,
+      "utilities": 0.92
+    },
+    "Oklahoma City, OK": {
+      "food": 0.88,
+      "healthcare": 0.90,
+      "transport": 1.12,
+      "utilities": 0.95
+    },
+    "Louisville/Jefferson County, KY-IN": {
+      "food": 0.90,
+      "healthcare": 0.95,
+      "transport": 1.08,
+      "utilities": 0.95
+    },
+    "Hartford-East Hartford-Middletown, CT": {
+      "food": 1.05,
+      "healthcare": 1.08,
+      "transport": 0.95,
+      "utilities": 1.12
+    },
+    "Richmond, VA": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.08,
+      "utilities": 0.98
+    },
+    "New Orleans-Metairie, LA": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.10,
+      "utilities": 0.95
+    },
+    "Buffalo-Cheektowaga, NY": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.00,
+      "utilities": 1.05
+    },
+    "Raleigh-Cary, NC": {
+      "food": 0.95,
+      "healthcare": 1.00,
+      "transport": 1.12,
+      "utilities": 0.92
+    },
+    "Birmingham-Hoover, AL": {
+      "food": 0.88,
+      "healthcare": 0.92,
+      "transport": 1.12,
+      "utilities": 0.95
+    },
+    "Salt Lake City, UT": {
+      "food": 0.98,
+      "healthcare": 1.00,
+      "transport": 1.08,
+      "utilities": 0.92
+    },
+    "Honolulu, HI": {
+      "food": 1.35,
+      "healthcare": 1.15,
+      "transport": 0.95,
+      "utilities": 1.40
+    },
+    "Tucson, AZ": {
+      "food": 0.95,
+      "healthcare": 0.98,
+      "transport": 1.10,
+      "utilities": 1.05
+    },
+    "Fresno, CA": {
+      "food": 0.98,
+      "healthcare": 0.98,
+      "transport": 1.18,
+      "utilities": 1.02
+    },
+    "Albuquerque, NM": {
+      "food": 0.95,
+      "healthcare": 0.95,
+      "transport": 1.12,
+      "utilities": 0.98
+    },
+    "Omaha-Council Bluffs, NE-IA": {
+      "food": 0.90,
+      "healthcare": 0.95,
+      "transport": 1.05,
+      "utilities": 0.95
+    },
+    "Bakersfield, CA": {
+      "food": 0.98,
+      "healthcare": 0.95,
+      "transport": 1.20,
+      "utilities": 1.05
+    },
+    "default": {
+      "food": 1.00,
+      "healthcare": 1.00,
+      "transport": 1.00,
+      "utilities": 1.00
+    }
+  }
+}
