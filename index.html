@@ -1390,6 +1390,14 @@
       const [unionRaisePercent, setUnionRaisePercent] = useState(0);
       const [showInflationResume, setShowInflationResume] = useState(false);
 
+      // The Shelter Tax State
+      const [shelterRent, setShelterRent] = useState('');
+      const [shelterSalary, setShelterSalary] = useState('');
+      const [shelterResults, setShelterResults] = useState(null);
+
+      // Corporate Conquest Map State
+      const [mapData, setMapData] = useState(null);
+
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
       const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [], telegram_url: '' });
@@ -1770,6 +1778,12 @@
           .then(r => r.json())
           .then(data => setReports(data))
           .catch(() => {});
+
+        // Fetch corporate map data
+        fetch(`${API_BASE}/map-data`)
+          .then(r => r.json())
+          .then(data => setMapData(data))
+          .catch(() => {});
       }, []);
 
       // Fetch buildings when ZIP changes
@@ -2060,6 +2074,41 @@
         } finally {
           setImpactLoading(false);
         }
+      };
+
+      // The Shelter Tax calculation
+      const calculateShelterTax = (e) => {
+        e.preventDefault();
+        const rent = parseFloat(shelterRent);
+        const salary = parseFloat(shelterSalary);
+
+        if (!rent || rent <= 0 || !salary || salary <= 0) {
+          setShelterResults(null);
+          return;
+        }
+
+        // Calculate hours spent on rent per month
+        // Hours_Rent_Now = (Current_Rent * 12) / (Current_Salary / 2080)
+        // This gives annual rent hours, divide by 12 for monthly
+        const hourlyWage = salary / 2080; // 2080 = 52 weeks * 40 hours
+        const hoursRentNow = rent / hourlyWage;
+
+        // In 1985, Rent-to-Income ratio was 25% (Gross)
+        // Hours_Rent_1985 = 160 * 0.25 = 40 Hours per month
+        const hoursRent1985 = 40;
+        const fullTimeMonth = 160; // hours
+
+        const extraHours = hoursRentNow - hoursRent1985;
+        const percentOfMonth = (hoursRentNow / fullTimeMonth) * 100;
+
+        setShelterResults({
+          hoursRentNow: Math.round(hoursRentNow * 10) / 10,
+          hoursRent1985,
+          extraHours: Math.round(extraHours * 10) / 10,
+          fullTimeMonth,
+          percentOfMonth: Math.round(percentOfMonth),
+          hourlyWage: Math.round(hourlyWage * 100) / 100
+        });
       };
 
       const toggleReportIssue = (issue) => {
@@ -2499,7 +2548,7 @@
                     color: colors.textDim,
                     lineHeight: '1.6'
                   }}>
-                    <strong style={{ color: colors.text }}>Methodology:</strong> This tool measures the delta between your actual compensation and the value created by your labor. "Fairness" is subjective; these numbers are based on objective historical data from the BLS and EPI.
+                    <strong style={{ color: colors.text }}>Disclaimer:</strong> This calculator provides educational estimates based on aggregate economic data. Your individual "Fair Value" represents what you would have earned if wages had tracked productivity gains since the year you started working. These calculations use interpolated growth curves based on CPI inflation and seniority factors, normalized to your actual salary endpoints. Results are illustrative, not financial advice. Data sources: Economic Policy Institute, Bureau of Labor Statistics, Federal Reserve, Census Bureau.
                   </div>
 
                   <form onSubmit={handleImpactCalculate} style={{ marginBottom: '30px' }}>
@@ -2584,7 +2633,7 @@
                           ${impactResults.summary.cumulative_economic_impact.toLocaleString()}
                         </div>
                         <div style={{ fontSize: '14px', color: colors.textMuted, marginTop: '12px' }}>
-                          Equivalent to <strong style={{ color: colors.text, fontSize: '18px' }}>{impactResults.summary.years_of_work_equivalent}</strong> years of your current salary
+                          {textConfig.impact_years_label}: <strong style={{ color: colors.text, fontSize: '18px' }}>{impactResults.summary.years_of_work_equivalent}</strong> years of labor
                         </div>
                       </div>
 
@@ -2921,6 +2970,259 @@
                       </div>
                     ))}
                   </div>
+                </section>
+
+                {/* The Shelter Tax */}
+                <section style={{ marginTop: '60px' }}>
+                  <h2 style={styles.sectionHeader}>The Shelter Tax</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                    Compare housing costs in Time, not Dollars. How many hours of your life does rent claim?
+                  </p>
+
+                  <form onSubmit={calculateShelterTax} style={{ marginBottom: '30px' }}>
+                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>MONTHLY RENT ($):</label>
+                      <input
+                        type="number"
+                        value={shelterRent}
+                        onChange={(e) => setShelterRent(e.target.value)}
+                        placeholder="1500"
+                        min={1}
+                        style={{ ...styles.input, width: '120px' }}
+                      />
+                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>ANNUAL SALARY ($):</label>
+                      <input
+                        type="number"
+                        value={shelterSalary}
+                        onChange={(e) => setShelterSalary(e.target.value)}
+                        placeholder="50000"
+                        min={1}
+                        style={{ ...styles.input, width: '120px' }}
+                      />
+                      <button type="submit" style={styles.button('primary')}>
+                        Calculate
+                      </button>
+                    </div>
+                  </form>
+
+                  {shelterResults && (
+                    <div style={{ ...styles.card, padding: '30px' }}>
+                      {/* Visualization Bar */}
+                      <div style={{ marginBottom: '25px' }}>
+                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          Hours per Month (160 = Full-Time)
+                        </div>
+                        <div style={{ position: 'relative', height: '60px', backgroundColor: colors.bgLight, border: `1px solid ${colors.border}` }}>
+                          {/* Your rent hours (red fill) */}
+                          <div style={{
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            height: '100%',
+                            width: `${Math.min((shelterResults.hoursRentNow / shelterResults.fullTimeMonth) * 100, 100)}%`,
+                            backgroundColor: 'rgba(255, 51, 51, 0.7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <span style={{ color: '#fff', fontWeight: 700, fontSize: '14px', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                              {shelterResults.hoursRentNow}h
+                            </span>
+                          </div>
+                          {/* 1985 Standard Line (40 hours = 25%) */}
+                          <div style={{
+                            position: 'absolute',
+                            left: `${(40 / 160) * 100}%`,
+                            top: 0,
+                            height: '100%',
+                            width: '2px',
+                            backgroundColor: colors.success
+                          }} />
+                          <div style={{
+                            position: 'absolute',
+                            left: `${(40 / 160) * 100}%`,
+                            top: '-20px',
+                            transform: 'translateX(-50%)',
+                            fontSize: '10px',
+                            color: colors.success,
+                            whiteSpace: 'nowrap'
+                          }}>
+                            1985 Standard (40h)
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: '10px', color: colors.textDimmest }}>
+                          <span>0h</span>
+                          <span>40h</span>
+                          <span>80h</span>
+                          <span>120h</span>
+                          <span>160h</span>
+                        </div>
+                      </div>
+
+                      {/* Results Text */}
+                      <div style={{
+                        padding: '20px',
+                        backgroundColor: '#1a0a0a',
+                        border: `1px solid ${colors.primary}`,
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ fontSize: '15px', color: colors.text, lineHeight: 1.8, margin: 0 }}>
+                          In 1985, a worker paid <strong style={{ color: colors.success }}>40 hours</strong> of life for shelter.
+                          <br />
+                          You pay <strong style={{ color: colors.primary }}>{shelterResults.hoursRentNow} hours</strong>.
+                          <br />
+                          {shelterResults.extraHours > 0 ? (
+                            <span style={{ marginTop: '10px', display: 'inline-block' }}>
+                              The market claims <strong style={{ color: colors.warning }}>{shelterResults.extraHours} extra hours</strong> of your life.
+                            </span>
+                          ) : (
+                            <span style={{ marginTop: '10px', display: 'inline-block', color: colors.success }}>
+                              Your rent burden is below the 1985 baseline.
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Additional Stats */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '20px' }}>
+                        <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
+                          <div style={{ fontSize: '24px', fontWeight: 700, color: colors.primary }}>{shelterResults.percentOfMonth}%</div>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>of work month</div>
+                        </div>
+                        <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
+                          <div style={{ fontSize: '24px', fontWeight: 700, color: colors.text }}>${shelterResults.hourlyWage}</div>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>hourly rate</div>
+                        </div>
+                        <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
+                          <div style={{ fontSize: '24px', fontWeight: 700, color: shelterResults.extraHours > 0 ? colors.warning : colors.success }}>
+                            {shelterResults.extraHours > 0 ? '+' : ''}{shelterResults.extraHours}h
+                          </div>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>vs 1985</div>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
+                        1985 baseline: 25% of gross income = 40 hours of a 160-hour work month. Source: Census Bureau rent-to-income data.
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Corporate Conquest Map */}
+                <section style={{ marginTop: '60px' }}>
+                  <h2 style={styles.sectionHeader}>Corporate Conquest Map</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                    State-by-state corporate investor ownership of housing. Red = High corporate ownership.
+                  </p>
+
+                  {mapData && (
+                    <div>
+                      {/* State Risk Grid */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                        gap: '8px',
+                        marginBottom: '20px'
+                      }}>
+                        {Object.entries(mapData)
+                          .filter(([state]) => state !== 'default')
+                          .sort((a, b) => b[1].corporate_pct - a[1].corporate_pct)
+                          .map(([state, data]) => {
+                            // Color coding: higher corporate % = more red
+                            const pct = data.corporate_pct;
+                            const hue = Math.max(0, 120 - (pct * 4)); // 0 = red, 120 = green
+                            const bgColor = `hsl(${hue}, 70%, 25%)`;
+                            const borderColor = `hsl(${hue}, 70%, 40%)`;
+
+                            return (
+                              <div
+                                key={state}
+                                style={{
+                                  padding: '12px 8px',
+                                  backgroundColor: bgColor,
+                                  border: `2px solid ${borderColor}`,
+                                  textAlign: 'center',
+                                  cursor: 'default',
+                                  position: 'relative'
+                                }}
+                                title={`${pct}% of homes in ${state} are owned by investors. Price-to-income ratio: ${data.price_to_income}x`}
+                              >
+                                <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>{state}</div>
+                                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>
+                                  {pct}%
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+
+                      {/* Legend */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '20px',
+                        marginBottom: '20px',
+                        flexWrap: 'wrap'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(0, 70%, 25%)', border: '1px solid hsl(0, 70%, 40%)' }} />
+                          <span style={{ fontSize: '11px', color: colors.textMuted }}>High (30%+)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(40, 70%, 25%)', border: '1px solid hsl(40, 70%, 40%)' }} />
+                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Medium (20-29%)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(80, 70%, 25%)', border: '1px solid hsl(80, 70%, 40%)' }} />
+                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Low (10-19%)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(120, 70%, 25%)', border: '1px solid hsl(120, 70%, 40%)' }} />
+                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Lowest (&lt;10%)</span>
+                        </div>
+                      </div>
+
+                      {/* Detail Cards */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '15px'
+                      }}>
+                        {Object.entries(mapData)
+                          .filter(([state]) => state !== 'default')
+                          .sort((a, b) => b[1].corporate_pct - a[1].corporate_pct)
+                          .slice(0, 5)
+                          .map(([state, data]) => (
+                            <div key={state} style={{
+                              ...styles.card,
+                              borderLeft: `3px solid ${colors.primary}`,
+                              padding: '15px'
+                            }}>
+                              <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text, marginBottom: '8px' }}>
+                                {state}
+                              </div>
+                              <div style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '5px' }}>
+                                <strong style={{ color: colors.warning }}>{data.corporate_pct}%</strong> of homes owned by investors
+                              </div>
+                              <div style={{ fontSize: '11px', color: colors.textDim }}>
+                                Price-to-income ratio: {data.price_to_income}x
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+
+                      <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
+                        Sources: CoreLogic, ATTOM Data, Redfin investor activity reports. "Corporate" includes institutional investors, REITs, and investment LLCs.
+                      </div>
+                    </div>
+                  )}
+
+                  {!mapData && (
+                    <div style={{ ...styles.card, textAlign: 'center', padding: '40px', color: colors.textMuted }}>
+                      Loading corporate ownership data...
+                    </div>
+                  )}
                 </section>
               </div>
             )}

@@ -68,6 +68,33 @@ const YEARLY_ECONOMIC_DATA = {
   2024: { productivity_index: 229.6, wage_index: 137.5, cpi_inflation: 0.033, baseline_rent_burden: 0.37 }
 };
 
+// ============================================
+// STATE CORPORATE OWNERSHIP DATA
+// ============================================
+// Corporate/investor ownership estimates by state (based on investor activity)
+// - corporate_pct: Estimated percentage of homes owned by corporate investors
+// - price_to_income: Median home price to median income ratio
+// Sources: CoreLogic, ATTOM Data, Redfin investor reports
+//
+const STATE_META = {
+  'NY': { corporate_pct: 16, price_to_income: 8.2 },
+  'CA': { corporate_pct: 22, price_to_income: 9.5 },
+  'TX': { corporate_pct: 28, price_to_income: 5.4 },
+  'FL': { corporate_pct: 24, price_to_income: 6.1 },
+  'GA': { corporate_pct: 31, price_to_income: 5.1 },
+  'AZ': { corporate_pct: 26, price_to_income: 5.8 },
+  'NC': { corporate_pct: 25, price_to_income: 5.2 },
+  'NV': { corporate_pct: 23, price_to_income: 6.3 },
+  'TN': { corporate_pct: 22, price_to_income: 5.0 },
+  'OH': { corporate_pct: 18, price_to_income: 4.2 },
+  'IL': { corporate_pct: 17, price_to_income: 5.1 },
+  'PA': { corporate_pct: 14, price_to_income: 4.8 },
+  'MI': { corporate_pct: 15, price_to_income: 4.0 },
+  'WA': { corporate_pct: 19, price_to_income: 7.8 },
+  'CO': { corporate_pct: 21, price_to_income: 6.9 },
+  'default': { corporate_pct: 13, price_to_income: 7.5 }
+};
+
 function initializeDatabase() {
   const db = new Database(DB_PATH);
 
@@ -473,4 +500,4 @@ function getDatabase() {
   return db;
 }
 
-module.exports = { getDatabase, YEARLY_ECONOMIC_DATA };
+module.exports = { getDatabase, YEARLY_ECONOMIC_DATA, STATE_META };
