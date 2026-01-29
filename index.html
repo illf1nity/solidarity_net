@@ -1334,6 +1334,7 @@
       // Navigation
       const [activeTab, setActiveTab] = useState('information');
       const [activeSubTab, setActiveSubTab] = useState('sentiment');
+      const [activeInfoSubTab, setActiveInfoSubTab] = useState('standards');
       const [notification, setNotification] = useState(null);
 
       // Information State
@@ -1426,6 +1427,10 @@
         subtab_worker: '⚡ Worker Collectives',
         subtab_consumer: '🛒 Consumer Groups',
         subtab_petitions: '📋 Petitions',
+
+        // Information sub-tabs
+        subtab_standards: '📏 Standards of Living',
+        subtab_exploitation: '💰 Exploitation Calculator',
 
         // Standard of Living Calculator
         sol_section_title: 'Standard of Living Calculator',
@@ -2355,7 +2360,19 @@
             {/* ==================== INFORMATION TAB ==================== */}
             {activeTab === 'information' && (
               <div>
+                <div style={styles.subNav}>
+                  {[
+                    { id: 'standards', label: textConfig.subtab_standards },
+                    { id: 'exploitation', label: textConfig.subtab_exploitation }
+                  ].map(sub => (
+                    <button key={sub.id} onClick={() => setActiveInfoSubTab(sub.id)} style={styles.subNavButton(activeInfoSubTab === sub.id)}>
+                      {sub.label}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Standard of Living Calculator */}
+                {activeInfoSubTab === 'standards' && (
                 <section style={{ marginBottom: '60px' }}>
                   <h2 style={styles.sectionHeader}>{textConfig.sol_section_title}</h2>
 
@@ -2530,8 +2547,10 @@
                     </div>
                   )}
                 </section>
+                )}
 
                 {/* Economic Impact Calculator */}
+                {activeInfoSubTab === 'exploitation' && (
                 <section style={{ marginBottom: '60px' }}>
                   <h2 style={styles.sectionHeader}>{textConfig.impact_section_title}</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
@@ -3224,6 +3243,7 @@
                     </div>
                   )}
                 </section>
+                )}
               </div>
             )}
 
