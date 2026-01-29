@@ -299,16 +299,46 @@ app.post('/api/impact-calculator', (req, res) => {
 
   const yearsWorked = currentYear - startYear;
 
-  // Calculate linear income progression for each year
-  // This estimates the user's income in each year of their career
-  const incomePerYear = [];
+  // ============================================
+  // COMPOUNDED GROWTH & NORMALIZATION MODEL
+  // ============================================
+  // Step 1: Simulate yearly salary path with inflation and seniority
+  const simulatedIncomes = [];
+  let simulatedSalary = startSalary;
+
   for (let year = startYear; year <= currentYear; year++) {
-    const progress = (year - startYear) / Math.max(1, yearsWorked);
-    const estimatedIncome = startSalary + (currentSalary - startSalary) * progress;
-    incomePerYear.push({ year, income: estimatedIncome });
+    const economicData = YEARLY_ECONOMIC_DATA[year];
+    if (!economicData) continue; // Skip years without data
+
+    if (year === startYear) {
+      // First year: use starting salary
+      simulatedIncomes.push({ year, simulatedIncome: startSalary });
+    } else {
+      // Apply inflation from previous year
+      const inflationFactor = 1 + economicData.cpi_inflation;
+      simulatedSalary *= inflationFactor;
+
+      // Apply seniority multiplier
+      const yearsOfExperience = year - startYear;
+      const seniorityGrowth = yearsOfExperience <= 15 ? 0.025 : 0.010;
+      simulatedSalary *= (1 + seniorityGrowth);
+
+      simulatedIncomes.push({ year, simulatedIncome: simulatedSalary });
+    }
   }
 
-  // Calculate cumulative economic impact year-over-year
+  // Step 2: Curve normalization - scale to match actual endpoints
+  const simulatedFinalSalary = simulatedIncomes[simulatedIncomes.length - 1].simulatedIncome;
+  const scalingFactor = currentSalary / simulatedFinalSalary;
+
+  const incomePerYear = simulatedIncomes.map(({ year, simulatedIncome }) => ({
+    year,
+    income: simulatedIncome * scalingFactor
+  }));
+
+  // ============================================
+  // CALCULATE UNPAID LABOR VALUE (VALUE GAP)
+  // ============================================
   let cumulativeProductivityGap = 0;
   let cumulativeRentBurden = 0;
   const yearlyBreakdown = [];
@@ -317,11 +347,11 @@ app.post('/api/impact-calculator', (req, res) => {
     const economicData = YEARLY_ECONOMIC_DATA[year];
     if (!economicData) continue; // Skip years without data
 
-    // Calculate productivity-wage gap for this year
-    // Formula: unrealized_gains = income * ((productivity_index / wage_index) - 1)
-    // This shows what the worker would have earned if wages tracked productivity
+    // Value Gap Formula: Fair Compensation = Actual Income * (productivity_index / wage_index)
+    // Unpaid Labor Value = Fair Compensation - Actual Income
     const productivityWageRatio = economicData.productivity_index / economicData.wage_index;
-    const yearlyUnrealizedGains = income * (productivityWageRatio - 1);
+    const fairCompensation = income * productivityWageRatio;
+    const yearlyUnpaidLaborValue = fairCompensation - income;
 
     // Calculate excess rent burden for this year
     // Only count if user's current rent burden exceeds historical baseline
@@ -329,7 +359,7 @@ app.post('/api/impact-calculator', (req, res) => {
     const excessBurden = Math.max(0, userRentBurden - economicData.baseline_rent_burden);
     const yearlyExcessRent = income * excessBurden;
 
-    cumulativeProductivityGap += yearlyUnrealizedGains;
+    cumulativeProductivityGap += yearlyUnpaidLaborValue;
     cumulativeRentBurden += yearlyExcessRent;
 
     yearlyBreakdown.push({
@@ -337,7 +367,8 @@ app.post('/api/impact-calculator', (req, res) => {
       income: Math.round(income),
       productivity_index: economicData.productivity_index,
       wage_index: economicData.wage_index,
-      unrealized_gains: Math.round(yearlyUnrealizedGains),
+      fair_compensation: Math.round(fairCompensation),
+      unpaid_labor_value: Math.round(yearlyUnpaidLaborValue),
       excess_rent: Math.round(yearlyExcessRent),
     });
   }
@@ -353,6 +384,19 @@ app.post('/api/impact-calculator', (req, res) => {
 
   const totalProductivityGrowth = ((lastYearData.productivity_index / firstYearData.productivity_index - 1) * 100).toFixed(1);
   const totalWageGrowth = ((lastYearData.wage_index / firstYearData.wage_index - 1) * 100).toFixed(1);
+
+  // ============================================
+  // HOUSING OPPORTUNITY COST
+  // ============================================
+  const historicalData = db.prepare('SELECT * FROM historical_economic_data WHERE id = 1').get();
+  const baselineRatio = historicalData.home_price_to_income_1985; // 3.5
+  const currentRatio = historicalData.home_price_to_income_now; // 7.5
+  const medianHomePrice = currentSalary * currentRatio; // Estimated median home price today
+
+  // Calculate years to afford home then vs now
+  const yearsToAffordThen = baselineRatio;
+  const yearsToAffordNow = currentRatio;
+  const housingTimeGap = yearsToAffordNow - yearsToAffordThen;
 
   res.json({
     inputs: {
@@ -388,6 +432,14 @@ app.post('/api/impact-calculator', (req, res) => {
         label: 'Rent Burden Increase',
         value: `${((lastYearData.baseline_rent_burden - firstYearData.baseline_rent_burden) * 100).toFixed(1)}%`,
         detail: `Baseline rent burden increased from ${(firstYearData.baseline_rent_burden * 100).toFixed(0)}% to ${(lastYearData.baseline_rent_burden * 100).toFixed(0)}% of income`,
+      },
+      housing: {
+        label: 'Housing Time Gap',
+        value: `${housingTimeGap.toFixed(1)} years`,
+        detail: `In 1985, a median home cost ${yearsToAffordThen} years of income. Today it costs ${yearsToAffordNow} years - an additional ${housingTimeGap.toFixed(1)} years of labor required`,
+        median_home_price: Math.round(medianHomePrice),
+        baseline_ratio: baselineRatio,
+        current_ratio: currentRatio,
       },
     },
     yearly_breakdown: yearlyBreakdown,
