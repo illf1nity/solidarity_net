@@ -1391,6 +1391,337 @@
       const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [] });
 
       // ============================================
+      // TEXT CUSTOMIZATION PANEL
+      // ============================================
+
+      // Default text configuration - all customizable text elements
+      const defaultTextConfig = {
+        // Header
+        header_title: 'SOLIDARITY',
+        header_title_suffix: 'NET',
+        header_tagline: 'Formation • Information • Accountability',
+        header_no_tracking: 'NO TRACKING • NO PROFILES',
+        header_workers_first: 'WORKERS FIRST',
+
+        // Navigation tabs
+        nav_information: 'information',
+        nav_formation: 'formation',
+        nav_accountability: 'accountability',
+
+        // Formation sub-tabs
+        subtab_sentiment: '📊 Work Sentiment',
+        subtab_tenant: '🏢 Tenant Unions',
+        subtab_worker: '⚡ Worker Collectives',
+        subtab_consumer: '🛒 Consumer Groups',
+        subtab_petitions: '📋 Petitions',
+
+        // Standard of Living Calculator
+        sol_section_title: 'Standard of Living Calculator',
+        sol_zip_label: 'ZIP CODE:',
+        sol_zip_placeholder: 'Enter ZIP',
+        sol_calculate_btn: 'Calculate',
+        sol_loading_btn: 'Loading...',
+        sol_helper_text: 'Enter any US ZIP code — data sourced from BLS, HUD, USDA, AAA, and EIA',
+        sol_weeks_label: 'weeks of work to afford one month of living',
+        sol_deficit_label: 'DEFICIT: You need',
+        sol_deficit_suffix: 'more hours than a full-time job provides',
+        sol_surplus_prefix: 'Technically sustainable with',
+        sol_surplus_suffix: 'hours of margin',
+        sol_gross_wage: 'Gross hourly wage',
+        sol_federal_tax: 'Federal income tax',
+        sol_state_tax: 'State tax',
+        sol_fica: 'FICA (SS + Medicare)',
+        sol_after_tax: 'After-tax hourly wage',
+        sol_effective_rate: 'Effective tax rate:',
+        sol_hours_label: 'Hours needed per month (at after-tax wage):',
+        sol_rent: 'Rent',
+        sol_food: 'Food',
+        sol_healthcare: 'Healthcare',
+        sol_transport: 'Transport',
+        sol_utilities: 'Utilities',
+        sol_total_required: 'TOTAL REQUIRED',
+        sol_available: 'Available (40hr/wk × 4)',
+        sol_monthly_result: 'MONTHLY DEFICIT / SURPLUS',
+        sol_data_quality: 'Data quality:',
+
+        // Theft Calculator
+        theft_section_title: 'What Has Been Stolen From You',
+        theft_description: 'Enter your age and income to see how systemic economic policy has personally cost you.',
+        theft_age_label: 'AGE:',
+        theft_income_label: 'ANNUAL INCOME ($):',
+        theft_age_placeholder: '30',
+        theft_income_placeholder: '45000',
+        theft_calculate_btn: 'Calculate',
+        theft_cost_label: 'Cost to You',
+        theft_hours_label: 'Hours of Work',
+        theft_stolen_by: 'Stolen by:',
+        theft_housing: 'Housing policy',
+        theft_wages: 'Wage suppression',
+        theft_healthcare: 'Healthcare costs',
+        theft_education: 'Education debt',
+
+        // Consumer Price Resistance
+        price_section_title: 'Consumer Price Resistance',
+        price_vote_prompt: 'Is this the right price?',
+        price_too_high: 'Too High',
+        price_seems_right: 'Seems Right',
+        price_too_low: 'Too Low',
+
+        // Work Sentiment
+        sentiment_section_title: 'Work Sentiment — Your Area',
+        sentiment_question: 'Do you feel like working today?',
+        sentiment_yes: 'YES',
+        sentiment_no: 'NO',
+        sentiment_recorded: 'Response recorded anonymously (fingerprint-based, no account)',
+        sentiment_unwilling: "Don't want to work today",
+        sentiment_responses: 'Responses in your area',
+        sentiment_trend: '4-Week Trend (% unwilling to work)',
+        sentiment_trend_msg: 'Worker unwillingness rising 14 points over 4 weeks',
+
+        // Tenant Union Builder
+        tenant_section_title: 'Tenant Union Builder',
+        tenant_description: 'Find and connect with other tenants in your building. No personal data required.',
+        tenant_search_placeholder: 'Enter ZIP to find buildings',
+        tenant_search_btn: 'Search Buildings',
+        tenant_landlord: 'Landlord:',
+        tenant_joined: 'Joined',
+        tenant_members: 'Members',
+        tenant_organization: 'Organization %',
+        tenant_join_btn: 'Join Building',
+        tenant_message_btn: 'Message Building',
+
+        // Worker Collectives
+        worker_section_title: 'Worker Collectives',
+        worker_form_title: 'Start a Worker Collective',
+        worker_company_label: 'COMPANY NAME',
+        worker_industry_label: 'INDUSTRY TYPE',
+        worker_issues_label: 'ISSUE TYPE (select all that apply)',
+        worker_create_btn: 'Create Collective',
+        worker_join_btn: 'Join Collective',
+        worker_message_btn: 'Message',
+
+        // Issue types
+        issue_wage_theft: 'Wage theft',
+        issue_unsafe: 'Unsafe conditions',
+        issue_retaliation: 'Retaliation',
+        issue_discrimination: 'Discrimination',
+        issue_harassment: 'Harassment',
+        issue_scheduling: 'Scheduling abuse',
+        issue_unpaid_ot: 'Unpaid overtime',
+        issue_other: 'Other',
+        issue_no_repairs: 'No repairs',
+        issue_illegal_fees: 'Illegal fees',
+        issue_safety_hazard: 'Safety hazard',
+        issue_pest: 'Pest infestation',
+        issue_no_heat: 'No heat/AC',
+
+        // Consumer Groups
+        consumer_section_title: 'Consumer Collectives',
+        consumer_join_btn: 'Join Group',
+
+        // Petitions
+        petition_section_title: 'Local Petitions',
+        petition_form_title: 'Link Change.org Petition',
+        petition_url_label: 'PETITION URL',
+        petition_title_label: 'PETITION TITLE',
+        petition_area_label: 'AREA / LOCATION',
+        petition_desc_label: 'DESCRIPTION (OPTIONAL)',
+        petition_url_placeholder: 'https://www.change.org/p/your-petition',
+        petition_title_placeholder: 'What are you petitioning for?',
+        petition_area_placeholder: 'Where does this apply?',
+        petition_desc_placeholder: 'Explain the issue...',
+        petition_create_btn: 'Create Petition',
+        petition_refresh_btn: 'Refresh Count',
+
+        // Accountability
+        report_section_title: 'Submit Report',
+        report_type_landlord: '🏠 Landlord',
+        report_type_employer: '💼 Employer',
+        report_name_landlord: 'Landlord Name or Management Company',
+        report_name_employer: 'Company Name',
+        report_address_label: 'Property Address (optional)',
+        report_issues_label: 'Issue Type (select all that apply)',
+        report_desc_label: 'Description (optional)',
+        report_anonymous: 'Post anonymously',
+        report_name_landlord_placeholder: 'e.g., Greystone Properties',
+        report_name_employer_placeholder: 'e.g., MegaCorp Inc',
+        report_address_placeholder: 'e.g., 123 Main St',
+        report_desc_placeholder: 'What happened? Be specific but protect your identity.',
+        report_submit_btn: 'Submit Report',
+        report_footer: 'Reports are public. No moderation by corporations or landlords.',
+
+        // Recent Reports
+        reports_section_title: 'Recent Reports',
+        reports_filter_all: 'All Reports',
+        reports_filter_landlord: 'Landlords',
+        reports_filter_employer: 'Employers',
+        reports_count_label: 'REPORTS',
+        reports_last: 'Last:',
+
+        // Footer
+        footer_brand: 'SOLIDARITY_NET',
+        footer_tagline: 'Open source. No tracking. No profiles. No ads.',
+        footer_source: 'Source Code',
+        footer_data: 'Data Sources',
+        footer_privacy: 'Privacy',
+      };
+
+      // Default font configuration
+      const defaultFontConfig = {
+        primary: "'IBM Plex Mono', 'Courier New', monospace",
+        heading: "'IBM Plex Mono', 'Courier New', monospace",
+        body: "'IBM Plex Mono', 'Courier New', monospace",
+      };
+
+      // Default color overrides (uses colors object as base)
+      const defaultColorConfig = {
+        primary: '#ff3333',
+        text: '#e8e8e8',
+        textMuted: '#888',
+        textDim: '#666',
+        success: '#33ff33',
+        warning: '#ffaa00',
+        bg: '#0a0a0a',
+        bgLight: '#111',
+        border: '#222',
+      };
+
+      // Available font options
+      const fontOptions = [
+        "'IBM Plex Mono', 'Courier New', monospace",
+        "'Arial', 'Helvetica', sans-serif",
+        "'Georgia', 'Times New Roman', serif",
+        "'Times New Roman', 'Times', serif",
+        "'Verdana', 'Geneva', sans-serif",
+        "'Trebuchet MS', 'Lucida Sans', sans-serif",
+        "'Courier New', 'Courier', monospace",
+        "'Roboto', 'Arial', sans-serif",
+        "'Open Sans', 'Arial', sans-serif",
+      ];
+
+      // State for customization
+      const [showCustomizationPanel, setShowCustomizationPanel] = useState(false);
+      const [textConfig, setTextConfig] = useState(() => {
+        const saved = localStorage.getItem('solidaritynet_textConfig');
+        return saved ? JSON.parse(saved) : defaultTextConfig;
+      });
+      const [fontConfig, setFontConfig] = useState(() => {
+        const saved = localStorage.getItem('solidaritynet_fontConfig');
+        return saved ? JSON.parse(saved) : defaultFontConfig;
+      });
+      const [colorConfig, setColorConfig] = useState(() => {
+        const saved = localStorage.getItem('solidaritynet_colorConfig');
+        return saved ? JSON.parse(saved) : defaultColorConfig;
+      });
+      const [panelTab, setPanelTab] = useState('text');
+      const [textFilter, setTextFilter] = useState('');
+
+      // Save to localStorage when configs change
+      useEffect(() => {
+        localStorage.setItem('solidaritynet_textConfig', JSON.stringify(textConfig));
+      }, [textConfig]);
+
+      useEffect(() => {
+        localStorage.setItem('solidaritynet_fontConfig', JSON.stringify(fontConfig));
+      }, [fontConfig]);
+
+      useEffect(() => {
+        localStorage.setItem('solidaritynet_colorConfig', JSON.stringify(colorConfig));
+      }, [colorConfig]);
+
+      // Helper to update text config
+      const updateText = (key, value) => {
+        setTextConfig(prev => ({ ...prev, [key]: value }));
+      };
+
+      // Helper to update font config
+      const updateFont = (key, value) => {
+        setFontConfig(prev => ({ ...prev, [key]: value }));
+      };
+
+      // Helper to update color config
+      const updateColor = (key, value) => {
+        setColorConfig(prev => ({ ...prev, [key]: value }));
+      };
+
+      // Reset to defaults
+      const resetTextConfig = () => {
+        setTextConfig(defaultTextConfig);
+        localStorage.removeItem('solidaritynet_textConfig');
+      };
+
+      const resetFontConfig = () => {
+        setFontConfig(defaultFontConfig);
+        localStorage.removeItem('solidaritynet_fontConfig');
+      };
+
+      const resetColorConfig = () => {
+        setColorConfig(defaultColorConfig);
+        localStorage.removeItem('solidaritynet_colorConfig');
+      };
+
+      const resetAllConfig = () => {
+        resetTextConfig();
+        resetFontConfig();
+        resetColorConfig();
+      };
+
+      // Export config as JSON
+      const exportConfig = () => {
+        const config = {
+          textConfig,
+          fontConfig,
+          colorConfig,
+          exportedAt: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'solidaritynet_customization.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      // Import config from JSON
+      const importConfig = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const config = JSON.parse(e.target.result);
+              if (config.textConfig) setTextConfig({ ...defaultTextConfig, ...config.textConfig });
+              if (config.fontConfig) setFontConfig({ ...defaultFontConfig, ...config.fontConfig });
+              if (config.colorConfig) setColorConfig({ ...defaultColorConfig, ...config.colorConfig });
+              showNotification('Configuration imported successfully', 'success');
+            } catch (err) {
+              showNotification('Invalid configuration file', 'error');
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+
+      // Group text config by category for display
+      const textCategories = {
+        'Header': ['header_title', 'header_title_suffix', 'header_tagline', 'header_no_tracking', 'header_workers_first'],
+        'Navigation': ['nav_information', 'nav_formation', 'nav_accountability', 'subtab_sentiment', 'subtab_tenant', 'subtab_worker', 'subtab_consumer', 'subtab_petitions'],
+        'Standard of Living': ['sol_section_title', 'sol_zip_label', 'sol_zip_placeholder', 'sol_calculate_btn', 'sol_loading_btn', 'sol_helper_text', 'sol_weeks_label', 'sol_deficit_label', 'sol_deficit_suffix', 'sol_surplus_prefix', 'sol_surplus_suffix', 'sol_gross_wage', 'sol_federal_tax', 'sol_state_tax', 'sol_fica', 'sol_after_tax', 'sol_effective_rate', 'sol_hours_label', 'sol_rent', 'sol_food', 'sol_healthcare', 'sol_transport', 'sol_utilities', 'sol_total_required', 'sol_available', 'sol_monthly_result', 'sol_data_quality'],
+        'Theft Calculator': ['theft_section_title', 'theft_description', 'theft_age_label', 'theft_income_label', 'theft_age_placeholder', 'theft_income_placeholder', 'theft_calculate_btn', 'theft_cost_label', 'theft_hours_label', 'theft_stolen_by', 'theft_housing', 'theft_wages', 'theft_healthcare', 'theft_education'],
+        'Price Resistance': ['price_section_title', 'price_vote_prompt', 'price_too_high', 'price_seems_right', 'price_too_low'],
+        'Work Sentiment': ['sentiment_section_title', 'sentiment_question', 'sentiment_yes', 'sentiment_no', 'sentiment_recorded', 'sentiment_unwilling', 'sentiment_responses', 'sentiment_trend', 'sentiment_trend_msg'],
+        'Tenant Unions': ['tenant_section_title', 'tenant_description', 'tenant_search_placeholder', 'tenant_search_btn', 'tenant_landlord', 'tenant_joined', 'tenant_members', 'tenant_organization', 'tenant_join_btn', 'tenant_message_btn'],
+        'Worker Collectives': ['worker_section_title', 'worker_form_title', 'worker_company_label', 'worker_industry_label', 'worker_issues_label', 'worker_create_btn', 'worker_join_btn', 'worker_message_btn'],
+        'Issue Labels': ['issue_wage_theft', 'issue_unsafe', 'issue_retaliation', 'issue_discrimination', 'issue_harassment', 'issue_scheduling', 'issue_unpaid_ot', 'issue_other', 'issue_no_repairs', 'issue_illegal_fees', 'issue_safety_hazard', 'issue_pest', 'issue_no_heat'],
+        'Consumer Groups': ['consumer_section_title', 'consumer_join_btn'],
+        'Petitions': ['petition_section_title', 'petition_form_title', 'petition_url_label', 'petition_title_label', 'petition_area_label', 'petition_desc_label', 'petition_url_placeholder', 'petition_title_placeholder', 'petition_area_placeholder', 'petition_desc_placeholder', 'petition_create_btn', 'petition_refresh_btn'],
+        'Submit Report': ['report_section_title', 'report_type_landlord', 'report_type_employer', 'report_name_landlord', 'report_name_employer', 'report_address_label', 'report_issues_label', 'report_desc_label', 'report_anonymous', 'report_name_landlord_placeholder', 'report_name_employer_placeholder', 'report_address_placeholder', 'report_desc_placeholder', 'report_submit_btn', 'report_footer'],
+        'Recent Reports': ['reports_section_title', 'reports_filter_all', 'reports_filter_landlord', 'reports_filter_employer', 'reports_count_label', 'reports_last'],
+        'Footer': ['footer_brand', 'footer_tagline', 'footer_source', 'footer_data', 'footer_privacy'],
+      };
+
+      // ============================================
       // DATA FETCHING
       // ============================================
 
@@ -1742,21 +2073,21 @@
       // ============================================
 
       const colors = {
-        bg: '#0a0a0a',
-        bgLight: '#111',
+        bg: colorConfig.bg || '#0a0a0a',
+        bgLight: colorConfig.bgLight || '#111',
         bgLighter: '#1a1a1a',
-        border: '#222',
+        border: colorConfig.border || '#222',
         borderLight: '#333',
-        text: '#e8e8e8',
-        textMuted: '#888',
-        textDim: '#666',
+        text: colorConfig.text || '#e8e8e8',
+        textMuted: colorConfig.textMuted || '#888',
+        textDim: colorConfig.textDim || '#666',
         textDimmer: '#555',
         textDimmest: '#444',
-        primary: '#ff3333',
+        primary: colorConfig.primary || '#ff3333',
         primaryDark: '#cc2929',
-        success: '#33ff33',
+        success: colorConfig.success || '#33ff33',
         successDark: '#29cc29',
-        warning: '#ffaa00',
+        warning: colorConfig.warning || '#ffaa00',
         purple: '#aa00ff',
       };
 
@@ -1765,7 +2096,7 @@
           minHeight: '100vh',
           backgroundColor: colors.bg,
           color: colors.text,
-          fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+          fontFamily: fontConfig.primary || "'IBM Plex Mono', 'Courier New', monospace",
           fontSize: '14px',
           lineHeight: '1.6'
         },
@@ -1914,28 +2245,32 @@
           {/* Header */}
           <header style={styles.header}>
             <div>
-              <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, letterSpacing: '-0.5px', color: '#ffffff' }}>
-                SOLIDARITY<span style={{ color: colors.primary }}>_</span>NET
+              <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, letterSpacing: '-0.5px', color: '#ffffff', fontFamily: fontConfig.heading }}>
+                {textConfig.header_title}<span style={{ color: colors.primary }}>_</span>{textConfig.header_title_suffix}
               </h1>
               <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px' }}>
-                Formation • Information • Accountability
+                {textConfig.header_tagline}
               </p>
             </div>
             <div style={{ fontSize: '11px', color: colors.textDimmer, textAlign: 'right' }}>
-              <div>NO TRACKING • NO PROFILES</div>
-              <div style={{ color: colors.primary, marginTop: '4px' }}>WORKERS FIRST</div>
+              <div>{textConfig.header_no_tracking}</div>
+              <div style={{ color: colors.primary, marginTop: '4px' }}>{textConfig.header_workers_first}</div>
             </div>
           </header>
 
           {/* Navigation */}
           <nav style={styles.nav}>
-            {['information', 'formation', 'accountability'].map(tab => (
+            {[
+              { key: 'information', label: textConfig.nav_information },
+              { key: 'formation', label: textConfig.nav_formation },
+              { key: 'accountability', label: textConfig.nav_accountability }
+            ].map(tab => (
               <button
-                key={tab}
-                onClick={() => { setActiveTab(tab); if (tab === 'formation') setActiveSubTab('sentiment'); }}
-                style={styles.navButton(activeTab === tab)}
+                key={tab.key}
+                onClick={() => { setActiveTab(tab.key); if (tab.key === 'formation') setActiveSubTab('sentiment'); }}
+                style={styles.navButton(activeTab === tab.key)}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </nav>
@@ -1948,11 +2283,11 @@
               <div>
                 {/* Standard of Living Calculator */}
                 <section style={{ marginBottom: '60px' }}>
-                  <h2 style={styles.sectionHeader}>Standard of Living Calculator</h2>
+                  <h2 style={styles.sectionHeader}>{textConfig.sol_section_title}</h2>
 
                   <form onSubmit={handleZipSubmit} style={{ marginBottom: '30px' }}>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <label style={{ color: colors.textMuted }}>ZIP CODE:</label>
+                      <label style={{ color: colors.textMuted }}>{textConfig.sol_zip_label}</label>
                       <input
                         type="text"
                         value={zipCode}
@@ -1960,7 +2295,7 @@
                           setZipCode(e.target.value.replace(/\D/g, '').slice(0, 5));
                           setZipError(null);
                         }}
-                        placeholder="Enter ZIP"
+                        placeholder={textConfig.sol_zip_placeholder}
                         maxLength={5}
                         style={{
                           ...styles.input,
@@ -1978,7 +2313,7 @@
                         }}
                         disabled={loading}
                       >
-                        {loading ? 'Loading...' : 'Calculate'}
+                        {loading ? textConfig.sol_loading_btn : textConfig.sol_calculate_btn}
                       </button>
                     </div>
                     {zipError && (
@@ -1987,7 +2322,7 @@
                       </p>
                     )}
                     <p style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '8px' }}>
-                      Enter any US ZIP code — data sourced from BLS, HUD, USDA, AAA, and EIA
+                      {textConfig.sol_helper_text}
                     </p>
                   </form>
 
@@ -2008,16 +2343,16 @@
                           {weeksToAffordMonth}
                         </div>
                         <div style={{ fontSize: '14px', color: colors.textMuted, marginTop: '10px' }}>
-                          weeks of work to afford one month of living
+                          {textConfig.sol_weeks_label}
                         </div>
                         {deficit < 0 && (
                           <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#ff333320', color: '#ff6666', fontSize: '12px' }}>
-                            ⚠ DEFICIT: You need <strong>{Math.abs(deficit)} more hours</strong> than a full-time job provides
+                            ⚠ {textConfig.sol_deficit_label} <strong>{Math.abs(deficit)} </strong>{textConfig.sol_deficit_suffix}
                           </div>
                         )}
                         {deficit >= 0 && (
                           <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#33ff3320', color: '#66ff66', fontSize: '12px' }}>
-                            ✓ Technically sustainable with {deficit} hours of margin
+                            ✓ {textConfig.sol_surplus_prefix} {deficit} {textConfig.sol_surplus_suffix}
                           </div>
                         )}
                       </div>
@@ -2025,40 +2360,40 @@
                       {/* Wage & Tax Breakdown */}
                       <div style={{ padding: '15px 0', borderBottom: `1px solid ${colors.border}`, marginBottom: '15px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <span style={{ color: colors.textMuted }}>Gross hourly wage</span>
+                          <span style={{ color: colors.textMuted }}>{textConfig.sol_gross_wage}</span>
                           <span style={{ fontWeight: 700, fontSize: '18px' }}>${localData.medianWage.toFixed(2)}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>Federal income tax</span>
+                          <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_federal_tax}</span>
                           <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.federalTax / 2080).toFixed(2)}/hr</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>State tax ({localData.taxData.stateCode})</span>
+                          <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_state_tax} ({localData.taxData.stateCode})</span>
                           <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.stateTax / 2080).toFixed(2)}/hr</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>FICA (SS + Medicare)</span>
+                          <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_fica}</span>
                           <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.ficaTax / 2080).toFixed(2)}/hr</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: `1px dashed ${colors.border}` }}>
-                          <span style={{ color: colors.warning, fontWeight: 700 }}>After-tax hourly wage</span>
+                          <span style={{ color: colors.warning, fontWeight: 700 }}>{textConfig.sol_after_tax}</span>
                           <span style={{ fontWeight: 700, fontSize: '18px', color: colors.warning }}>${localData.netWage.toFixed(2)}</span>
                         </div>
                         <div style={{ textAlign: 'right', fontSize: '11px', color: colors.textDimmest }}>
-                          Effective tax rate: {(localData.taxData.effectiveRate * 100).toFixed(1)}%
+                          {textConfig.sol_effective_rate} {(localData.taxData.effectiveRate * 100).toFixed(1)}%
                         </div>
                       </div>
 
                       <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        Hours needed per month (at after-tax wage):
+                        {textConfig.sol_hours_label}
                       </div>
 
                       {[
-                        { label: 'Rent', cost: localData.rent, icon: '🏠' },
-                        { label: 'Food', cost: localData.food, icon: '🍎' },
-                        { label: 'Healthcare', cost: localData.healthcare, icon: '🏥' },
-                        { label: 'Transport', cost: localData.transport, icon: '🚗' },
-                        { label: 'Utilities', cost: localData.utilities, icon: '💡' },
+                        { label: textConfig.sol_rent, cost: localData.rent, icon: '🏠' },
+                        { label: textConfig.sol_food, cost: localData.food, icon: '🍎' },
+                        { label: textConfig.sol_healthcare, cost: localData.healthcare, icon: '🏥' },
+                        { label: textConfig.sol_transport, cost: localData.transport, icon: '🚗' },
+                        { label: textConfig.sol_utilities, cost: localData.utilities, icon: '💡' },
                       ].map(item => {
                         const hours = calculateHours(item.cost, effectiveWage);
                         const pct = (hours / totalMonthlyHours) * 100;
@@ -2124,30 +2459,30 @@
 
                 {/* Economic Theft Calculator */}
                 <section style={{ marginBottom: '60px' }}>
-                  <h2 style={styles.sectionHeader}>What Has Been Stolen From You</h2>
+                  <h2 style={styles.sectionHeader}>{textConfig.theft_section_title}</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                    Enter your age and income to see how systemic economic policy has personally cost you.
+                    {textConfig.theft_description}
                   </p>
 
                   <form onSubmit={handleTheftCalculate} style={{ marginBottom: '30px' }}>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <label style={{ color: colors.textMuted }}>AGE:</label>
+                      <label style={{ color: colors.textMuted }}>{textConfig.theft_age_label}</label>
                       <input
                         type="number"
                         value={theftAge}
                         onChange={(e) => { setTheftAge(e.target.value); setTheftError(null); }}
-                        placeholder="30"
+                        placeholder={textConfig.theft_age_placeholder}
                         min={18}
                         max={100}
                         style={{ ...styles.input, width: '80px' }}
                         disabled={theftLoading}
                       />
-                      <label style={{ color: colors.textMuted }}>ANNUAL INCOME ($):</label>
+                      <label style={{ color: colors.textMuted }}>{textConfig.theft_income_label}</label>
                       <input
                         type="number"
                         value={theftIncome}
                         onChange={(e) => { setTheftIncome(e.target.value); setTheftError(null); }}
-                        placeholder="45000"
+                        placeholder={textConfig.theft_income_placeholder}
                         min={1}
                         style={{ ...styles.input, width: '140px' }}
                         disabled={theftLoading}
@@ -2161,7 +2496,7 @@
                         }}
                         disabled={theftLoading}
                       >
-                        {theftLoading ? 'Calculating...' : 'Calculate My Theft'}
+                        {theftLoading ? textConfig.sol_loading_btn : textConfig.theft_calculate_btn}
                       </button>
                     </div>
                     {theftError && (
@@ -2393,14 +2728,14 @@
               <div>
                 <div style={styles.subNav}>
                   {[
-                    { id: 'sentiment', label: 'Work Sentiment', icon: '📊' },
-                    { id: 'tenant', label: 'Tenant Unions', icon: '🏢' },
-                    { id: 'worker', label: 'Worker Collectives', icon: '⚡' },
-                    { id: 'consumer', label: 'Consumer Groups', icon: '🛒' },
-                    { id: 'petition', label: 'Petitions', icon: '📋' }
+                    { id: 'sentiment', label: textConfig.subtab_sentiment },
+                    { id: 'tenant', label: textConfig.subtab_tenant },
+                    { id: 'worker', label: textConfig.subtab_worker },
+                    { id: 'consumer', label: textConfig.subtab_consumer },
+                    { id: 'petition', label: textConfig.subtab_petitions }
                   ].map(sub => (
                     <button key={sub.id} onClick={() => setActiveSubTab(sub.id)} style={styles.subNavButton(activeSubTab === sub.id)}>
-                      {sub.icon} {sub.label}
+                      {sub.label}
                     </button>
                   ))}
                 </div>
@@ -2408,11 +2743,11 @@
                 {/* Work Sentiment */}
                 {activeSubTab === 'sentiment' && (
                   <section>
-                    <h2 style={styles.sectionHeader}>Work Sentiment — Your Area</h2>
+                    <h2 style={styles.sectionHeader}>{textConfig.sentiment_section_title}</h2>
 
                     <div style={styles.card}>
                       <p style={{ color: colors.textMuted, marginBottom: '25px', textAlign: 'center', fontSize: '16px' }}>
-                        Do you feel like working today?
+                        {textConfig.sentiment_question}
                       </p>
                       <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '30px' }}>
                         {['yes', 'no'].map(vote => (
@@ -2433,14 +2768,14 @@
                               transition: 'all 0.15s'
                             }}
                           >
-                            {vote.toUpperCase()}
+                            {vote === 'yes' ? textConfig.sentiment_yes : textConfig.sentiment_no}
                           </button>
                         ))}
                       </div>
 
                       {workSentiment && (
                         <div style={{ textAlign: 'center', marginBottom: '25px', fontSize: '12px', color: colors.success }}>
-                          ✓ Response recorded anonymously (fingerprint-based, no account)
+                          ✓ {textConfig.sentiment_recorded}
                         </div>
                       )}
 
@@ -2450,7 +2785,7 @@
                             {Math.round((todaySentiment.unwilling / todaySentiment.total) * 100)}%
                           </div>
                           <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            Don't want to work today
+                            {textConfig.sentiment_unwilling}
                           </div>
                         </div>
                         <div style={{ padding: '25px', backgroundColor: colors.bg }}>
@@ -2458,7 +2793,7 @@
                             {todaySentiment.total}
                           </div>
                           <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            Responses in your area
+                            {textConfig.sentiment_responses}
                           </div>
                         </div>
                       </div>
@@ -2466,7 +2801,7 @@
                       {/* Trend */}
                       <div>
                         <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', marginBottom: '15px' }}>
-                          4-Week Trend (% unwilling to work)
+                          {textConfig.sentiment_trend}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'flex-end', height: '120px', gap: '15px' }}>
                           {sentimentHistory.map((week, i) => (
@@ -3073,7 +3408,7 @@
             {activeTab === 'accountability' && (
               <div>
                 <section style={{ marginBottom: '60px' }}>
-                  <h2 style={styles.sectionHeader}>Submit Report</h2>
+                  <h2 style={styles.sectionHeader}>{textConfig.report_section_title}</h2>
 
                   <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                     {['landlord', 'employer'].map(type => (
@@ -3093,7 +3428,7 @@
                           fontWeight: reportType === type ? 700 : 400
                         }}
                       >
-                        {type === 'landlord' ? '🏠 Landlord' : '💼 Employer'}
+                        {type === 'landlord' ? textConfig.report_type_landlord : textConfig.report_type_employer}
                       </button>
                     ))}
                   </div>
@@ -3101,13 +3436,13 @@
                   <div style={styles.card}>
                     <div style={{ marginBottom: '20px' }}>
                       <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                        {reportType === 'landlord' ? 'Landlord Name or Management Company' : 'Company Name'}
+                        {reportType === 'landlord' ? textConfig.report_name_landlord : textConfig.report_name_employer}
                       </label>
                       <input
                         type="text"
                         value={newReport.name}
                         onChange={(e) => setNewReport({ ...newReport, name: e.target.value })}
-                        placeholder={reportType === 'landlord' ? 'e.g., Greystone Properties' : 'e.g., MegaCorp Inc'}
+                        placeholder={reportType === 'landlord' ? textConfig.report_name_landlord_placeholder : textConfig.report_name_employer_placeholder}
                         style={styles.input}
                       />
                     </div>
@@ -3115,13 +3450,13 @@
                     {reportType === 'landlord' && (
                       <div style={{ marginBottom: '20px' }}>
                         <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                          Property Address (optional)
+                          {textConfig.report_address_label}
                         </label>
                         <input
                           type="text"
                           value={newReport.address}
                           onChange={(e) => setNewReport({ ...newReport, address: e.target.value })}
-                          placeholder="e.g., 123 Main St"
+                          placeholder={textConfig.report_address_placeholder}
                           style={styles.input}
                         />
                       </div>
@@ -3129,12 +3464,12 @@
 
                     <div style={{ marginBottom: '20px' }}>
                       <label style={{ display: 'block', marginBottom: '10px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                        Issue Type (select all that apply)
+                        {textConfig.report_issues_label}
                       </label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {(reportType === 'landlord'
-                          ? ['No repairs', 'Illegal fees', 'Harassment', 'Safety hazard', 'Discrimination', 'Retaliation', 'Pest infestation', 'No heat/AC', 'Other']
-                          : ['Wage theft', 'Unsafe conditions', 'Retaliation', 'Discrimination', 'Harassment', 'Scheduling abuse', 'Unpaid overtime', 'Other']
+                          ? [textConfig.issue_no_repairs, textConfig.issue_illegal_fees, textConfig.issue_harassment, textConfig.issue_safety_hazard, textConfig.issue_discrimination, textConfig.issue_retaliation, textConfig.issue_pest, textConfig.issue_no_heat, textConfig.issue_other]
+                          : [textConfig.issue_wage_theft, textConfig.issue_unsafe, textConfig.issue_retaliation, textConfig.issue_discrimination, textConfig.issue_harassment, textConfig.issue_scheduling, textConfig.issue_unpaid_ot, textConfig.issue_other]
                         ).map(issue => (
                           <label key={issue} style={{
                             display: 'flex',
@@ -3160,13 +3495,13 @@
 
                     <div style={{ marginBottom: '20px' }}>
                       <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                        Description (optional)
+                        {textConfig.report_desc_label}
                       </label>
                       <textarea
                         rows={4}
                         value={newReport.description}
                         onChange={(e) => setNewReport({ ...newReport, description: e.target.value })}
-                        placeholder="What happened? Be specific but protect your identity."
+                        placeholder={textConfig.report_desc_placeholder}
                         style={{ ...styles.input, resize: 'vertical' }}
                       />
                     </div>
@@ -3179,40 +3514,44 @@
                           onChange={(e) => setNewReport({ ...newReport, anonymous: e.target.checked })}
                           style={{ accentColor: colors.primary, width: '18px', height: '18px' }}
                         />
-                        <span style={{ fontSize: '13px', color: colors.textMuted }}>Post anonymously</span>
+                        <span style={{ fontSize: '13px', color: colors.textMuted }}>{textConfig.report_anonymous}</span>
                       </label>
                     </div>
 
                     <button onClick={handleSubmitReport} style={{ ...styles.button('primary'), width: '100%', padding: '15px' }}>
-                      Submit Report
+                      {textConfig.report_submit_btn}
                     </button>
 
                     <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', textAlign: 'center' }}>
-                      Reports are public. No moderation by corporations or landlords.
+                      {textConfig.report_footer}
                     </p>
                   </div>
                 </section>
 
                 <section>
-                  <h2 style={styles.sectionHeader}>Recent Reports</h2>
+                  <h2 style={styles.sectionHeader}>{textConfig.reports_section_title}</h2>
 
                   <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
-                    {['all', 'landlord', 'employer'].map(filter => (
+                    {[
+                      { key: 'all', label: textConfig.reports_filter_all },
+                      { key: 'landlord', label: textConfig.reports_filter_landlord },
+                      { key: 'employer', label: textConfig.reports_filter_employer }
+                    ].map(filter => (
                       <button
-                        key={filter}
-                        onClick={() => setReportFilter(filter)}
+                        key={filter.key}
+                        onClick={() => setReportFilter(filter.key)}
                         style={{
                           padding: '8px 15px',
-                          backgroundColor: reportFilter === filter ? colors.primary : 'transparent',
-                          color: reportFilter === filter ? '#000' : colors.textDim,
-                          border: `1px solid ${reportFilter === filter ? colors.primary : colors.borderLight}`,
+                          backgroundColor: reportFilter === filter.key ? colors.primary : 'transparent',
+                          color: reportFilter === filter.key ? '#000' : colors.textDim,
+                          border: `1px solid ${reportFilter === filter.key ? colors.primary : colors.borderLight}`,
                           cursor: 'pointer',
                           fontFamily: 'inherit',
                           fontSize: '11px',
                           textTransform: 'capitalize'
                         }}
                       >
-                        {filter === 'all' ? 'All Reports' : filter + 's'}
+                        {filter.label}
                       </button>
                     ))}
                   </div>
@@ -3242,8 +3581,8 @@
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '36px', fontWeight: 700, color: colors.primary }}>{report.reports}</div>
-                        <div style={{ fontSize: '10px', color: colors.textDimmer }}>REPORTS</div>
-                        <div style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '5px' }}>Last: {report.lastReport}</div>
+                        <div style={{ fontSize: '10px', color: colors.textDimmer }}>{textConfig.reports_count_label}</div>
+                        <div style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '5px' }}>{textConfig.reports_last} {report.lastReport}</div>
                       </div>
                     </div>
                   ))}
@@ -3251,6 +3590,339 @@
               </div>
             )}
           </main>
+
+          {/* Customization Panel Toggle Button */}
+          <button
+            onClick={() => setShowCustomizationPanel(!showCustomizationPanel)}
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              right: '20px',
+              width: '50px',
+              height: '50px',
+              borderRadius: '50%',
+              backgroundColor: colors.primary,
+              color: '#000',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '20px',
+              fontWeight: 700,
+              zIndex: 999,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              transition: 'transform 0.2s',
+            }}
+            title="Customize Text & Styling"
+          >
+            ⚙
+          </button>
+
+          {/* Customization Panel */}
+          {showCustomizationPanel && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              width: '450px',
+              maxWidth: '100vw',
+              height: '100vh',
+              backgroundColor: colors.bgLight,
+              borderLeft: `2px solid ${colors.primary}`,
+              zIndex: 1000,
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '-4px 0 20px rgba(0,0,0,0.5)',
+            }} className="modal-enter">
+              {/* Panel Header */}
+              <div style={{
+                padding: '20px',
+                borderBottom: `1px solid ${colors.border}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: colors.primary }}>
+                    CUSTOMIZATION CONTROL PANEL
+                  </h2>
+                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: colors.textDim }}>
+                    Edit text, colors, and fonts
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowCustomizationPanel(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: colors.textMuted,
+                    cursor: 'pointer',
+                    fontSize: '24px',
+                    padding: '5px',
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Panel Tabs */}
+              <div style={{
+                display: 'flex',
+                borderBottom: `1px solid ${colors.border}`,
+              }}>
+                {['text', 'colors', 'fonts'].map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setPanelTab(tab)}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      backgroundColor: panelTab === tab ? colors.bgLighter : 'transparent',
+                      color: panelTab === tab ? colors.primary : colors.textDim,
+                      border: 'none',
+                      borderBottom: panelTab === tab ? `2px solid ${colors.primary}` : '2px solid transparent',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px',
+                      fontWeight: panelTab === tab ? 700 : 400,
+                    }}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Panel Content */}
+              <div style={{
+                flex: 1,
+                overflow: 'auto',
+                padding: '20px',
+              }}>
+                {/* Text Tab */}
+                {panelTab === 'text' && (
+                  <div>
+                    {/* Search Filter */}
+                    <input
+                      type="text"
+                      placeholder="Filter text elements..."
+                      value={textFilter}
+                      onChange={(e) => setTextFilter(e.target.value)}
+                      style={{
+                        ...styles.input,
+                        marginBottom: '20px',
+                        fontSize: '12px',
+                      }}
+                    />
+
+                    {/* Text Categories */}
+                    {Object.entries(textCategories).map(([category, keys]) => {
+                      const filteredKeys = keys.filter(key =>
+                        !textFilter ||
+                        key.toLowerCase().includes(textFilter.toLowerCase()) ||
+                        (textConfig[key] && textConfig[key].toLowerCase().includes(textFilter.toLowerCase()))
+                      );
+                      if (filteredKeys.length === 0) return null;
+
+                      return (
+                        <div key={category} style={{ marginBottom: '25px' }}>
+                          <h3 style={{
+                            fontSize: '11px',
+                            color: colors.primary,
+                            textTransform: 'uppercase',
+                            letterSpacing: '2px',
+                            marginBottom: '12px',
+                            paddingBottom: '8px',
+                            borderBottom: `1px solid ${colors.border}`,
+                          }}>
+                            {category}
+                          </h3>
+                          {filteredKeys.map(key => (
+                            <div key={key} style={{ marginBottom: '12px' }}>
+                              <label style={{
+                                display: 'block',
+                                fontSize: '10px',
+                                color: colors.textDim,
+                                marginBottom: '4px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                              }}>
+                                {key.replace(/_/g, ' ')}
+                              </label>
+                              <input
+                                type="text"
+                                value={textConfig[key] || ''}
+                                onChange={(e) => updateText(key, e.target.value)}
+                                style={{
+                                  ...styles.input,
+                                  fontSize: '12px',
+                                  padding: '8px 10px',
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Colors Tab */}
+                {panelTab === 'colors' && (
+                  <div>
+                    <p style={{ fontSize: '11px', color: colors.textDim, marginBottom: '20px' }}>
+                      Customize the color scheme. Changes apply immediately.
+                    </p>
+                    {Object.entries(colorConfig).map(([key, value]) => (
+                      <div key={key} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginBottom: '15px',
+                        gap: '12px',
+                      }}>
+                        <input
+                          type="color"
+                          value={value}
+                          onChange={(e) => updateColor(key, e.target.value)}
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            border: `1px solid ${colors.borderLight}`,
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            padding: '2px',
+                            backgroundColor: colors.bgLighter,
+                          }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontSize: '12px',
+                            color: colors.text,
+                            marginBottom: '2px',
+                            textTransform: 'capitalize',
+                          }}>
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </div>
+                          <div style={{ fontSize: '10px', color: colors.textDim }}>
+                            {value}
+                          </div>
+                        </div>
+                        <input
+                          type="text"
+                          value={value}
+                          onChange={(e) => updateColor(key, e.target.value)}
+                          style={{
+                            ...styles.input,
+                            width: '90px',
+                            fontSize: '11px',
+                            padding: '6px 8px',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Fonts Tab */}
+                {panelTab === 'fonts' && (
+                  <div>
+                    <p style={{ fontSize: '11px', color: colors.textDim, marginBottom: '20px' }}>
+                      Choose fonts for different elements. Changes apply immediately.
+                    </p>
+                    {Object.entries(fontConfig).map(([key, value]) => (
+                      <div key={key} style={{ marginBottom: '20px' }}>
+                        <label style={{
+                          display: 'block',
+                          fontSize: '11px',
+                          color: colors.textMuted,
+                          marginBottom: '8px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '1px',
+                        }}>
+                          {key} Font
+                        </label>
+                        <select
+                          value={value}
+                          onChange={(e) => updateFont(key, e.target.value)}
+                          style={{
+                            ...styles.input,
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {fontOptions.map(font => (
+                            <option key={font} value={font} style={{ fontFamily: font }}>
+                              {font.split(',')[0].replace(/'/g, '')}
+                            </option>
+                          ))}
+                        </select>
+                        <div style={{
+                          marginTop: '8px',
+                          padding: '12px',
+                          backgroundColor: colors.bgLighter,
+                          border: `1px solid ${colors.border}`,
+                          fontFamily: value,
+                          fontSize: '14px',
+                        }}>
+                          Preview: The quick brown fox jumps over the lazy dog
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Panel Footer */}
+              <div style={{
+                padding: '15px 20px',
+                borderTop: `1px solid ${colors.border}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+              }}>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={exportConfig}
+                    style={{
+                      ...styles.button('secondary'),
+                      flex: 1,
+                      padding: '10px',
+                      fontSize: '10px',
+                    }}
+                  >
+                    Export
+                  </button>
+                  <label style={{
+                    ...styles.button('secondary'),
+                    flex: 1,
+                    padding: '10px',
+                    fontSize: '10px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                  }}>
+                    Import
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={importConfig}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+                <button
+                  onClick={resetAllConfig}
+                  style={{
+                    ...styles.button('primary'),
+                    padding: '10px',
+                    fontSize: '10px',
+                    backgroundColor: colors.warning,
+                    color: '#000',
+                  }}
+                >
+                  Reset All to Defaults
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <footer style={{
@@ -3264,13 +3936,13 @@
             gap: '20px'
           }}>
             <div style={{ fontSize: '11px', color: colors.textDimmest }}>
-              <div style={{ fontWeight: 700, marginBottom: '4px' }}>SOLIDARITY_NET</div>
-              <div>Open source. No tracking. No profiles. No ads.</div>
+              <div style={{ fontWeight: 700, marginBottom: '4px' }}>{textConfig.footer_brand}</div>
+              <div>{textConfig.footer_tagline}</div>
             </div>
             <div style={{ display: 'flex', gap: '25px', fontSize: '11px' }}>
-              <a href="#" style={{ color: colors.textDim, textDecoration: 'none' }}>Source Code</a>
-              <a href="#" style={{ color: colors.textDim, textDecoration: 'none' }}>Data Sources</a>
-              <a href="#" style={{ color: colors.textDim, textDecoration: 'none' }}>Privacy</a>
+              <a href="#" style={{ color: colors.textDim, textDecoration: 'none' }}>{textConfig.footer_source}</a>
+              <a href="#" style={{ color: colors.textDim, textDecoration: 'none' }}>{textConfig.footer_data}</a>
+              <a href="#" style={{ color: colors.textDim, textDecoration: 'none' }}>{textConfig.footer_privacy}</a>
             </div>
           </footer>
         </div>
