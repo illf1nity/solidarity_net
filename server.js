@@ -526,9 +526,43 @@ app.get('/api/local-data/:zipCode', (req, res) => {
   });
 });
 
+const STATE_CODES = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA',
+  'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR',
+  'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+];
+
+function buildEmptyStateMetrics() {
+  const data = STATE_CODES.reduce((acc, code) => {
+    acc[code] = { corporate_pct: null, price_to_income: null };
+    return acc;
+  }, {});
+  data.default = { corporate_pct: null, price_to_income: null };
+  return data;
+}
+
 // GET /api/map-data - Corporate ownership data by state for the Corporate Conquest Map
 app.get('/api/map-data', (req, res) => {
   res.json(STATE_META);
+});
+
+// GET /api/state-metrics - Map metrics by state (placeholder until sourced)
+app.get('/api/state-metrics', (req, res) => {
+  const cacheKey = 'state_metrics';
+  const cached = apiCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < API_CACHE_TTL) {
+    return res.json({ source: 'CACHE', data: cached.data });
+  }
+
+  try {
+    const metrics = buildEmptyStateMetrics();
+    apiCache.set(cacheKey, { data: metrics, timestamp: Date.now() });
+    res.json({ source: 'LOCAL_FALLBACK', data: metrics });
+  } catch (error) {
+    console.error('State metrics error:', error.message);
+    res.json({ source: 'FALLBACK_EMPTY', data: buildEmptyStateMetrics() });
+  }
 });
 
 // GET /api/economic-data/cpi - Fetch CPI inflation data from BLS
