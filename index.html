@@ -1358,6 +1358,7 @@
       // Navigation
       const [activeTab, setActiveTab] = useState('information');
       const [activeSubTab, setActiveSubTab] = useState('sentiment');
+      const [activeInfoSubTab, setActiveInfoSubTab] = useState('living');
       const [notification, setNotification] = useState(null);
 
       // Information State
@@ -1466,6 +1467,16 @@
         subtab_worker: '⚡ Worker Collectives',
         subtab_consumer: '🛒 Consumer Groups',
         subtab_petitions: '📋 Petitions',
+
+        // Information sub-tabs
+        info_subtab_living: '📊 Living Wage',
+        info_subtab_impact: '💸 Economic Impact',
+        info_subtab_prices: '🛒 Price Resistance',
+        info_subtab_shelter: '🏠 Shelter Tax',
+        info_subtab_corporate: '🏢 Corporate Map',
+        info_subtab_stopwatch: '⏱️ Profit Clock',
+        info_subtab_calendar: '📅 Calendar',
+        info_subtab_emergency: '🚨 One Bad Day',
 
         // Standard of Living Calculator
         sol_section_title: 'Standard of Living Calculator',
@@ -1759,7 +1770,7 @@
       // Group text config by category for display
       const textCategories = {
         'Header': ['header_title', 'header_title_suffix', 'header_tagline', 'header_no_tracking', 'header_workers_first'],
-        'Navigation': ['nav_information', 'nav_formation', 'nav_accountability', 'subtab_sentiment', 'subtab_tenant', 'subtab_worker', 'subtab_consumer', 'subtab_petitions'],
+        'Navigation': ['nav_information', 'nav_formation', 'nav_accountability', 'subtab_sentiment', 'subtab_tenant', 'subtab_worker', 'subtab_consumer', 'subtab_petitions', 'info_subtab_living', 'info_subtab_impact', 'info_subtab_prices', 'info_subtab_shelter', 'info_subtab_corporate', 'info_subtab_stopwatch', 'info_subtab_calendar', 'info_subtab_emergency'],
         'Standard of Living': ['sol_section_title', 'sol_zip_label', 'sol_zip_placeholder', 'sol_calculate_btn', 'sol_loading_btn', 'sol_helper_text', 'sol_weeks_label', 'sol_deficit_label', 'sol_deficit_suffix', 'sol_surplus_prefix', 'sol_surplus_suffix', 'sol_gross_wage', 'sol_federal_tax', 'sol_state_tax', 'sol_fica', 'sol_after_tax', 'sol_effective_rate', 'sol_hours_label', 'sol_rent', 'sol_food', 'sol_healthcare', 'sol_transport', 'sol_utilities', 'sol_total_required', 'sol_available', 'sol_monthly_result', 'sol_data_quality'],
         'Economic Impact': ['impact_section_title', 'impact_description', 'impact_start_year_label', 'impact_start_salary_label', 'impact_current_salary_label', 'impact_current_rent_label', 'impact_start_year_placeholder', 'impact_start_salary_placeholder', 'impact_current_salary_placeholder', 'impact_current_rent_placeholder', 'impact_calculate_btn', 'impact_cumulative_label', 'impact_unrealized_label', 'impact_rent_label', 'impact_years_label'],
         'Price Resistance': ['price_section_title', 'price_vote_prompt', 'price_too_high', 'price_seems_right', 'price_too_low'],
@@ -2496,7 +2507,25 @@
             {/* ==================== INFORMATION TAB ==================== */}
             {activeTab === 'information' && (
               <div>
+                <div style={styles.subNav}>
+                  {[
+                    { id: 'living', label: textConfig.info_subtab_living },
+                    { id: 'impact', label: textConfig.info_subtab_impact },
+                    { id: 'prices', label: textConfig.info_subtab_prices },
+                    { id: 'shelter', label: textConfig.info_subtab_shelter },
+                    { id: 'corporate', label: textConfig.info_subtab_corporate },
+                    { id: 'stopwatch', label: textConfig.info_subtab_stopwatch },
+                    { id: 'calendar', label: textConfig.info_subtab_calendar },
+                    { id: 'emergency', label: textConfig.info_subtab_emergency }
+                  ].map(sub => (
+                    <button key={sub.id} onClick={() => setActiveInfoSubTab(sub.id)} style={styles.subNavButton(activeInfoSubTab === sub.id)}>
+                      {sub.label}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Standard of Living Calculator */}
+                {activeInfoSubTab === 'living' && (
                 <section style={{ marginBottom: '60px' }}>
                   <h2 style={styles.sectionHeader}>{textConfig.sol_section_title}</h2>
 
@@ -2671,8 +2700,10 @@
                     </div>
                   )}
                 </section>
+                )}
 
                 {/* Economic Impact Calculator */}
+                {activeInfoSubTab === 'impact' && (
                 <section style={{ marginBottom: '60px' }}>
                   <h2 style={styles.sectionHeader}>{textConfig.impact_section_title}</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
@@ -3050,8 +3081,10 @@
                     </div>
                   )}
                 </section>
+                )}
 
                 {/* Price Resistance */}
+                {activeInfoSubTab === 'prices' && (
                 <section>
                   <h2 style={styles.sectionHeader}>Consumer Price Resistance</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px' }}>
@@ -3112,8 +3145,10 @@
                     ))}
                   </div>
                 </section>
+                )}
 
                 {/* The Shelter Tax */}
+                {activeInfoSubTab === 'shelter' && (
                 <section style={{ marginTop: '60px' }}>
                   <h2 style={styles.sectionHeader}>The Shelter Tax</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
@@ -3248,8 +3283,10 @@
                     </div>
                   )}
                 </section>
+                )}
 
                 {/* Corporate Conquest Map */}
+                {activeInfoSubTab === 'corporate' && (
                 <section style={{ marginTop: '60px' }}>
                   <h2 style={styles.sectionHeader}>Corporate Conquest Map</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
@@ -3365,8 +3402,10 @@
                     </div>
                   )}
                 </section>
+                )}
 
                 {/* ==================== THE PROFIT STOPWATCH ==================== */}
+                {activeInfoSubTab === 'stopwatch' && (
                 <section style={{ marginTop: '60px' }}>
                   <h2 style={styles.sectionHeader}>The Profit Stopwatch</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
@@ -3546,8 +3585,10 @@
                     </div>
                   )}
                 </section>
+                )}
 
                 {/* ==================== THE CALENDAR OF SERVITUDE ==================== */}
+                {activeInfoSubTab === 'calendar' && (
                 <section style={{ marginTop: '60px' }}>
                   <h2 style={styles.sectionHeader}>The Calendar of Servitude</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
@@ -3690,8 +3731,10 @@
                     </div>
                   )}
                 </section>
+                )}
 
                 {/* ==================== THE ONE BAD DAY ==================== */}
+                {activeInfoSubTab === 'emergency' && (
                 <section style={{ marginTop: '60px' }}>
                   <h2 style={styles.sectionHeader}>The One Bad Day</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
@@ -3838,6 +3881,7 @@
                     </div>
                   )}
                 </section>
+                )}
               </div>
             )}
 
