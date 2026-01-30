@@ -2404,21 +2404,24 @@
         }),
         subNav: {
           display: 'flex',
-          gap: '10px',
-          marginBottom: '30px',
-          flexWrap: 'wrap'
+          gap: '15px',
+          marginBottom: '40px',
+          flexWrap: 'wrap',
+          justifyContent: 'center'
         },
         subNavButton: (active) => ({
-          padding: '10px 15px',
-          backgroundColor: active ? colors.primary : 'transparent',
-          color: active ? '#000' : colors.textMuted,
-          border: `1px solid ${active ? colors.primary : colors.borderLight}`,
+          padding: '15px 25px',
+          backgroundColor: active ? colors.primary : '#1a1a1a',
+          color: active ? '#fff' : colors.textMuted,
+          border: `2px solid ${active ? colors.primary : '#2a2a2a'}`,
           cursor: 'pointer',
           fontFamily: 'inherit',
-          fontSize: '11px',
+          fontSize: '12px',
           textTransform: 'uppercase',
-          letterSpacing: '1px',
-          transition: 'all 0.15s'
+          letterSpacing: '1.5px',
+          fontWeight: active ? 600 : 400,
+          transition: 'all 0.2s',
+          borderRadius: '2px'
         }),
         main: {
           padding: '40px',
@@ -4020,6 +4023,23 @@
             {/* ==================== FORMATION TAB ==================== */}
             {activeTab === 'formation' && (
               <div>
+                {/* Formation Header */}
+                <div style={{
+                  textAlign: 'center',
+                  marginBottom: '40px',
+                  paddingBottom: '20px',
+                  borderBottom: `2px solid ${colors.primary}`
+                }}>
+                  <h1 style={{
+                    fontSize: '14px',
+                    color: colors.primary,
+                    textTransform: 'uppercase',
+                    letterSpacing: '4px',
+                    fontWeight: 400,
+                    margin: 0
+                  }}>FORMATION</h1>
+                </div>
+
                 <div style={styles.subNav}>
                   {[
                     { id: 'sentiment', label: textConfig.subtab_sentiment },
