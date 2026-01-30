@@ -46,11 +46,35 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1.2); box-shadow: 0 0 20px rgba(255, 51, 51, 0.4); }
+      50% { transform: scale(1.3); box-shadow: 0 0 30px rgba(255, 51, 51, 0.8); }
+    }
+    @keyframes jolt {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(5deg); }
+      75% { transform: rotate(-5deg); }
+    }
+    @keyframes intensityPulse {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.3); }
+    }
     .notification-enter {
       animation: slideIn 0.3s ease-out;
     }
     .modal-enter {
       animation: fadeIn 0.2s ease-out;
+    }
+    .pop-out {
+      transform: scale(1.1) translateY(-4px);
+      transition: transform 0.3s ease;
+    }
+    .threat-lift {
+      box-shadow: 0 8px 20px rgba(255, 51, 51, 0.6);
+      transition: box-shadow 0.3s ease;
+    }
+    .heartbeat {
+      animation: pulse 1s infinite;
     }
   </style>
 </head>
@@ -1398,6 +1422,22 @@
       // Corporate Conquest Map State
       const [mapData, setMapData] = useState(null);
 
+      // Profit Stopwatch State
+      const [hourlyWage, setHourlyWage] = useState('');
+      const [hoursWorkedPerDay, setHoursWorkedPerDay] = useState('');
+      const [industry, setIndustry] = useState('Technology');
+      const [stopwatchResults, setStopwatchResults] = useState(null);
+
+      // Calendar of Servitude State
+      const [monthlyRent, setMonthlyRent] = useState('');
+      const [monthlyIncome, setMonthlyIncome] = useState('');
+      const [calendarResults, setCalendarResults] = useState(null);
+
+      // One Bad Day State
+      const [currentSavings, setCurrentSavings] = useState('');
+      const [selectedEmergency, setSelectedEmergency] = useState(null);
+      const [emergencyResults, setEmergencyResults] = useState(null);
+
       // New Collective Form
       const [showNewCollectiveForm, setShowNewCollectiveForm] = useState(false);
       const [newCollective, setNewCollective] = useState({ company: '', industry: '', issues: [], telegram_url: '' });
@@ -2108,6 +2148,107 @@
           fullTimeMonth,
           percentOfMonth: Math.round(percentOfMonth),
           hourlyWage: Math.round(hourlyWage * 100) / 100
+        });
+      };
+
+      // Profit Stopwatch calculation
+      const industryProfitMargins = {
+        'Technology': 0.25,
+        'Retail': 0.08,
+        'Healthcare': 0.12,
+        'Manufacturing': 0.15,
+        'Food Service': 0.06,
+        'Finance': 0.22,
+        'Construction': 0.10,
+        'Hospitality': 0.09
+      };
+
+      const handleStopwatchCalculate = (e) => {
+        e.preventDefault();
+        const wage = parseFloat(hourlyWage);
+        const hours = parseFloat(hoursWorkedPerDay);
+
+        if (!wage || wage <= 0 || !hours || hours <= 0) {
+          setStopwatchResults(null);
+          return;
+        }
+
+        const profitMargin = industryProfitMargins[industry];
+        const profitPerHour = wage * profitMargin;
+        const breakEvenHours = hours * (1 - profitMargin);
+        const stolenHours = hours - breakEvenHours;
+
+        // Convert hours to time (e.g., 6.5 hours -> 6:30 AM if starting at 9 AM)
+        const startHour = 9; // 9 AM start
+        const breakEvenTime = startHour + breakEvenHours;
+        const breakEvenHour = Math.floor(breakEvenTime);
+        const breakEvenMin = Math.round((breakEvenTime - breakEvenHour) * 60);
+        const breakEvenTimeStr = `${breakEvenHour > 12 ? breakEvenHour - 12 : breakEvenHour}:${breakEvenMin.toString().padStart(2, '0')} ${breakEvenHour >= 12 ? 'PM' : 'AM'}`;
+
+        setStopwatchResults({
+          profitPerHour: profitPerHour.toFixed(2),
+          breakEvenHours: breakEvenHours.toFixed(2),
+          stolenHours: stolenHours.toFixed(2),
+          breakEvenTime: breakEvenTimeStr,
+          profitMargin: (profitMargin * 100).toFixed(0),
+          stolenAngle: (stolenHours / hours) * 360,
+          breakEvenAngle: (breakEvenHours / hours) * 360
+        });
+      };
+
+      // Calendar of Servitude calculation
+      const handleCalendarCalculate = (e) => {
+        e.preventDefault();
+        const rent = parseFloat(monthlyRent);
+        const income = parseFloat(monthlyIncome);
+
+        if (!rent || rent <= 0 || !income || income <= 0) {
+          setCalendarResults(null);
+          return;
+        }
+
+        const rentDays = Math.ceil(30 * (rent / income));
+        const freedomDay = rentDays + 1;
+
+        setCalendarResults({
+          rentDays,
+          freedomDay,
+          freeDays: 30 - rentDays,
+          rentPercent: ((rent / income) * 100).toFixed(1)
+        });
+      };
+
+      // One Bad Day emergency toggle
+      const handleEmergencyToggle = (emergencyType) => {
+        const emergencyCosts = {
+          'Flat Tire': 300,
+          'ER Visit': 1200,
+          'Broken Phone': 400
+        };
+
+        const savings = parseFloat(currentSavings);
+        if (!savings || savings < 0) {
+          setEmergencyResults(null);
+          return;
+        }
+
+        // Toggle off if same emergency clicked again
+        if (selectedEmergency === emergencyType) {
+          setSelectedEmergency(null);
+          setEmergencyResults({ savings, deficit: 0, isNegative: false });
+          return;
+        }
+
+        setSelectedEmergency(emergencyType);
+        const cost = emergencyCosts[emergencyType];
+        const deficit = savings - cost;
+
+        setEmergencyResults({
+          savings,
+          cost,
+          deficit,
+          isNegative: deficit < 0,
+          emergencyType
         });
       };
 
@@ -3221,6 +3362,479 @@
                   {!mapData && (
                     <div style={{ ...styles.card, textAlign: 'center', padding: '40px', color: colors.textMuted }}>
                       Loading corporate ownership data...
+                    </div>
+                  )}
+                </section>
+
+                {/* ==================== THE PROFIT STOPWATCH ==================== */}
+                <section style={{ marginTop: '60px' }}>
+                  <h2 style={styles.sectionHeader}>The Profit Stopwatch</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                    Visualize how much of your workday goes to shareholders vs. your own survival. Watch the clock divide.
+                  </p>
+
+                  <form onSubmit={handleStopwatchCalculate} style={{ marginBottom: '30px' }}>
+                    <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                      <div>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          Hourly Wage
+                        </label>
+                        <input
+                          type="number"
+                          value={hourlyWage}
+                          onChange={(e) => setHourlyWage(e.target.value)}
+                          placeholder="15.00"
+                          step="0.01"
+                          style={{ ...styles.input, width: '120px' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          Hours Per Day
+                        </label>
+                        <input
+                          type="number"
+                          value={hoursWorkedPerDay}
+                          onChange={(e) => setHoursWorkedPerDay(e.target.value)}
+                          placeholder="8"
+                          step="0.5"
+                          style={{ ...styles.input, width: '120px' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          Industry
+                        </label>
+                        <select
+                          value={industry}
+                          onChange={(e) => setIndustry(e.target.value)}
+                          style={{ ...styles.input, width: '180px' }}
+                        >
+                          <option>Technology</option>
+                          <option>Retail</option>
+                          <option>Healthcare</option>
+                          <option>Manufacturing</option>
+                          <option>Food Service</option>
+                          <option>Finance</option>
+                          <option>Construction</option>
+                          <option>Hospitality</option>
+                        </select>
+                      </div>
+                      <button type="submit" style={styles.button('primary')}>
+                        Calculate
+                      </button>
+                    </div>
+                  </form>
+
+                  {stopwatchResults && (
+                    <div>
+                      {/* SVG Analog Clock */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        marginBottom: '30px',
+                        animation: 'jolt 0.3s ease-out'
+                      }}>
+                        <svg width="300" height="300" viewBox="0 0 300 300" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>
+                          {/* Clock face */}
+                          <circle cx="150" cy="150" r="140" fill="#111" stroke={colors.border} strokeWidth="2"/>
+
+                          {/* Hour markers */}
+                          {[...Array(12)].map((_, i) => {
+                            const angle = (i * 30 - 90) * Math.PI / 180;
+                            const x1 = 150 + 130 * Math.cos(angle);
+                            const y1 = 150 + 130 * Math.sin(angle);
+                            const x2 = 150 + 120 * Math.cos(angle);
+                            const y2 = 150 + 120 * Math.sin(angle);
+                            return (
+                              <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={colors.textDimmest} strokeWidth="2"/>
+                            );
+                          })}
+
+                          {/* Hour numbers */}
+                          {[12, 3, 6, 9].map((hour) => {
+                            const angle = ((hour === 12 ? 0 : hour) * 30 - 90) * Math.PI / 180;
+                            const x = 150 + 100 * Math.cos(angle);
+                            const y = 150 + 100 * Math.sin(angle);
+                            return (
+                              <text key={hour} x={x} y={y} textAnchor="middle" dy="5" fill={colors.textDim} fontSize="18" fontWeight="700">
+                                {hour}
+                              </text>
+                            );
+                          })}
+
+                          {/* Green arc (paid time) */}
+                          <path
+                            d={`M 150 150 L 150 10 A 140 140 0 ${stopwatchResults.breakEvenAngle > 180 ? 1 : 0} 1 ${150 + 140 * Math.sin(stopwatchResults.breakEvenAngle * Math.PI / 180)} ${150 - 140 * Math.cos(stopwatchResults.breakEvenAngle * Math.PI / 180)} Z`}
+                            fill={colors.success}
+                            opacity="0.3"
+                            stroke={colors.success}
+                            strokeWidth="2"
+                          />
+
+                          {/* Red slice (stolen time) - lifted effect */}
+                          <path
+                            d={`M 150 150 L ${150 + 140 * Math.sin(stopwatchResults.breakEvenAngle * Math.PI / 180)} ${150 - 140 * Math.cos(stopwatchResults.breakEvenAngle * Math.PI / 180)} A 140 140 0 ${stopwatchResults.stolenAngle > 180 ? 1 : 0} 1 150 10 Z`}
+                            fill={colors.primary}
+                            opacity="0.6"
+                            stroke={colors.primary}
+                            strokeWidth="3"
+                            style={{
+                              filter: 'drop-shadow(0 8px 20px rgba(255, 51, 51, 0.6))',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.opacity = '0.9';
+                              e.target.style.filter = 'drop-shadow(0 12px 30px rgba(255, 51, 51, 0.9))';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.opacity = '0.6';
+                              e.target.style.filter = 'drop-shadow(0 8px 20px rgba(255, 51, 51, 0.6))';
+                            }}
+                          />
+
+                          {/* Center dot */}
+                          <circle cx="150" cy="150" r="8" fill={colors.text}/>
+                        </svg>
+                      </div>
+
+                      {/* Results */}
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '25px',
+                        backgroundColor: '#051a05',
+                        border: `2px solid ${colors.success}`,
+                        marginBottom: '20px'
+                      }}>
+                        <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
+                          Break-Even Time
+                        </div>
+                        <div className="pop-out" style={{ fontSize: '56px', fontWeight: 700, color: colors.success, lineHeight: 1, textShadow: `0 0 20px ${colors.success}80` }}>
+                          {stopwatchResults.breakEvenTime}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                        <div style={{ ...styles.card, borderLeft: `3px solid ${colors.primary}`, padding: '20px' }}>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                            Stolen Time
+                          </div>
+                          <div style={{ fontSize: '32px', fontWeight: 700, color: colors.primary, marginBottom: '5px' }}>
+                            {stopwatchResults.stolenHours}h
+                          </div>
+                          <div style={{ fontSize: '11px', color: colors.textMuted }}>
+                            Pure volunteer work
+                          </div>
+                        </div>
+                        <div style={{ ...styles.card, borderLeft: `3px solid ${colors.warning}`, padding: '20px' }}>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                            Profit Per Hour
+                          </div>
+                          <div style={{ fontSize: '32px', fontWeight: 700, color: colors.warning, marginBottom: '5px' }}>
+                            ${stopwatchResults.profitPerHour}
+                          </div>
+                          <div style={{ fontSize: '11px', color: colors.textMuted }}>
+                            {stopwatchResults.profitMargin}% margin
+                          </div>
+                        </div>
+                      </div>
+
+                      <p style={{ marginTop: '20px', color: colors.textDim, fontSize: '13px', textAlign: 'center', fontStyle: 'italic' }}>
+                        By {stopwatchResults.breakEvenTime}, you're paid up. The red slice? Pure volunteer work for shareholders.
+                      </p>
+                    </div>
+                  )}
+                </section>
+
+                {/* ==================== THE CALENDAR OF SERVITUDE ==================== */}
+                <section style={{ marginTop: '60px' }}>
+                  <h2 style={styles.sectionHeader}>The Calendar of Servitude</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                    How many days of the month do you work just to pay rent? See when you start earning for yourself.
+                  </p>
+
+                  <form onSubmit={handleCalendarCalculate} style={{ marginBottom: '30px' }}>
+                    <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                      <div>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          Monthly Rent
+                        </label>
+                        <input
+                          type="number"
+                          value={monthlyRent}
+                          onChange={(e) => setMonthlyRent(e.target.value)}
+                          placeholder="1500"
+                          step="50"
+                          style={{ ...styles.input, width: '140px' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          Monthly Income
+                        </label>
+                        <input
+                          type="number"
+                          value={monthlyIncome}
+                          onChange={(e) => setMonthlyIncome(e.target.value)}
+                          placeholder="3000"
+                          step="100"
+                          style={{ ...styles.input, width: '140px' }}
+                        />
+                      </div>
+                      <button type="submit" style={styles.button('primary')}>
+                        Calculate
+                      </button>
+                    </div>
+                  </form>
+
+                  {calendarResults && (
+                    <div>
+                      {/* 30-day calendar grid */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(7, 1fr)',
+                        gap: '8px',
+                        marginBottom: '30px',
+                        maxWidth: '500px',
+                        margin: '0 auto 30px'
+                      }}>
+                        {[...Array(30)].map((_, i) => {
+                          const day = i + 1;
+                          const isLandlordDay = day <= calendarResults.rentDays;
+                          const isFreedomDay = day === calendarResults.freedomDay;
+
+                          return (
+                            <div
+                              key={day}
+                              style={{
+                                aspectRatio: '1',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: isLandlordDay ? 'rgba(255, 51, 51, 0.3)' : 'rgba(51, 255, 51, 0.1)',
+                                border: isFreedomDay ? `2px solid ${colors.success}` : `1px solid ${colors.border}`,
+                                color: isFreedomDay ? colors.success : isLandlordDay ? colors.primary : colors.textMuted,
+                                fontSize: isFreedomDay ? '18px' : '14px',
+                                fontWeight: isFreedomDay ? 700 : 400,
+                                cursor: 'pointer',
+                                transform: isLandlordDay ? 'scale(0.95)' : isFreedomDay ? 'scale(1.2)' : 'scale(1)',
+                                boxShadow: isFreedomDay ? `0 4px 12px ${colors.success}80` : isLandlordDay ? 'inset 0 2px 4px rgba(0,0,0,0.3)' : 'none',
+                                transition: 'all 0.3s ease',
+                                position: 'relative',
+                                animation: isFreedomDay ? 'intensityPulse 2s infinite' : 'none'
+                              }}
+                              title={isLandlordDay ? 'Working for your landlord' : 'Working for yourself'}
+                              onMouseEnter={(e) => {
+                                if (!isFreedomDay) {
+                                  e.currentTarget.style.transform = isLandlordDay ? 'scale(1)' : 'scale(1.1)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isFreedomDay) {
+                                  e.currentTarget.style.transform = isLandlordDay ? 'scale(0.95)' : 'scale(1)';
+                                }
+                              }}
+                            >
+                              {day}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Legend */}
+                      <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '30px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'rgba(255, 51, 51, 0.3)', border: `1px solid ${colors.border}` }}></div>
+                          <span style={{ fontSize: '12px', color: colors.textMuted }}>Landlord Days ({calendarResults.rentDays})</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', border: `2px solid ${colors.success}`, backgroundColor: 'rgba(51, 255, 51, 0.1)' }}></div>
+                          <span style={{ fontSize: '12px', color: colors.textMuted }}>Freedom Day ({calendarResults.freedomDay})</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'rgba(51, 255, 51, 0.1)', border: `1px solid ${colors.border}` }}></div>
+                          <span style={{ fontSize: '12px', color: colors.textMuted }}>Free Days ({calendarResults.freeDays})</span>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                        <div style={{ ...styles.card, borderLeft: `3px solid ${colors.primary}`, padding: '20px' }}>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                            Rent Burden
+                          </div>
+                          <div style={{ fontSize: '36px', fontWeight: 700, color: colors.primary, marginBottom: '5px' }}>
+                            {calendarResults.rentPercent}%
+                          </div>
+                          <div style={{ fontSize: '11px', color: colors.textMuted }}>
+                            of monthly income
+                          </div>
+                        </div>
+                        <div style={{ ...styles.card, borderLeft: `3px solid ${colors.success}`, padding: '20px' }}>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                            Freedom Day
+                          </div>
+                          <div style={{ fontSize: '36px', fontWeight: 700, color: colors.success, marginBottom: '5px' }}>
+                            Day {calendarResults.freedomDay}
+                          </div>
+                          <div style={{ fontSize: '11px', color: colors.textMuted }}>
+                            Start earning for yourself
+                          </div>
+                        </div>
+                      </div>
+
+                      <p style={{ marginTop: '20px', color: colors.textDim, fontSize: '13px', textAlign: 'center', fontStyle: 'italic' }}>
+                        You don't start earning for yourself until the {calendarResults.freedomDay}th.
+                      </p>
+                    </div>
+                  )}
+                </section>
+
+                {/* ==================== THE ONE BAD DAY ==================== */}
+                <section style={{ marginTop: '60px' }}>
+                  <h2 style={styles.sectionHeader}>The One Bad Day</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                    Test your financial resilience. One emergency. That's all it takes.
+                  </p>
+
+                  <div style={{ marginBottom: '30px' }}>
+                    <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                      Current Savings
+                    </label>
+                    <input
+                      type="number"
+                      value={currentSavings}
+                      onChange={(e) => {
+                        setCurrentSavings(e.target.value);
+                        if (selectedEmergency) {
+                          handleEmergencyToggle(selectedEmergency);
+                        }
+                      }}
+                      placeholder="850"
+                      step="50"
+                      style={{ ...styles.input, width: '200px' }}
+                    />
+                  </div>
+
+                  {currentSavings && parseFloat(currentSavings) >= 0 && (
+                    <div>
+                      {/* Savings bar */}
+                      <div style={{ marginBottom: '20px' }}>
+                        <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                          {emergencyResults && emergencyResults.isNegative ? 'Deficit' : 'Savings'}
+                        </div>
+                        <div style={{
+                          height: '40px',
+                          backgroundColor: colors.bgLight,
+                          border: `1px solid ${colors.border}`,
+                          position: 'relative',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{
+                            height: '100%',
+                            width: emergencyResults && emergencyResults.isNegative ? '100%' : `${Math.min((parseFloat(currentSavings) / 2000) * 100, 100)}%`,
+                            backgroundColor: emergencyResults && emergencyResults.isNegative ? colors.primary : colors.success,
+                            transition: emergencyResults && emergencyResults.isNegative ? 'none' : 'all 0.3s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            paddingLeft: '15px'
+                          }}>
+                            <span style={{
+                              fontSize: '16px',
+                              fontWeight: 700,
+                              color: '#000'
+                            }}>
+                              ${emergencyResults && emergencyResults.isNegative ? Math.abs(emergencyResults.deficit) : currentSavings}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Emergency toggle buttons */}
+                      <div style={{ marginBottom: '30px' }}>
+                        <div style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          Select Emergency
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                          {['Flat Tire', 'ER Visit', 'Broken Phone'].map((emergency) => {
+                            const costs = { 'Flat Tire': 300, 'ER Visit': 1200, 'Broken Phone': 400 };
+                            const isSelected = selectedEmergency === emergency;
+                            return (
+                              <button
+                                key={emergency}
+                                onClick={() => handleEmergencyToggle(emergency)}
+                                style={{
+                                  padding: '12px 20px',
+                                  backgroundColor: isSelected ? colors.primary : 'transparent',
+                                  color: isSelected ? '#000' : colors.textMuted,
+                                  border: `1px solid ${isSelected ? colors.primary : colors.borderLight}`,
+                                  cursor: 'pointer',
+                                  fontFamily: 'inherit',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  transition: 'all 0.15s',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px'
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isSelected) {
+                                    e.target.style.borderColor = colors.primary;
+                                    e.target.style.color = colors.primary;
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSelected) {
+                                    e.target.style.borderColor = colors.borderLight;
+                                    e.target.style.color = colors.textMuted;
+                                  }
+                                }}
+                              >
+                                {emergency} (${costs[emergency]})
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Results */}
+                      {emergencyResults && emergencyResults.isNegative && (
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '30px',
+                          backgroundColor: '#1a0505',
+                          border: `2px solid ${colors.primary}`,
+                          marginBottom: '20px'
+                        }}>
+                          <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
+                            Deficit After {emergencyResults.emergencyType}
+                          </div>
+                          <div className="heartbeat" style={{ fontSize: '64px', fontWeight: 700, color: colors.primary, lineHeight: 1, textShadow: `0 0 30px ${colors.primary}80` }}>
+                            -${Math.abs(emergencyResults.deficit)}
+                          </div>
+                        </div>
+                      )}
+
+                      {emergencyResults && !emergencyResults.isNegative && emergencyResults.emergencyType && (
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '30px',
+                          backgroundColor: '#051a05',
+                          border: `2px solid ${colors.success}`,
+                          marginBottom: '20px'
+                        }}>
+                          <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
+                            Remaining After {emergencyResults.emergencyType}
+                          </div>
+                          <div style={{ fontSize: '64px', fontWeight: 700, color: colors.success, lineHeight: 1 }}>
+                            ${emergencyResults.deficit}
+                          </div>
+                        </div>
+                      )}
+
+                      <p style={{ marginTop: '20px', color: colors.textDim, fontSize: '13px', textAlign: 'center', fontStyle: 'italic' }}>
+                        One bad day. That's all it takes.
+                      </p>
                     </div>
                   )}
                 </section>
