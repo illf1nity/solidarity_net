@@ -88,6 +88,7 @@ const STATE_META = {
   'TN': { corporate_pct: 22, price_to_income: 5.0 },
   'OH': { corporate_pct: 18, price_to_income: 4.2 },
   'IL': { corporate_pct: 17, price_to_income: 5.1 },
+  'IN': { corporate_pct: 16, price_to_income: 4.5 },
   'PA': { corporate_pct: 14, price_to_income: 4.8 },
   'MI': { corporate_pct: 15, price_to_income: 4.0 },
   'WA': { corporate_pct: 19, price_to_income: 7.8 },
