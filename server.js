@@ -531,6 +531,33 @@ app.get('/api/map-data', (req, res) => {
   res.json(STATE_META);
 });
 
+// GET /api/state-metrics - State metrics from database for the map
+app.get('/api/state-metrics', (req, res) => {
+  try {
+    const metrics = db.prepare('SELECT * FROM state_metrics').all();
+    const statesObject = {};
+
+    // Get update timestamp from most recent row
+    const latestUpdate = db.prepare('SELECT MAX(updated_at) as updated_at FROM state_metrics').get();
+
+    // Convert array to object keyed by state_code
+    metrics.forEach(row => {
+      statesObject[row.state_code] = {
+        corporateOwnershipPct: row.corporate_ownership_pct,
+        priceToIncomeRatio: row.price_to_income_ratio
+      };
+    });
+
+    res.json({
+      updatedAt: latestUpdate?.updated_at || new Date().toISOString(),
+      states: statesObject
+    });
+  } catch (error) {
+    console.error('Error fetching state metrics:', error);
+    res.status(500).json({ error: 'Failed to fetch state metrics' });
+  }
+});
+
 // GET /api/economic-data/cpi - Fetch CPI inflation data from BLS
 app.get('/api/economic-data/cpi', async (req, res) => {
   const { startYear, endYear } = req.query;

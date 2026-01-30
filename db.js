@@ -228,6 +228,13 @@ function initializeDatabase() {
       rent_pct_income_now REAL NOT NULL,
       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS state_metrics (
+      state_code TEXT PRIMARY KEY,
+      corporate_ownership_pct REAL,
+      price_to_income_ratio REAL,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Migration: Add telegram_url column if it doesn't exist
@@ -491,6 +498,24 @@ function seedDatabase(db) {
     }
   });
   seedSentimentVotes();
+
+  // Seed state_metrics from STATE_META
+  const stateMetricsCount = db.prepare('SELECT COUNT(*) as count FROM state_metrics').get().count;
+  if (stateMetricsCount === 0) {
+    const insertStateMetrics = db.prepare(`
+      INSERT INTO state_metrics (state_code, corporate_ownership_pct, price_to_income_ratio, updated_at)
+      VALUES (?, ?, ?, datetime('now'))
+    `);
+
+    const seedStateMetrics = db.transaction(() => {
+      for (const [stateCode, metrics] of Object.entries(STATE_META)) {
+        if (stateCode !== 'default') {
+          insertStateMetrics.run(stateCode, metrics.corporate_pct, metrics.price_to_income);
+        }
+      }
+    });
+    seedStateMetrics();
+  }
 
   console.log('Database seeded successfully.');
 }

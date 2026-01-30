@@ -1408,6 +1408,21 @@
     };
 
     // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    // Convert number to ordinal (1st, 2nd, 3rd, 4th, etc.)
+    const getOrdinal = (n) => {
+      const num = parseInt(n, 10);
+      if (isNaN(num)) return n;
+
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = num % 100;
+      // 11, 12, 13 are special cases - always use 'th'
+      return num + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+
+    // ============================================
     // MAIN COMPONENT
     // ============================================
 
@@ -1877,11 +1892,26 @@
           .then(data => setReports(data))
           .catch(() => {});
 
-        // Fetch corporate map data
-        fetch(`${API_BASE}/map-data`)
+        // Fetch corporate map data from API
+        fetch(`${API_BASE}/state-metrics`)
           .then(r => r.json())
-          .then(data => setMapData(data))
-          .catch(() => {});
+          .then(response => {
+            // Transform API response to expected format
+            const transformedData = {};
+            for (const [stateCode, metrics] of Object.entries(response.states || {})) {
+              transformedData[stateCode] = {
+                corporate_pct: metrics.corporateOwnershipPct,
+                price_to_income: metrics.priceToIncomeRatio
+              };
+            }
+            // Add default fallback
+            transformedData.default = { corporate_pct: 13, price_to_income: 7.5 };
+            setMapData(transformedData);
+          })
+          .catch(() => {
+            // Fallback to empty data if API fails
+            setMapData({ default: { corporate_pct: 13, price_to_income: 7.5 } });
+          });
       }, []);
 
       // Fetch buildings when ZIP changes
@@ -3311,91 +3341,11 @@
                 <section style={{ marginTop: '60px' }}>
                   <h2 style={styles.sectionHeader}>Corporate Conquest Map</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                    State-by-state corporate investor ownership of housing. Hover over states to see details in the info bar above the map. Red = High corporate ownership.
+                    State-by-state corporate investor ownership of housing. Hover over states to highlight them. Red = High corporate ownership.
                   </p>
 
                   {mapData && (
                     <div>
-                      {/* State Info Bar */}
-                      <div style={{
-                        backgroundColor: colors.cardBg,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: '4px',
-                        padding: '15px 20px',
-                        marginBottom: '15px',
-                        minHeight: '60px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexWrap: 'wrap',
-                        gap: '20px'
-                      }}>
-                        {hoveredState ? (
-                          <>
-                            <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                              <div style={{ 
-                                fontSize: '18px', 
-                                fontWeight: 'bold', 
-                                color: colors.text,
-                                marginBottom: '4px' 
-                              }}>
-                                {hoveredState.name}
-                              </div>
-                            </div>
-                            <div style={{ 
-                              height: '40px', 
-                              width: '1px', 
-                              backgroundColor: colors.border 
-                            }} />
-                            <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                              <div style={{ 
-                                fontSize: '12px', 
-                                color: colors.textDim,
-                                marginBottom: '2px' 
-                              }}>
-                                Corporate Ownership
-                              </div>
-                              <div style={{ 
-                                fontSize: '20px', 
-                                fontWeight: 'bold', 
-                                color: colors.accent 
-                              }}>
-                                {hoveredState.corporate_pct}%
-                              </div>
-                            </div>
-                            <div style={{ 
-                              height: '40px', 
-                              width: '1px', 
-                              backgroundColor: colors.border 
-                            }} />
-                            <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                              <div style={{ 
-                                fontSize: '12px', 
-                                color: colors.textDim,
-                                marginBottom: '2px' 
-                              }}>
-                                Price-to-Income Ratio
-                              </div>
-                              <div style={{ 
-                                fontSize: '20px', 
-                                fontWeight: 'bold', 
-                                color: colors.accent 
-                              }}>
-                                {hoveredState.price_to_income}×
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <div style={{ 
-                            fontSize: '14px', 
-                            color: colors.textDim,
-                            textAlign: 'center' 
-                          }}>
-                            Hover over a state to see details
-                          </div>
-                        )}
-                      </div>
-
                       {/* Interactive SVG Map */}
                       <div style={{
                         backgroundColor: colors.cardBg,
@@ -3403,14 +3353,15 @@
                         borderRadius: '4px',
                         padding: '20px',
                         marginBottom: '20px',
-                        overflow: 'hidden'
+                        overflow: 'visible'
                       }}>
                         <svg
                           viewBox="0 0 960 620"
                           style={{
                             width: '100%',
                             height: 'auto',
-                            maxHeight: '500px'
+                            maxHeight: '500px',
+                            overflow: 'visible'
                           }}
                         >
                           {Object.entries(US_STATES_SVG).map(([stateCode, stateData]) => {
@@ -3445,7 +3396,7 @@
                                 strokeWidth={isHovered ? "2" : "1"}
                                 tabIndex="0"
                                 role="button"
-                                aria-label={`${stateData.name}: ${pct}% corporate ownership, ${data.price_to_income} price-to-income ratio`}
+                                aria-label={`${stateData.name}: ${pct != null ? pct + '% corporate ownership' : 'N/A'}, ${data.price_to_income != null ? data.price_to_income + ' price-to-income ratio' : 'N/A'}`}
                                 style={{
                                   cursor: 'pointer',
                                   transition: 'all 0.15s ease-out',
@@ -3861,7 +3812,7 @@
                       </div>
 
                       <p style={{ marginTop: '20px', color: colors.textDim, fontSize: '13px', textAlign: 'center', fontStyle: 'italic' }}>
-                        You don't start earning for yourself until the {calendarResults.freedomDay}th.
+                        You don't start earning for yourself until the {getOrdinal(calendarResults.freedomDay)}.
                       </p>
                     </div>
                   )}
