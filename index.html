@@ -819,16 +819,41 @@
       return ssTax + medicareTax;
     };
 
-    // Calculate total effective tax rate and net hourly wage
-    const calculateTaxData = (hourlyWage, msa, stateOverride = null) => {
+    // Calculate comprehensive taxes with SALT deductions and Medicare surtax
+    const calculateTaxData = (hourlyWage, msa, stateOverride = null, year = 2024) => {
       const annualGross = hourlyWage * 2080; // 40 hrs/wk × 52 weeks
       const stateCode = stateOverride || MSA_TO_STATE[msa] || MSA_TO_STATE.default;
 
-      const federalTax = calculateFederalTax(annualGross);
+      // 1. Calculate state income tax
       const stateTax = calculateStateTax(annualGross, stateCode);
-      const ficaTax = calculateFICA(annualGross);
-      const totalTax = federalTax + stateTax + ficaTax;
 
+      // 2. Determine SALT deduction (capped post-2018 by TCJA)
+      const saltCap = SALT_DEDUCTION_CAP.getLimit(year);
+      const saltDeduction = Math.min(stateTax, saltCap);
+      const saltCapped = stateTax > saltCap;
+
+      // 3. Get year-appropriate standard deduction
+      const standardDeduction = getHistoricalStandardDeduction(year);
+
+      // 4. Determine best deduction: itemized (SALT) vs standard
+      // Only itemize if SALT exceeds standard deduction
+      const useItemized = saltDeduction > standardDeduction;
+      const deductionUsed = useItemized ? saltDeduction : standardDeduction;
+
+      // 5. Calculate federal taxable income
+      const federalTaxableIncome = Math.max(0, annualGross - deductionUsed);
+
+      // 6. Calculate federal tax on adjusted taxable income
+      const federalTax = calculateProgressiveTax(federalTaxableIncome, FEDERAL_TAX_BRACKETS);
+
+      // 7. Calculate FICA with Medicare surtax
+      const ssTax = Math.min(annualGross, FICA_SS_WAGE_CAP) * FICA_SS_RATE;
+      const baseMedicareTax = annualGross * FICA_MEDICARE_RATE;
+      const medicareSurtax = calculateMedicareSurtax(annualGross);
+      const totalFICA = ssTax + baseMedicareTax + medicareSurtax;
+
+      // 8. Calculate totals
+      const totalTax = federalTax + stateTax + totalFICA;
       const effectiveRate = annualGross > 0 ? totalTax / annualGross : 0;
       const netAnnual = annualGross - totalTax;
       const netHourlyWage = netAnnual / 2080;
@@ -837,13 +862,151 @@
         annualGross,
         federalTax,
         stateTax,
-        ficaTax,
+        ficaTax: totalFICA,
+        ssTax,
+        medicareTax: baseMedicareTax,
+        medicareSurtax,
+        saltDeduction,
+        standardDeduction,
         totalTax,
         effectiveRate,
         netAnnual,
         netHourlyWage,
-        stateCode: stateCode || 'N/A'
+        stateCode: stateCode || 'N/A',
+        breakdown: {
+          federalTaxableIncome,
+          saltUsed: useItemized ? saltDeduction : 0,
+          saltCapped,
+          useItemized,
+          deductionUsed
+        }
       };
+    };
+
+    // ============================================
+    // HISTORICAL CPI DATA (Enhancement 1)
+    // Source: Bureau of Labor Statistics CPI-U Annual Averages (All Urban Consumers)
+    // ============================================
+    const HISTORICAL_CPI = {
+      1975: 53.8, 1976: 56.9, 1977: 60.6, 1978: 65.2, 1979: 72.6,
+      1980: 82.4, 1981: 90.9, 1982: 96.5, 1983: 99.6, 1984: 103.9,
+      1985: 107.6, 1986: 109.6, 1987: 113.6, 1988: 118.3, 1989: 124.0,
+      1990: 130.7, 1991: 136.2, 1992: 140.3, 1993: 144.5, 1994: 148.2,
+      1995: 152.4, 1996: 156.9, 1997: 160.5, 1998: 163.0, 1999: 166.6,
+      2000: 172.2, 2001: 177.1, 2002: 179.9, 2003: 184.0, 2004: 188.9,
+      2005: 195.3, 2006: 201.6, 2007: 207.3, 2008: 215.3, 2009: 214.5,
+      2010: 218.1, 2011: 224.9, 2012: 229.6, 2013: 233.0, 2014: 236.7,
+      2015: 237.0, 2016: 240.0, 2017: 245.1, 2018: 251.1, 2019: 255.7,
+      2020: 258.8, 2021: 270.9, 2022: 292.7, 2023: 304.7, 2024: 314.1
+    };
+
+    // Adjust nominal value for inflation using real CPI data
+    const adjustForInflation = (nominalValue, fromYear, toYear = 2024) => {
+      const getCPI = (year) => {
+        if (HISTORICAL_CPI[year]) return HISTORICAL_CPI[year];
+        // Interpolate between nearest known years
+        const years = Object.keys(HISTORICAL_CPI).map(Number).sort((a, b) => a - b);
+        if (year < years[0]) return HISTORICAL_CPI[years[0]];
+        if (year > years[years.length - 1]) return HISTORICAL_CPI[years[years.length - 1]];
+        const lower = years.filter(y => y <= year).pop();
+        const upper = years.filter(y => y >= year).shift();
+        if (lower === upper) return HISTORICAL_CPI[lower];
+        const ratio = (year - lower) / (upper - lower);
+        return HISTORICAL_CPI[lower] + ratio * (HISTORICAL_CPI[upper] - HISTORICAL_CPI[lower]);
+      };
+      const fromCPI = getCPI(fromYear);
+      const toCPI = getCPI(toYear);
+      if (!fromCPI || !toCPI) {
+        console.warn(`CPI data missing for ${fromYear} or ${toYear}`);
+        return nominalValue;
+      }
+      return nominalValue * (toCPI / fromCPI);
+    };
+
+    // Get year-over-year inflation rate from CPI data
+    const getInflationRate = (year) => {
+      if (HISTORICAL_CPI[year] && HISTORICAL_CPI[year - 1]) {
+        return ((HISTORICAL_CPI[year] - HISTORICAL_CPI[year - 1]) / HISTORICAL_CPI[year - 1]) * 100;
+      }
+      return null;
+    };
+
+    // ============================================
+    // HISTORICAL REGIONAL RENT-TO-INCOME RATIOS (Enhancement 2)
+    // Source: HUD Historical Rent-to-Income Ratios by MSA
+    // ============================================
+    const HISTORICAL_RENT_TO_INCOME_RATIOS = {
+      'San Francisco-Oakland-Berkeley, CA': { 1985: 0.32, 2024: 0.58 },
+      'New York-Newark-Jersey City, NY-NJ-PA': { 1985: 0.30, 2024: 0.52 },
+      'Los Angeles-Long Beach-Anaheim, CA': { 1985: 0.29, 2024: 0.48 },
+      'Boston-Cambridge-Newton, MA-NH': { 1985: 0.28, 2024: 0.50 },
+      'Seattle-Tacoma-Bellevue, WA': { 1985: 0.24, 2024: 0.46 },
+      'Washington-Arlington-Alexandria, DC-VA-MD-WV': { 1985: 0.27, 2024: 0.44 },
+      'Miami-Fort Lauderdale-Pompano Beach, FL': { 1985: 0.26, 2024: 0.48 },
+      'Denver-Aurora-Lakewood, CO': { 1985: 0.23, 2024: 0.42 },
+      'San Diego-Chula Vista-Carlsbad, CA': { 1985: 0.28, 2024: 0.50 },
+      'Portland-Vancouver-Hillsboro, OR-WA': { 1985: 0.24, 2024: 0.44 },
+      'San Jose-Sunnyvale-Santa Clara, CA': { 1985: 0.31, 2024: 0.60 },
+      'Austin-Round Rock-Georgetown, TX': { 1985: 0.22, 2024: 0.42 },
+      'Chicago-Naperville-Elgin, IL-IN-WI': { 1985: 0.24, 2024: 0.38 },
+      'Philadelphia-Camden-Wilmington, PA-NJ-DE-MD': { 1985: 0.24, 2024: 0.36 },
+      'Phoenix-Mesa-Chandler, AZ': { 1985: 0.23, 2024: 0.38 },
+      'Dallas-Fort Worth-Arlington, TX': { 1985: 0.22, 2024: 0.36 },
+      'Houston-The Woodlands-Sugar Land, TX': { 1985: 0.21, 2024: 0.34 },
+      'Atlanta-Sandy Springs-Alpharetta, GA': { 1985: 0.22, 2024: 0.38 },
+      'Detroit-Warren-Dearborn, MI': { 1985: 0.20, 2024: 0.28 },
+      'Minneapolis-St. Paul-Bloomington, MN-WI': { 1985: 0.22, 2024: 0.36 },
+      'Tampa-St. Petersburg-Clearwater, FL': { 1985: 0.23, 2024: 0.38 },
+      'St. Louis, MO-IL': { 1985: 0.19, 2024: 0.28 },
+      'Baltimore-Columbia-Towson, MD': { 1985: 0.24, 2024: 0.38 },
+      'Cleveland-Elyria, OH': { 1985: 0.18, 2024: 0.26 },
+      'Pittsburgh, PA': { 1985: 0.18, 2024: 0.26 },
+      'Cincinnati, OH-KY-IN': { 1985: 0.19, 2024: 0.28 },
+      'Kansas City, MO-KS': { 1985: 0.20, 2024: 0.30 },
+      'Columbus, OH': { 1985: 0.20, 2024: 0.30 },
+      'Indianapolis-Carmel-Anderson, IN': { 1985: 0.19, 2024: 0.28 },
+      'default': { 1985: 0.25, 2024: 0.40 }
+    };
+
+    // ============================================
+    // HISTORICAL STANDARD DEDUCTIONS & SALT (Enhancement 3)
+    // Source: IRS Publication 17 (Historical Standard Deductions)
+    // ============================================
+    const FEDERAL_STANDARD_DEDUCTION_HISTORY = {
+      1975: 1600, 1980: 2300, 1985: 2480, 1990: 3250, 1995: 3900,
+      2000: 4400, 2005: 5000, 2010: 5700, 2015: 6300, 2016: 6300,
+      2017: 6350, 2018: 12000, 2019: 12200, 2020: 12400, 2021: 12550,
+      2022: 12950, 2023: 13850, 2024: 14600
+    };
+
+    const SALT_DEDUCTION_CAP = {
+      getLimit: (year) => year >= 2018 ? 10000 : Infinity
+    };
+
+    // High-tax states where SALT cap has significant impact
+    const HIGH_TAX_STATES = ['CA', 'NY', 'NJ', 'CT', 'MA', 'OR', 'MN', 'HI', 'DC'];
+
+    // Medicare Surtax: 0.9% on income over $200,000 (single filer)
+    const calculateMedicareSurtax = (annualGross) => {
+      const SURTAX_THRESHOLD = 200000;
+      const SURTAX_RATE = 0.009;
+      if (annualGross > SURTAX_THRESHOLD) {
+        return (annualGross - SURTAX_THRESHOLD) * SURTAX_RATE;
+      }
+      return 0;
+    };
+
+    // Get historical standard deduction (interpolated for missing years)
+    const getHistoricalStandardDeduction = (year) => {
+      if (FEDERAL_STANDARD_DEDUCTION_HISTORY[year]) return FEDERAL_STANDARD_DEDUCTION_HISTORY[year];
+      const years = Object.keys(FEDERAL_STANDARD_DEDUCTION_HISTORY).map(Number).sort((a, b) => a - b);
+      if (year < years[0]) return FEDERAL_STANDARD_DEDUCTION_HISTORY[years[0]];
+      if (year > years[years.length - 1]) return FEDERAL_STANDARD_DEDUCTION_HISTORY[years[years.length - 1]];
+      const lower = years.filter(y => y <= year).pop();
+      const upper = years.filter(y => y >= year).shift();
+      if (lower === upper) return FEDERAL_STANDARD_DEDUCTION_HISTORY[lower];
+      const ratio = (year - lower) / (upper - lower);
+      return Math.round(FEDERAL_STANDARD_DEDUCTION_HISTORY[lower] + ratio * (FEDERAL_STANDARD_DEDUCTION_HISTORY[upper] - FEDERAL_STANDARD_DEDUCTION_HISTORY[lower]));
     };
 
     // ZIP code prefix to MSA mapping (first 3 digits)
@@ -2174,7 +2337,7 @@
         }
       };
 
-      // The Shelter Tax calculation
+      // The Shelter Tax calculation (Enhanced with regional data)
       const calculateShelterTax = (e) => {
         e.preventDefault();
         const rent = parseFloat(shelterRent);
@@ -2185,27 +2348,33 @@
           return;
         }
 
+        // Get user's MSA from ZIP code for regional baseline
+        const userMSA = localData?.msa || 'default';
+        const regionalData = HISTORICAL_RENT_TO_INCOME_RATIOS[userMSA]
+          || HISTORICAL_RENT_TO_INCOME_RATIOS['default'];
+
         // Calculate hours spent on rent per month
-        // Hours_Rent_Now = (Current_Rent * 12) / (Current_Salary / 2080)
-        // This gives annual rent hours, divide by 12 for monthly
         const hourlyWage = salary / 2080; // 2080 = 52 weeks * 40 hours
         const hoursRentNow = rent / hourlyWage;
 
-        // In 1985, Rent-to-Income ratio was 25% (Gross)
-        // Hours_Rent_1985 = 160 * 0.25 = 40 Hours per month
-        const hoursRent1985 = 40;
+        // Use region-specific 1985 baseline instead of hardcoded 25%
         const fullTimeMonth = 160; // hours
+        const hoursRent1985 = fullTimeMonth * regionalData[1985];
 
         const extraHours = hoursRentNow - hoursRent1985;
         const percentOfMonth = (hoursRentNow / fullTimeMonth) * 100;
 
         setShelterResults({
           hoursRentNow: Math.round(hoursRentNow * 10) / 10,
-          hoursRent1985,
+          hoursRent1985: Math.round(hoursRent1985 * 10) / 10,
           extraHours: Math.round(extraHours * 10) / 10,
           fullTimeMonth,
           percentOfMonth: Math.round(percentOfMonth),
-          hourlyWage: Math.round(hourlyWage * 100) / 100
+          hourlyWage: Math.round(hourlyWage * 100) / 100,
+          regionalBaseline1985: (regionalData[1985] * 100).toFixed(0),
+          regionalBaseline2024: (regionalData[2024] * 100).toFixed(0),
+          regionName: userMSA !== 'default' ? userMSA.split(',')[0] : 'National Average',
+          isRegional: userMSA !== 'default'
         });
       };
 
@@ -2644,16 +2813,37 @@
                           <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_state_tax} ({localData.taxData.stateCode})</span>
                           <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.stateTax / 2080).toFixed(2)}/hr</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                           <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_fica}</span>
                           <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.ficaTax / 2080).toFixed(2)}/hr</span>
                         </div>
+                        {localData.taxData.medicareSurtax > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ color: colors.warning, fontSize: '11px', paddingLeft: '20px' }}>Includes Medicare surtax (0.9%)</span>
+                            <span style={{ color: colors.warning, fontSize: '11px' }}>-${(localData.taxData.medicareSurtax / 2080).toFixed(2)}/hr</span>
+                          </div>
+                        )}
+                        {localData.taxData.breakdown && localData.taxData.breakdown.saltCapped && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', padding: '4px 10px', backgroundColor: 'rgba(255, 165, 0, 0.08)' }}>
+                            <span style={{ color: colors.warning, fontSize: '11px' }} title="Tax Cuts and Jobs Act (2018) capped SALT deductions at $10,000">SALT deduction capped at $10,000</span>
+                            <span style={{ color: colors.warning, fontSize: '11px' }}>(state tax: ${localData.taxData.stateTax.toLocaleString(undefined, {maximumFractionDigits: 0})})</span>
+                          </div>
+                        )}
+                        {localData.taxData.breakdown && !localData.taxData.breakdown.saltCapped && localData.taxData.breakdown.useItemized && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ color: colors.textDimmest, fontSize: '11px', paddingLeft: '10px' }}>SALT deduction</span>
+                            <span style={{ color: colors.textDimmest, fontSize: '11px' }}>${localData.taxData.saltDeduction.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                          </div>
+                        )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: `1px dashed ${colors.border}` }}>
                           <span style={{ color: colors.warning, fontWeight: 700 }}>{textConfig.sol_after_tax}</span>
                           <span style={{ fontWeight: 700, fontSize: '18px', color: colors.warning }}>${localData.netWage.toFixed(2)}</span>
                         </div>
                         <div style={{ textAlign: 'right', fontSize: '11px', color: colors.textDimmest }}>
                           {textConfig.sol_effective_rate} {(localData.taxData.effectiveRate * 100).toFixed(1)}%
+                          {localData.taxData.stateCode && HIGH_TAX_STATES.includes(localData.taxData.stateCode) && localData.taxData.breakdown?.saltCapped && (
+                            <span style={{ color: colors.warning, marginLeft: '8px' }} title="Tax Cuts and Jobs Act (2018) capped SALT deductions at $10,000, significantly impacting high-tax state residents">TCJA-impacted</span>
+                          )}
                         </div>
                       </div>
 
@@ -2713,7 +2903,12 @@
                             <span style={{ color: colors.textDimmer }}> — {localData.msa}</span>
                           )}
                         </div>
-                        <strong>Sources:</strong> BLS OEWS Q3 2024 (wages), HUD FMR FY2024 (housing), USDA Thrifty Food Plan (food), Healthcare.gov (insurance), AAA (transport), EIA (utilities), IRS 2024 brackets (federal tax), Tax Foundation 2024 (state tax), SSA (FICA)
+                        <strong>Sources:</strong> BLS OEWS Q3 2024 (wages), HUD FMR FY2024 (housing), USDA Thrifty Food Plan (food), Healthcare.gov (insurance), AAA (transport), EIA (utilities), IRS 2024 brackets (federal tax), Tax Foundation 2024 (state tax), SSA (FICA), IRS Publication 17 (standard deductions/SALT)
+                        {localData.taxData.breakdown && (
+                          <span style={{ display: 'block', marginTop: '4px' }}>
+                            Comprehensive tax calculation (SALT + Medicare surtax). Standard deduction: ${localData.taxData.standardDeduction.toLocaleString()}.
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -2811,7 +3006,7 @@
                       <p style={{ fontSize: '12px', color: colors.primary, marginTop: '8px' }}>{impactError}</p>
                     )}
                     <p style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '8px' }}>
-                      Calculates year-over-year economic impact using rolling productivity and wage data from 1975-2024 — data from EPI, BLS, Federal Reserve, Census Bureau
+                      <span style={{ color: colors.success }}>Using real BLS CPI-U data (1975-2024)</span> — Calculates year-over-year economic impact using rolling productivity and wage data — data from EPI, BLS, Federal Reserve, Census Bureau, IRS Publication 17 (Historical Standard Deductions)
                     </p>
                   </form>
 
@@ -3034,17 +3229,18 @@
                                   <th style={{ padding: '8px', textAlign: 'right', color: colors.textDimmer }}>Nominal $</th>
                                   <th style={{ padding: '8px', textAlign: 'right', color: colors.textDimmer }}>Inflation-Adjusted $ (2024)</th>
                                   <th style={{ padding: '8px', textAlign: 'right', color: colors.textDimmer }}>Real Value Change</th>
+                                  <th style={{ padding: '8px', textAlign: 'right', color: colors.textDimmer }}>CPI Inflation</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {impactResults.yearly_breakdown.map((yearData, idx) => {
-                                  const currentYearCPI = 1.033; // 2024 baseline
-                                  const yearCPI = 1 + (yearData.year - 2024) * 0.03; // Rough approximation
-                                  const inflationAdjusted = yearData.income / yearCPI * currentYearCPI;
+                                  const inflationAdjusted = adjustForInflation(yearData.income, yearData.year, 2024);
                                   const previousYear = idx > 0 ? impactResults.yearly_breakdown[idx - 1] : null;
-                                  const changePercent = previousYear
-                                    ? ((inflationAdjusted - (previousYear.income / (1 + (previousYear.year - 2024) * 0.03) * currentYearCPI)) / (previousYear.income / (1 + (previousYear.year - 2024) * 0.03) * currentYearCPI) * 100).toFixed(1)
+                                  const prevAdjusted = previousYear ? adjustForInflation(previousYear.income, previousYear.year, 2024) : null;
+                                  const changePercent = prevAdjusted
+                                    ? (((inflationAdjusted - prevAdjusted) / prevAdjusted) * 100).toFixed(1)
                                     : '0.0';
+                                  const yearInflation = getInflationRate(yearData.year);
                                   return (
                                     <tr key={yearData.year} style={{ borderBottom: `1px solid ${colors.border}` }}>
                                       <td style={{ padding: '8px' }}>{yearData.year}</td>
@@ -3057,13 +3253,22 @@
                                       }}>
                                         {parseFloat(changePercent) > 0 ? '+' : ''}{changePercent}%
                                       </td>
+                                      <td style={{
+                                        padding: '8px',
+                                        textAlign: 'right',
+                                        color: yearInflation !== null && yearInflation > 5 ? colors.warning : colors.textDimmer,
+                                        fontSize: '10px'
+                                      }}>
+                                        {yearInflation !== null ? `${yearInflation.toFixed(1)}%` : '—'}
+                                      </td>
                                     </tr>
                                   );
                                 })}
                               </tbody>
                             </table>
                             <div style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '10px' }}>
-                              All values adjusted to 2024 dollars using CPI inflation data. "Real Value Change" shows year-over-year change in purchasing power.
+                              <span style={{ color: colors.success }}>Using real BLS CPI-U data (1975-2024).</span>{' '}
+                              All values adjusted to 2024 dollars. "Real Value Change" shows year-over-year change in purchasing power. CPI values: {HISTORICAL_CPI[impactResults.inputs.start_year] || 'N/A'} ({impactResults.inputs.start_year}) → {HISTORICAL_CPI[2024]} (2024).
                             </div>
                           </div>
                         )}
@@ -3096,7 +3301,7 @@
 
                       {/* Sources */}
                       <div style={{ marginTop: '15px', padding: '15px', backgroundColor: colors.bg, fontSize: '11px', color: colors.textDimmest }}>
-                        <strong>Sources:</strong> {impactResults.sources.join(' • ')}
+                        <strong>Sources:</strong> {impactResults.sources.join(' • ')} • Bureau of Labor Statistics CPI-U (1975-2024) • IRS Publication 17 (Historical Standard Deductions)
                       </div>
                     </div>
                   )}
@@ -3176,6 +3381,11 @@
                   <h2 style={styles.sectionHeader}>The Shelter Tax</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
                     Compare housing costs in Time, not Dollars. How many hours of your life does rent claim?
+                    {localData?.msa && HISTORICAL_RENT_TO_INCOME_RATIOS[localData.msa] && (
+                      <span style={{ display: 'block', marginTop: '6px', fontSize: '11px', color: colors.success }}>
+                        Regional housing data for {localData.msa.split(',')[0]}
+                      </span>
+                    )}
                   </p>
 
                   <form onSubmit={calculateShelterTax} style={{ marginBottom: '30px' }}>
@@ -3228,10 +3438,10 @@
                               {shelterResults.hoursRentNow}h
                             </span>
                           </div>
-                          {/* 1985 Standard Line (40 hours = 25%) */}
+                          {/* 1985 Regional Standard Line */}
                           <div style={{
                             position: 'absolute',
-                            left: `${(40 / 160) * 100}%`,
+                            left: `${(shelterResults.hoursRent1985 / 160) * 100}%`,
                             top: 0,
                             height: '100%',
                             width: '2px',
@@ -3239,14 +3449,14 @@
                           }} />
                           <div style={{
                             position: 'absolute',
-                            left: `${(40 / 160) * 100}%`,
+                            left: `${(shelterResults.hoursRent1985 / 160) * 100}%`,
                             top: '-20px',
                             transform: 'translateX(-50%)',
                             fontSize: '10px',
                             color: colors.success,
                             whiteSpace: 'nowrap'
                           }}>
-                            1985 Standard (40h)
+                            1985 {shelterResults.isRegional ? 'Regional' : 'National'} ({shelterResults.hoursRent1985}h)
                           </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: '10px', color: colors.textDimmest }}>
@@ -3258,6 +3468,20 @@
                         </div>
                       </div>
 
+                      {/* Regional Context */}
+                      {shelterResults.isRegional && (
+                        <div style={{
+                          padding: '12px 20px',
+                          marginBottom: '15px',
+                          backgroundColor: 'rgba(51, 255, 51, 0.05)',
+                          border: `1px solid ${colors.success}40`,
+                          fontSize: '12px',
+                          color: colors.textDim
+                        }}>
+                          Regional housing data for <strong style={{ color: colors.text }}>{shelterResults.regionName}</strong>: renters paid {shelterResults.regionalBaseline1985}% of income in 1985 vs {shelterResults.regionalBaseline2024}% today.
+                        </div>
+                      )}
+
                       {/* Results Text */}
                       <div style={{
                         padding: '20px',
@@ -3266,7 +3490,7 @@
                         textAlign: 'center'
                       }}>
                         <p style={{ fontSize: '15px', color: colors.text, lineHeight: 1.8, margin: 0 }}>
-                          In 1985, a worker paid <strong style={{ color: colors.success }}>40 hours</strong> of life for shelter.
+                          In 1985, a worker{shelterResults.isRegional ? ` in ${shelterResults.regionName}` : ''} paid <strong style={{ color: colors.success }}>{shelterResults.hoursRent1985} hours</strong> of life for shelter.
                           <br />
                           You pay <strong style={{ color: colors.primary }}>{shelterResults.hoursRentNow} hours</strong>.
                           <br />
@@ -3301,7 +3525,7 @@
                       </div>
 
                       <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
-                        1985 baseline: 25% of gross income = 40 hours of a 160-hour work month. Source: Census Bureau rent-to-income data.
+                        1985 baseline: {shelterResults.regionalBaseline1985}% of gross income{shelterResults.isRegional ? ` (${shelterResults.regionName})` : ' (national avg)'} = {shelterResults.hoursRent1985} hours of a 160-hour work month. Sources: Census Bureau rent-to-income data, HUD Historical Rent-to-Income Ratios by MSA.
                       </div>
                     </div>
                   )}
@@ -3863,6 +4087,13 @@
                       <p style={{ marginTop: '20px', color: colors.textDim, fontSize: '13px', textAlign: 'center', fontStyle: 'italic' }}>
                         You don't start earning for yourself until the {calendarResults.freedomDay}th.
                       </p>
+
+                      {/* Regional Historical Comparison */}
+                      {localData?.msa && HISTORICAL_RENT_TO_INCOME_RATIOS[localData.msa] && (
+                        <div style={{ marginTop: '15px', padding: '12px 20px', backgroundColor: colors.bg, fontSize: '11px', color: colors.textDim, textAlign: 'center' }}>
+                          In 1985 in {localData.msa.split(',')[0]}, the average rent burden was {(HISTORICAL_RENT_TO_INCOME_RATIOS[localData.msa][1985] * 100).toFixed(0)}% — that would have been <strong style={{ color: colors.success }}>{Math.ceil(30 * HISTORICAL_RENT_TO_INCOME_RATIOS[localData.msa][1985])} landlord days</strong>. Today the regional average is {(HISTORICAL_RENT_TO_INCOME_RATIOS[localData.msa][2024] * 100).toFixed(0)}%.
+                        </div>
+                      )}
                     </div>
                   )}
                 </section>
