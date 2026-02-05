@@ -1415,6 +1415,8 @@
       // Navigation
       const [activeTab, setActiveTab] = useState('information');
       const [activeSubTab, setActiveSubTab] = useState('sentiment');
+      const [activeInfoTab, setActiveInfoTab] = useState('living-costs');
+      const [showOneBadDay, setShowOneBadDay] = useState(false);
       const [notification, setNotification] = useState(null);
 
       // Information State
@@ -2420,6 +2422,19 @@
           letterSpacing: '1px',
           transition: 'all 0.15s'
         }),
+        infoSubNavButton: (active) => ({
+          padding: '10px 18px',
+          backgroundColor: active ? colors.success : 'transparent',
+          color: active ? '#000' : colors.textMuted,
+          border: `1px solid ${active ? colors.success : colors.borderLight}`,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          fontSize: '11px',
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          fontWeight: active ? 700 : 400,
+          transition: 'all 0.15s'
+        }),
         main: {
           padding: '40px',
           maxWidth: '1200px',
@@ -2554,6 +2569,26 @@
             {/* ==================== INFORMATION TAB ==================== */}
             {activeTab === 'information' && (
               <div>
+                {/* Information Sub-Navigation Tabs */}
+                <div style={styles.subNav}>
+                  {[
+                    { id: 'living-costs', label: '\uD83D\uDCB0 LIVING COSTS' },
+                    { id: 'work-wages', label: '\u23F1\uFE0F WORK & WAGES' },
+                    { id: 'market-forces', label: '\uD83D\uDCC8 MARKET FORCES' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveInfoTab(tab.id)}
+                      style={styles.infoSubNavButton(activeInfoTab === tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* ==================== TAB 1: LIVING COSTS ==================== */}
+                {activeInfoTab === 'living-costs' && (
+                  <div>
                 {/* Standard of Living Calculator */}
                 <section style={{ marginBottom: '60px' }}>
                   <h2 style={styles.sectionHeader}>{textConfig.sol_section_title}</h2>
@@ -2715,6 +2750,178 @@
                         </div>
                         <strong>Sources:</strong> BLS OEWS Q3 2024 (wages), HUD FMR FY2024 (housing), USDA Thrifty Food Plan (food), Healthcare.gov (insurance), AAA (transport), EIA (utilities), IRS 2024 brackets (federal tax), Tax Foundation 2024 (state tax), SSA (FICA)
                       </div>
+
+                      {/* ⚠️ One Bad Day - Embedded Collapsible Section */}
+                      <div style={{
+                        marginTop: '25px',
+                        border: `2px solid ${colors.primary}`,
+                        backgroundColor: '#1a0505',
+                        overflow: 'hidden'
+                      }}>
+                        <button
+                          onClick={() => {
+                            setShowOneBadDay(!showOneBadDay);
+                            if (!showOneBadDay && deficit !== undefined) {
+                              const monthlySurplusDeficit = deficit;
+                              const estimatedMonthlySavings = monthlySurplusDeficit > 0
+                                ? Math.round(monthlySurplusDeficit * effectiveWage)
+                                : 0;
+                              if (!currentSavings) {
+                                setCurrentSavings(String(estimatedMonthlySavings));
+                              }
+                            }
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '15px 20px',
+                            backgroundColor: 'transparent',
+                            color: colors.primary,
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            textAlign: 'left',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <span>⚠️ What if something goes wrong?</span>
+                          <span style={{ fontSize: '11px', color: colors.textDim }}>
+                            {showOneBadDay ? '▲ Collapse' : 'See how one emergency could impact your finances →'}
+                          </span>
+                        </button>
+
+                        {showOneBadDay && (
+                          <div style={{ padding: '0 20px 20px' }}>
+                            <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                              Test your financial resilience. One emergency. That's all it takes.
+                            </p>
+
+                            <div style={{ marginBottom: '20px' }}>
+                              <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                Current Savings {deficit > 0 ? `(pre-filled from your ${deficit}hr surplus ≈ $${Math.round(deficit * effectiveWage)}/mo)` : ''}
+                              </label>
+                              <input
+                                type="number"
+                                value={currentSavings}
+                                onChange={(e) => {
+                                  setCurrentSavings(e.target.value);
+                                  if (selectedEmergency) {
+                                    handleEmergencyToggle(selectedEmergency);
+                                  }
+                                }}
+                                placeholder="850"
+                                step="50"
+                                style={{ ...styles.input, width: '200px' }}
+                              />
+                            </div>
+
+                            {currentSavings && parseFloat(currentSavings) >= 0 && (
+                              <div>
+                                <div style={{ marginBottom: '20px' }}>
+                                  <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                                    {emergencyResults && emergencyResults.isNegative ? 'Deficit' : 'Savings'}
+                                  </div>
+                                  <div style={{
+                                    height: '40px',
+                                    backgroundColor: colors.bgLight,
+                                    border: `1px solid ${colors.border}`,
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                  }}>
+                                    <div style={{
+                                      height: '100%',
+                                      width: emergencyResults && emergencyResults.isNegative ? '100%' : `${Math.min((parseFloat(currentSavings) / 2000) * 100, 100)}%`,
+                                      backgroundColor: emergencyResults && emergencyResults.isNegative ? colors.primary : colors.success,
+                                      transition: emergencyResults && emergencyResults.isNegative ? 'none' : 'all 0.3s ease',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      paddingLeft: '15px'
+                                    }}>
+                                      <span style={{ fontSize: '16px', fontWeight: 700, color: '#000' }}>
+                                        ${emergencyResults && emergencyResults.isNegative ? Math.abs(emergencyResults.deficit) : currentSavings}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div style={{ marginBottom: '20px' }}>
+                                  <div style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                    Select Emergency
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                    {['Flat Tire', 'ER Visit', 'Broken Phone'].map((emergency) => {
+                                      const costs = { 'Flat Tire': 300, 'ER Visit': 1200, 'Broken Phone': 400 };
+                                      const isSelected = selectedEmergency === emergency;
+                                      return (
+                                        <button
+                                          key={emergency}
+                                          onClick={() => handleEmergencyToggle(emergency)}
+                                          style={{
+                                            padding: '12px 20px',
+                                            backgroundColor: isSelected ? colors.primary : 'transparent',
+                                            color: isSelected ? '#000' : colors.textMuted,
+                                            border: `1px solid ${isSelected ? colors.primary : colors.borderLight}`,
+                                            cursor: 'pointer',
+                                            fontFamily: 'inherit',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            transition: 'all 0.15s',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px'
+                                          }}
+                                        >
+                                          {emergency} (${costs[emergency]})
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                {emergencyResults && emergencyResults.isNegative && (
+                                  <div style={{
+                                    textAlign: 'center',
+                                    padding: '30px',
+                                    backgroundColor: '#1a0505',
+                                    border: `2px solid ${colors.primary}`,
+                                    marginBottom: '20px'
+                                  }}>
+                                    <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
+                                      Deficit After {emergencyResults.emergencyType}
+                                    </div>
+                                    <div className="heartbeat" style={{ fontSize: '64px', fontWeight: 700, color: colors.primary, lineHeight: 1, textShadow: `0 0 30px ${colors.primary}80` }}>
+                                      -${Math.abs(emergencyResults.deficit)}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {emergencyResults && !emergencyResults.isNegative && emergencyResults.emergencyType && (
+                                  <div style={{
+                                    textAlign: 'center',
+                                    padding: '30px',
+                                    backgroundColor: '#051a05',
+                                    border: `2px solid ${colors.success}`,
+                                    marginBottom: '20px'
+                                  }}>
+                                    <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
+                                      Remaining After {emergencyResults.emergencyType}
+                                    </div>
+                                    <div style={{ fontSize: '64px', fontWeight: 700, color: colors.success, lineHeight: 1 }}>
+                                      ${emergencyResults.deficit}
+                                    </div>
+                                  </div>
+                                )}
+
+                                <p style={{ marginTop: '20px', color: colors.textDim, fontSize: '13px', textAlign: 'center', fontStyle: 'italic' }}>
+                                  One bad day. That's all it takes.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -2730,6 +2937,171 @@
                   )}
                 </section>
 
+                {/* The Shelter Tax */}
+                <section style={{ marginTop: '60px' }}>
+                  <h2 style={styles.sectionHeader}>The Shelter Tax</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                    Compare housing costs in Time, not Dollars. How many hours of your life does rent claim?
+                  </p>
+
+                  <form onSubmit={calculateShelterTax} style={{ marginBottom: '30px' }}>
+                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>MONTHLY RENT ($):</label>
+                      <input
+                        type="number"
+                        value={shelterRent}
+                        onChange={(e) => setShelterRent(e.target.value)}
+                        placeholder="1500"
+                        min={1}
+                        style={{ ...styles.input, width: '120px' }}
+                      />
+                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>ANNUAL SALARY ($):</label>
+                      <input
+                        type="number"
+                        value={shelterSalary}
+                        onChange={(e) => setShelterSalary(e.target.value)}
+                        placeholder="50000"
+                        min={1}
+                        style={{ ...styles.input, width: '120px' }}
+                      />
+                      <button type="submit" style={styles.button('primary')}>
+                        Calculate
+                      </button>
+                    </div>
+                  </form>
+
+                  {shelterResults && (
+                    <div style={{ ...styles.card, padding: '30px' }}>
+                      <div style={{ marginBottom: '25px' }}>
+                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          Hours per Month (160 = Full-Time)
+                        </div>
+                        <div style={{ position: 'relative', height: '60px', backgroundColor: colors.bgLight, border: `1px solid ${colors.border}` }}>
+                          <div style={{
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            height: '100%',
+                            width: `${Math.min((shelterResults.hoursRentNow / shelterResults.fullTimeMonth) * 100, 100)}%`,
+                            backgroundColor: 'rgba(255, 51, 51, 0.7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <span style={{ color: '#fff', fontWeight: 700, fontSize: '14px', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                              {shelterResults.hoursRentNow}h
+                            </span>
+                          </div>
+                          <div style={{
+                            position: 'absolute',
+                            left: `${(40 / 160) * 100}%`,
+                            top: 0,
+                            height: '100%',
+                            width: '2px',
+                            backgroundColor: colors.success
+                          }} />
+                          <div style={{
+                            position: 'absolute',
+                            left: `${(40 / 160) * 100}%`,
+                            top: '-20px',
+                            transform: 'translateX(-50%)',
+                            fontSize: '10px',
+                            color: colors.success,
+                            whiteSpace: 'nowrap'
+                          }}>
+                            1985 Standard (40h)
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: '10px', color: colors.textDimmest }}>
+                          <span>0h</span>
+                          <span>40h</span>
+                          <span>80h</span>
+                          <span>120h</span>
+                          <span>160h</span>
+                        </div>
+                      </div>
+
+                      <div style={{
+                        padding: '20px',
+                        backgroundColor: '#1a0a0a',
+                        border: `1px solid ${colors.primary}`,
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ fontSize: '15px', color: colors.text, lineHeight: 1.8, margin: 0 }}>
+                          In 1985, a worker paid <strong style={{ color: colors.success }}>40 hours</strong> of life for shelter.
+                          <br />
+                          You pay <strong style={{ color: colors.primary }}>{shelterResults.hoursRentNow} hours</strong>.
+                          <br />
+                          {shelterResults.extraHours > 0 ? (
+                            <span style={{ marginTop: '10px', display: 'inline-block' }}>
+                              The market claims <strong style={{ color: colors.warning }}>{shelterResults.extraHours} extra hours</strong> of your life.
+                            </span>
+                          ) : (
+                            <span style={{ marginTop: '10px', display: 'inline-block', color: colors.success }}>
+                              Your rent burden is below the 1985 baseline.
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '20px' }}>
+                        <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
+                          <div style={{ fontSize: '24px', fontWeight: 700, color: colors.primary }}>{shelterResults.percentOfMonth}%</div>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>of work month</div>
+                        </div>
+                        <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
+                          <div style={{ fontSize: '24px', fontWeight: 700, color: colors.text }}>${shelterResults.hourlyWage}</div>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>hourly rate</div>
+                        </div>
+                        <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
+                          <div style={{ fontSize: '24px', fontWeight: 700, color: shelterResults.extraHours > 0 ? colors.warning : colors.success }}>
+                            {shelterResults.extraHours > 0 ? '+' : ''}{shelterResults.extraHours}h
+                          </div>
+                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>vs 1985</div>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
+                        1985 baseline: 25% of gross income = 40 hours of a 160-hour work month. Source: Census Bureau rent-to-income data.
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* Cross-tool suggestion */}
+                <div style={{
+                  marginTop: '30px',
+                  padding: '15px 20px',
+                  backgroundColor: colors.bg,
+                  border: `1px solid ${colors.border}`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '10px'
+                }}>
+                  <span style={{ fontSize: '12px', color: colors.textDim }}>
+                    See how your work breaks down hour-by-hour →
+                  </span>
+                  <button
+                    onClick={() => setActiveInfoTab('work-wages')}
+                    style={{
+                      ...styles.button('secondary'),
+                      padding: '8px 16px',
+                      fontSize: '10px',
+                      borderColor: colors.success,
+                      color: colors.success
+                    }}
+                  >
+                    ⏱️ Work & Wages
+                  </button>
+                </div>
+                  </div>
+                )}
+
+                {/* ==================== TAB 2: WORK & WAGES ==================== */}
+                {activeInfoTab === 'work-wages' && (
+                  <div>
                 {/* Economic Impact Calculator */}
                 <section style={{ marginBottom: '60px' }}>
                   <h2 style={styles.sectionHeader}>{textConfig.impact_section_title}</h2>
@@ -3109,439 +3481,27 @@
                   )}
                 </section>
 
-                {/* Price Resistance */}
-                <section>
-                  <h2 style={styles.sectionHeader}>Consumer Price Resistance</h2>
-                  <p style={{ color: colors.textDim, marginBottom: '20px' }}>
-                    "At what price do you stop buying?" — Click to set your threshold
-                  </p>
-
-                  <div style={styles.grid}>
-                    {priceResistanceItems.map(item => (
-                      <div key={item.id} style={styles.card}>
-                        <div style={{ fontSize: '13px', color: colors.textMuted, marginBottom: '12px', fontWeight: 500 }}>{item.item}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                          <div>
-                            <div style={{ fontSize: '10px', color: colors.textDimmer }}>CURRENT</div>
-                            <div style={{ fontSize: '20px', fontWeight: 700 }}>
-                              ${item.current < 10 ? item.current.toFixed(2) : item.current}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '10px', color: colors.textDimmer }}>COMMUNITY THRESHOLD</div>
-                            <div style={{ fontSize: '20px', fontWeight: 700, color: colors.primary }}>
-                              ${item.resistance < 10 ? item.resistance.toFixed(2) : item.resistance}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ height: '6px', backgroundColor: colors.border, borderRadius: '3px', marginBottom: '8px' }}>
-                          <div style={{ height: '100%', width: `${item.atResistance}%`, backgroundColor: colors.primary, borderRadius: '3px', transition: 'width 0.3s' }} />
-                        </div>
-                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '15px' }}>
-                          {item.atResistance}% of {item.votes.toLocaleString()} people at resistance
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                          {[1.15, 1.3, 1.5, 2].map(mult => {
-                            const threshold = (item.current * mult).toFixed(2);
-                            const isSelected = priceVotes[item.item] === threshold;
-                            return (
-                              <button
-                                key={mult}
-                                onClick={() => handlePriceVote(item.item, threshold, item.id)}
-                                style={{
-                                  padding: '8px 12px',
-                                  backgroundColor: isSelected ? colors.primary : colors.bgLighter,
-                                  color: isSelected ? '#000' : colors.textMuted,
-                                  border: `1px solid ${isSelected ? colors.primary : colors.borderLight}`,
-                                  cursor: 'pointer',
-                                  fontFamily: 'inherit',
-                                  fontSize: '11px',
-                                  fontWeight: isSelected ? 700 : 400
-                                }}
-                              >
-                                ${threshold}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                {/* Cross-tool suggestion: Exploitation → Stopwatch */}
+                {impactResults && (
+                  <div style={{
+                    marginTop: '20px',
+                    padding: '15px 20px',
+                    backgroundColor: colors.bg,
+                    border: `1px solid ${colors.border}`,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '10px'
+                  }}>
+                    <span style={{ fontSize: '12px', color: colors.textDim }}>
+                      See how this breaks down hour-by-hour → Profit Stopwatch
+                    </span>
+                    <span style={{ fontSize: '11px', color: colors.textDimmer }}>↓ Scroll down</span>
                   </div>
-                </section>
+                )}
 
-                {/* The Shelter Tax */}
-                <section style={{ marginTop: '60px' }}>
-                  <h2 style={styles.sectionHeader}>The Shelter Tax</h2>
-                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                    Compare housing costs in Time, not Dollars. How many hours of your life does rent claim?
-                  </p>
-
-                  <form onSubmit={calculateShelterTax} style={{ marginBottom: '30px' }}>
-                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>MONTHLY RENT ($):</label>
-                      <input
-                        type="number"
-                        value={shelterRent}
-                        onChange={(e) => setShelterRent(e.target.value)}
-                        placeholder="1500"
-                        min={1}
-                        style={{ ...styles.input, width: '120px' }}
-                      />
-                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>ANNUAL SALARY ($):</label>
-                      <input
-                        type="number"
-                        value={shelterSalary}
-                        onChange={(e) => setShelterSalary(e.target.value)}
-                        placeholder="50000"
-                        min={1}
-                        style={{ ...styles.input, width: '120px' }}
-                      />
-                      <button type="submit" style={styles.button('primary')}>
-                        Calculate
-                      </button>
-                    </div>
-                  </form>
-
-                  {shelterResults && (
-                    <div style={{ ...styles.card, padding: '30px' }}>
-                      {/* Visualization Bar */}
-                      <div style={{ marginBottom: '25px' }}>
-                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                          Hours per Month (160 = Full-Time)
-                        </div>
-                        <div style={{ position: 'relative', height: '60px', backgroundColor: colors.bgLight, border: `1px solid ${colors.border}` }}>
-                          {/* Your rent hours (red fill) */}
-                          <div style={{
-                            position: 'absolute',
-                            left: 0,
-                            top: 0,
-                            height: '100%',
-                            width: `${Math.min((shelterResults.hoursRentNow / shelterResults.fullTimeMonth) * 100, 100)}%`,
-                            backgroundColor: 'rgba(255, 51, 51, 0.7)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <span style={{ color: '#fff', fontWeight: 700, fontSize: '14px', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                              {shelterResults.hoursRentNow}h
-                            </span>
-                          </div>
-                          {/* 1985 Standard Line (40 hours = 25%) */}
-                          <div style={{
-                            position: 'absolute',
-                            left: `${(40 / 160) * 100}%`,
-                            top: 0,
-                            height: '100%',
-                            width: '2px',
-                            backgroundColor: colors.success
-                          }} />
-                          <div style={{
-                            position: 'absolute',
-                            left: `${(40 / 160) * 100}%`,
-                            top: '-20px',
-                            transform: 'translateX(-50%)',
-                            fontSize: '10px',
-                            color: colors.success,
-                            whiteSpace: 'nowrap'
-                          }}>
-                            1985 Standard (40h)
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: '10px', color: colors.textDimmest }}>
-                          <span>0h</span>
-                          <span>40h</span>
-                          <span>80h</span>
-                          <span>120h</span>
-                          <span>160h</span>
-                        </div>
-                      </div>
-
-                      {/* Results Text */}
-                      <div style={{
-                        padding: '20px',
-                        backgroundColor: '#1a0a0a',
-                        border: `1px solid ${colors.primary}`,
-                        textAlign: 'center'
-                      }}>
-                        <p style={{ fontSize: '15px', color: colors.text, lineHeight: 1.8, margin: 0 }}>
-                          In 1985, a worker paid <strong style={{ color: colors.success }}>40 hours</strong> of life for shelter.
-                          <br />
-                          You pay <strong style={{ color: colors.primary }}>{shelterResults.hoursRentNow} hours</strong>.
-                          <br />
-                          {shelterResults.extraHours > 0 ? (
-                            <span style={{ marginTop: '10px', display: 'inline-block' }}>
-                              The market claims <strong style={{ color: colors.warning }}>{shelterResults.extraHours} extra hours</strong> of your life.
-                            </span>
-                          ) : (
-                            <span style={{ marginTop: '10px', display: 'inline-block', color: colors.success }}>
-                              Your rent burden is below the 1985 baseline.
-                            </span>
-                          )}
-                        </p>
-                      </div>
-
-                      {/* Additional Stats */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '20px' }}>
-                        <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
-                          <div style={{ fontSize: '24px', fontWeight: 700, color: colors.primary }}>{shelterResults.percentOfMonth}%</div>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>of work month</div>
-                        </div>
-                        <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
-                          <div style={{ fontSize: '24px', fontWeight: 700, color: colors.text }}>${shelterResults.hourlyWage}</div>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>hourly rate</div>
-                        </div>
-                        <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
-                          <div style={{ fontSize: '24px', fontWeight: 700, color: shelterResults.extraHours > 0 ? colors.warning : colors.success }}>
-                            {shelterResults.extraHours > 0 ? '+' : ''}{shelterResults.extraHours}h
-                          </div>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>vs 1985</div>
-                        </div>
-                      </div>
-
-                      <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
-                        1985 baseline: 25% of gross income = 40 hours of a 160-hour work month. Source: Census Bureau rent-to-income data.
-                      </div>
-                    </div>
-                  )}
-                </section>
-
-                {/* Corporate Conquest Map */}
-                <section style={{ marginTop: '60px' }}>
-                  <h2 style={styles.sectionHeader}>Corporate Conquest Map</h2>
-                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                    State-by-state corporate investor ownership of housing. Hover over states to see details in the info bar above the map. Red = High corporate ownership.
-                  </p>
-
-                  {mapData && (
-                    <div>
-                      {/* State Info Bar */}
-                      <div style={{
-                        backgroundColor: colors.cardBg,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: '4px',
-                        padding: '15px 20px',
-                        marginBottom: '15px',
-                        minHeight: '60px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexWrap: 'wrap',
-                        gap: '20px'
-                      }}>
-                        {hoveredState ? (
-                          <>
-                            <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                              <div style={{ 
-                                fontSize: '18px', 
-                                fontWeight: 'bold', 
-                                color: colors.text,
-                                marginBottom: '4px' 
-                              }}>
-                                {hoveredState.name}
-                              </div>
-                            </div>
-                            <div style={{ 
-                              height: '40px', 
-                              width: '1px', 
-                              backgroundColor: colors.border 
-                            }} />
-                            <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                              <div style={{ 
-                                fontSize: '12px', 
-                                color: colors.textDim,
-                                marginBottom: '2px' 
-                              }}>
-                                Corporate Ownership
-                              </div>
-                              <div style={{ 
-                                fontSize: '20px', 
-                                fontWeight: 'bold', 
-                                color: colors.accent 
-                              }}>
-                                {hoveredState.corporate_pct}%
-                              </div>
-                            </div>
-                            <div style={{ 
-                              height: '40px', 
-                              width: '1px', 
-                              backgroundColor: colors.border 
-                            }} />
-                            <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                              <div style={{ 
-                                fontSize: '12px', 
-                                color: colors.textDim,
-                                marginBottom: '2px' 
-                              }}>
-                                Price-to-Income Ratio
-                              </div>
-                              <div style={{ 
-                                fontSize: '20px', 
-                                fontWeight: 'bold', 
-                                color: colors.accent 
-                              }}>
-                                {hoveredState.price_to_income}×
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <div style={{ 
-                            fontSize: '14px', 
-                            color: colors.textDim,
-                            textAlign: 'center' 
-                          }}>
-                            Hover over a state to see details
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Interactive SVG Map */}
-                      <div style={{
-                        backgroundColor: colors.cardBg,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: '4px',
-                        padding: '20px',
-                        marginBottom: '20px',
-                        overflow: 'hidden'
-                      }}>
-                        <svg
-                          viewBox="0 0 960 620"
-                          style={{
-                            width: '100%',
-                            height: 'auto',
-                            maxHeight: '500px'
-                          }}
-                        >
-                          {Object.entries(US_STATES_SVG).map(([stateCode, stateData]) => {
-                            const data = mapData[stateCode] || mapData.default || { corporate_pct: 0, price_to_income: 0 };
-                            const pct = data.corporate_pct || 0;
-                            const isHovered = hoveredState && hoveredState.code === stateCode;
-                            
-                            // Color coding: higher corporate % = more red
-                            const hue = Math.max(0, 120 - (pct * 4)); // 0 = red, 120 = green
-                            const fillColor = isHovered ? `hsl(${hue}, 85%, 45%)` : `hsl(${hue}, 70%, 30%)`;
-                            const strokeColor = isHovered ? `hsl(${hue}, 90%, 55%)` : `hsl(${hue}, 70%, 45%)`;
-
-                            const handleInteractionStart = () => {
-                              setHoveredState({
-                                code: stateCode,
-                                name: stateData.name,
-                                corporate_pct: pct,
-                                price_to_income: data.price_to_income
-                              });
-                            };
-
-                            const handleInteractionEnd = () => {
-                              setHoveredState(null);
-                            };
-
-                            return (
-                              <path
-                                key={stateCode}
-                                d={stateData.path}
-                                fill={fillColor}
-                                stroke={strokeColor}
-                                strokeWidth={isHovered ? "2" : "1"}
-                                tabIndex="0"
-                                role="button"
-                                aria-label={`${stateData.name}: ${pct}% corporate ownership, ${data.price_to_income} price-to-income ratio`}
-                                style={{
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease-out',
-                                  transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-                                  transformBox: 'fill-box',
-                                  transformOrigin: 'center',
-                                  outline: isHovered ? `2px solid ${strokeColor}` : 'none',
-                                  outlineOffset: '2px'
-                                }}
-                                onMouseEnter={handleInteractionStart}
-                                onMouseLeave={handleInteractionEnd}
-                                onFocus={handleInteractionStart}
-                                onBlur={handleInteractionEnd}
-                              />
-                            );
-                          })}
-                        </svg>
-                      </div>
-
-                      {/* Legend */}
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        gap: '20px',
-                        marginBottom: '20px',
-                        flexWrap: 'wrap'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(0, 70%, 30%)', border: '1px solid hsl(0, 70%, 45%)' }} />
-                          <span style={{ fontSize: '11px', color: colors.textMuted }}>High (30%+)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(40, 70%, 30%)', border: '1px solid hsl(40, 70%, 45%)' }} />
-                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Medium (20-29%)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(80, 70%, 30%)', border: '1px solid hsl(80, 70%, 45%)' }} />
-                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Low (10-19%)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(120, 70%, 30%)', border: '1px solid hsl(120, 70%, 45%)' }} />
-                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Lowest (&lt;10%)</span>
-                        </div>
-                      </div>
-
-                      {/* Top 5 States Detail Cards */}
-                      <h3 style={{ fontSize: '13px', color: colors.textMuted, marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        Highest Corporate Ownership States
-                      </h3>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '15px'
-                      }}>
-                        {Object.entries(mapData)
-                          .filter(([state]) => state !== 'default')
-                          .sort((a, b) => b[1].corporate_pct - a[1].corporate_pct)
-                          .slice(0, 5)
-                          .map(([state, data]) => {
-                            const stateInfo = US_STATES_SVG[state];
-                            const pct = data.corporate_pct;
-                            const hue = Math.max(0, 120 - (pct * 4));
-                            return (
-                              <div key={state} style={{
-                                ...styles.card,
-                                borderLeft: `3px solid hsl(${hue}, 70%, 45%)`,
-                                padding: '15px'
-                              }}>
-                                <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text, marginBottom: '8px' }}>
-                                  {stateInfo ? stateInfo.name : state} ({state})
-                                </div>
-                                <div style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '5px' }}>
-                                  <strong style={{ color: `hsl(${hue}, 70%, 55%)` }}>{data.corporate_pct}%</strong> of homes owned by investors
-                                </div>
-                                <div style={{ fontSize: '11px', color: colors.textDim }}>
-                                  Price-to-income ratio: {data.price_to_income}x
-                                </div>
-                              </div>
-                            );
-                          })}
-                      </div>
-
-                      <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
-                        Sources: CoreLogic, ATTOM Data, Redfin investor activity reports. "Corporate" includes institutional investors, REITs, and investment LLCs.
-                      </div>
-                    </div>
-                  )}
-
-                  {!mapData && (
-                    <div style={{ ...styles.card, textAlign: 'center', padding: '40px', color: colors.textMuted }}>
-                      Loading corporate ownership data...
-                    </div>
-                  )}
-                </section>
-
+                {/* (Shelter Tax moved to Living Costs tab, Corporate Conquest Map & Price Resistance moved to Market Forces tab) */}
                 {/* ==================== THE PROFIT STOPWATCH ==================== */}
                 <section style={{ marginTop: '60px' }}>
                   <h2 style={styles.sectionHeader}>The Profit Stopwatch</h2>
@@ -3867,153 +3827,367 @@
                   )}
                 </section>
 
-                {/* ==================== THE ONE BAD DAY ==================== */}
-                <section style={{ marginTop: '60px' }}>
-                  <h2 style={styles.sectionHeader}>The One Bad Day</h2>
+                {/* Cross-tool suggestion: Calendar → Living Costs */}
+                <div style={{
+                  marginTop: '30px',
+                  padding: '15px 20px',
+                  backgroundColor: colors.bg,
+                  border: `1px solid ${colors.border}`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '10px'
+                }}>
+                  <span style={{ fontSize: '12px', color: colors.textDim }}>
+                    See how one emergency could wipe out your surplus →
+                  </span>
+                  <button
+                    onClick={() => setActiveInfoTab('living-costs')}
+                    style={{
+                      ...styles.button('secondary'),
+                      padding: '8px 16px',
+                      fontSize: '10px',
+                      borderColor: colors.success,
+                      color: colors.success
+                    }}
+                  >
+                    💰 Living Costs
+                  </button>
+                </div>
+                  </div>
+                )}
+
+                {/* ==================== TAB 3: MARKET FORCES ==================== */}
+                {activeInfoTab === 'market-forces' && (
+                  <div>
+                {/* Corporate Conquest Map */}
+                <section style={{ marginBottom: '60px' }}>
+                  <h2 style={styles.sectionHeader}>Corporate Conquest Map</h2>
                   <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                    Test your financial resilience. One emergency. That's all it takes.
+                    State-by-state corporate investor ownership of housing. Hover over states to see details in the info bar above the map. Red = High corporate ownership.
                   </p>
 
-                  <div style={{ marginBottom: '30px' }}>
-                    <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                      Current Savings
-                    </label>
-                    <input
-                      type="number"
-                      value={currentSavings}
-                      onChange={(e) => {
-                        setCurrentSavings(e.target.value);
-                        if (selectedEmergency) {
-                          handleEmergencyToggle(selectedEmergency);
-                        }
-                      }}
-                      placeholder="850"
-                      step="50"
-                      style={{ ...styles.input, width: '200px' }}
-                    />
-                  </div>
-
-                  {currentSavings && parseFloat(currentSavings) >= 0 && (
+                  {mapData && (
                     <div>
-                      {/* Savings bar */}
-                      <div style={{ marginBottom: '20px' }}>
-                        <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                          {emergencyResults && emergencyResults.isNegative ? 'Deficit' : 'Savings'}
-                        </div>
-                        <div style={{
-                          height: '40px',
-                          backgroundColor: colors.bgLight,
-                          border: `1px solid ${colors.border}`,
-                          position: 'relative',
-                          overflow: 'hidden'
-                        }}>
+                      {/* State Info Bar */}
+                      <div style={{
+                        backgroundColor: colors.cardBg,
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: '4px',
+                        padding: '15px 20px',
+                        marginBottom: '15px',
+                        minHeight: '60px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexWrap: 'wrap',
+                        gap: '20px'
+                      }}>
+                        {hoveredState ? (
+                          <>
+                            <div style={{ textAlign: 'center', minWidth: '150px' }}>
+                              <div style={{
+                                fontSize: '18px',
+                                fontWeight: 'bold',
+                                color: colors.text,
+                                marginBottom: '4px'
+                              }}>
+                                {hoveredState.name}
+                              </div>
+                            </div>
+                            <div style={{
+                              height: '40px',
+                              width: '1px',
+                              backgroundColor: colors.border
+                            }} />
+                            <div style={{ textAlign: 'center', minWidth: '150px' }}>
+                              <div style={{
+                                fontSize: '12px',
+                                color: colors.textDim,
+                                marginBottom: '2px'
+                              }}>
+                                Corporate Ownership
+                              </div>
+                              <div style={{
+                                fontSize: '20px',
+                                fontWeight: 'bold',
+                                color: colors.accent
+                              }}>
+                                {hoveredState.corporate_pct}%
+                              </div>
+                            </div>
+                            <div style={{
+                              height: '40px',
+                              width: '1px',
+                              backgroundColor: colors.border
+                            }} />
+                            <div style={{ textAlign: 'center', minWidth: '150px' }}>
+                              <div style={{
+                                fontSize: '12px',
+                                color: colors.textDim,
+                                marginBottom: '2px'
+                              }}>
+                                Price-to-Income Ratio
+                              </div>
+                              <div style={{
+                                fontSize: '20px',
+                                fontWeight: 'bold',
+                                color: colors.accent
+                              }}>
+                                {hoveredState.price_to_income}×
+                              </div>
+                            </div>
+                          </>
+                        ) : (
                           <div style={{
-                            height: '100%',
-                            width: emergencyResults && emergencyResults.isNegative ? '100%' : `${Math.min((parseFloat(currentSavings) / 2000) * 100, 100)}%`,
-                            backgroundColor: emergencyResults && emergencyResults.isNegative ? colors.primary : colors.success,
-                            transition: emergencyResults && emergencyResults.isNegative ? 'none' : 'all 0.3s ease',
-                            display: 'flex',
-                            alignItems: 'center',
-                            paddingLeft: '15px'
+                            fontSize: '14px',
+                            color: colors.textDim,
+                            textAlign: 'center'
                           }}>
-                            <span style={{
-                              fontSize: '16px',
-                              fontWeight: 700,
-                              color: '#000'
-                            }}>
-                              ${emergencyResults && emergencyResults.isNegative ? Math.abs(emergencyResults.deficit) : currentSavings}
-                            </span>
+                            Hover over a state to see details
                           </div>
+                        )}
+                      </div>
+
+                      {/* Interactive SVG Map */}
+                      <div style={{
+                        backgroundColor: colors.cardBg,
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: '4px',
+                        padding: '20px',
+                        marginBottom: '20px',
+                        overflow: 'hidden'
+                      }}>
+                        <svg
+                          viewBox="0 0 960 620"
+                          style={{
+                            width: '100%',
+                            height: 'auto',
+                            maxHeight: '500px'
+                          }}
+                        >
+                          {Object.entries(US_STATES_SVG).map(([stateCode, stateData]) => {
+                            const data = mapData[stateCode] || mapData.default || { corporate_pct: 0, price_to_income: 0 };
+                            const pct = data.corporate_pct || 0;
+                            const isHovered = hoveredState && hoveredState.code === stateCode;
+
+                            const hue = Math.max(0, 120 - (pct * 4));
+                            const fillColor = isHovered ? `hsl(${hue}, 85%, 45%)` : `hsl(${hue}, 70%, 30%)`;
+                            const strokeColor = isHovered ? `hsl(${hue}, 90%, 55%)` : `hsl(${hue}, 70%, 45%)`;
+
+                            const handleInteractionStart = () => {
+                              setHoveredState({
+                                code: stateCode,
+                                name: stateData.name,
+                                corporate_pct: pct,
+                                price_to_income: data.price_to_income
+                              });
+                            };
+
+                            const handleInteractionEnd = () => {
+                              setHoveredState(null);
+                            };
+
+                            return (
+                              <path
+                                key={stateCode}
+                                d={stateData.path}
+                                fill={fillColor}
+                                stroke={strokeColor}
+                                strokeWidth={isHovered ? "2" : "1"}
+                                tabIndex="0"
+                                role="button"
+                                aria-label={`${stateData.name}: ${pct}% corporate ownership, ${data.price_to_income} price-to-income ratio`}
+                                style={{
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease-out',
+                                  transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                                  transformBox: 'fill-box',
+                                  transformOrigin: 'center',
+                                  outline: isHovered ? `2px solid ${strokeColor}` : 'none',
+                                  outlineOffset: '2px'
+                                }}
+                                onMouseEnter={handleInteractionStart}
+                                onMouseLeave={handleInteractionEnd}
+                                onFocus={handleInteractionStart}
+                                onBlur={handleInteractionEnd}
+                              />
+                            );
+                          })}
+                        </svg>
+                      </div>
+
+                      {/* Legend */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '20px',
+                        marginBottom: '20px',
+                        flexWrap: 'wrap'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(0, 70%, 30%)', border: '1px solid hsl(0, 70%, 45%)' }} />
+                          <span style={{ fontSize: '11px', color: colors.textMuted }}>High (30%+)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(40, 70%, 30%)', border: '1px solid hsl(40, 70%, 45%)' }} />
+                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Medium (20-29%)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(80, 70%, 30%)', border: '1px solid hsl(80, 70%, 45%)' }} />
+                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Low (10-19%)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '20px', height: '20px', backgroundColor: 'hsl(120, 70%, 30%)', border: '1px solid hsl(120, 70%, 45%)' }} />
+                          <span style={{ fontSize: '11px', color: colors.textMuted }}>Lowest (&lt;10%)</span>
                         </div>
                       </div>
 
-                      {/* Emergency toggle buttons */}
-                      <div style={{ marginBottom: '30px' }}>
-                        <div style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                          Select Emergency
+                      {/* Top 5 States Detail Cards */}
+                      <h3 style={{ fontSize: '13px', color: colors.textMuted, marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        Highest Corporate Ownership States
+                      </h3>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '15px'
+                      }}>
+                        {Object.entries(mapData)
+                          .filter(([state]) => state !== 'default')
+                          .sort((a, b) => b[1].corporate_pct - a[1].corporate_pct)
+                          .slice(0, 5)
+                          .map(([state, data]) => {
+                            const stateInfo = US_STATES_SVG[state];
+                            const pct = data.corporate_pct;
+                            const hue = Math.max(0, 120 - (pct * 4));
+                            return (
+                              <div key={state} style={{
+                                ...styles.card,
+                                borderLeft: `3px solid hsl(${hue}, 70%, 45%)`,
+                                padding: '15px'
+                              }}>
+                                <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text, marginBottom: '8px' }}>
+                                  {stateInfo ? stateInfo.name : state} ({state})
+                                </div>
+                                <div style={{ fontSize: '11px', color: colors.textMuted, marginBottom: '5px' }}>
+                                  <strong style={{ color: `hsl(${hue}, 70%, 55%)` }}>{data.corporate_pct}%</strong> of homes owned by investors
+                                </div>
+                                <div style={{ fontSize: '11px', color: colors.textDim }}>
+                                  Price-to-income ratio: {data.price_to_income}x
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+
+                      <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
+                        Sources: CoreLogic, ATTOM Data, Redfin investor activity reports. "Corporate" includes institutional investors, REITs, and investment LLCs.
+                      </div>
+                    </div>
+                  )}
+
+                  {!mapData && (
+                    <div style={{ ...styles.card, textAlign: 'center', padding: '40px', color: colors.textMuted }}>
+                      Loading corporate ownership data...
+                    </div>
+                  )}
+                </section>
+
+                {/* Consumer Price Resistance */}
+                <section style={{ marginTop: '60px' }}>
+                  <h2 style={styles.sectionHeader}>Consumer Price Resistance</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px' }}>
+                    "At what price do you stop buying?" — Click to set your threshold
+                  </p>
+
+                  <div style={styles.grid}>
+                    {priceResistanceItems.map(item => (
+                      <div key={item.id} style={styles.card}>
+                        <div style={{ fontSize: '13px', color: colors.textMuted, marginBottom: '12px', fontWeight: 500 }}>{item.item}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                          <div>
+                            <div style={{ fontSize: '10px', color: colors.textDimmer }}>CURRENT</div>
+                            <div style={{ fontSize: '20px', fontWeight: 700 }}>
+                              ${item.current < 10 ? item.current.toFixed(2) : item.current}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '10px', color: colors.textDimmer }}>COMMUNITY THRESHOLD</div>
+                            <div style={{ fontSize: '20px', fontWeight: 700, color: colors.primary }}>
+                              ${item.resistance < 10 ? item.resistance.toFixed(2) : item.resistance}
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                          {['Flat Tire', 'ER Visit', 'Broken Phone'].map((emergency) => {
-                            const costs = { 'Flat Tire': 300, 'ER Visit': 1200, 'Broken Phone': 400 };
-                            const isSelected = selectedEmergency === emergency;
+
+                        <div style={{ height: '6px', backgroundColor: colors.border, borderRadius: '3px', marginBottom: '8px' }}>
+                          <div style={{ height: '100%', width: `${item.atResistance}%`, backgroundColor: colors.primary, borderRadius: '3px', transition: 'width 0.3s' }} />
+                        </div>
+                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '15px' }}>
+                          {item.atResistance}% of {item.votes.toLocaleString()} people at resistance
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {[1.15, 1.3, 1.5, 2].map(mult => {
+                            const threshold = (item.current * mult).toFixed(2);
+                            const isSelected = priceVotes[item.item] === threshold;
                             return (
                               <button
-                                key={emergency}
-                                onClick={() => handleEmergencyToggle(emergency)}
+                                key={mult}
+                                onClick={() => handlePriceVote(item.item, threshold, item.id)}
                                 style={{
-                                  padding: '12px 20px',
-                                  backgroundColor: isSelected ? colors.primary : 'transparent',
+                                  padding: '8px 12px',
+                                  backgroundColor: isSelected ? colors.primary : colors.bgLighter,
                                   color: isSelected ? '#000' : colors.textMuted,
                                   border: `1px solid ${isSelected ? colors.primary : colors.borderLight}`,
                                   cursor: 'pointer',
                                   fontFamily: 'inherit',
-                                  fontSize: '12px',
-                                  fontWeight: 600,
-                                  transition: 'all 0.15s',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.5px'
-                                }}
-                                onMouseEnter={(e) => {
-                                  if (!isSelected) {
-                                    e.target.style.borderColor = colors.primary;
-                                    e.target.style.color = colors.primary;
-                                  }
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (!isSelected) {
-                                    e.target.style.borderColor = colors.borderLight;
-                                    e.target.style.color = colors.textMuted;
-                                  }
+                                  fontSize: '11px',
+                                  fontWeight: isSelected ? 700 : 400
                                 }}
                               >
-                                {emergency} (${costs[emergency]})
+                                ${threshold}
                               </button>
                             );
                           })}
                         </div>
                       </div>
-
-                      {/* Results */}
-                      {emergencyResults && emergencyResults.isNegative && (
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '30px',
-                          backgroundColor: '#1a0505',
-                          border: `2px solid ${colors.primary}`,
-                          marginBottom: '20px'
-                        }}>
-                          <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
-                            Deficit After {emergencyResults.emergencyType}
-                          </div>
-                          <div className="heartbeat" style={{ fontSize: '64px', fontWeight: 700, color: colors.primary, lineHeight: 1, textShadow: `0 0 30px ${colors.primary}80` }}>
-                            -${Math.abs(emergencyResults.deficit)}
-                          </div>
-                        </div>
-                      )}
-
-                      {emergencyResults && !emergencyResults.isNegative && emergencyResults.emergencyType && (
-                        <div style={{
-                          textAlign: 'center',
-                          padding: '30px',
-                          backgroundColor: '#051a05',
-                          border: `2px solid ${colors.success}`,
-                          marginBottom: '20px'
-                        }}>
-                          <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
-                            Remaining After {emergencyResults.emergencyType}
-                          </div>
-                          <div style={{ fontSize: '64px', fontWeight: 700, color: colors.success, lineHeight: 1 }}>
-                            ${emergencyResults.deficit}
-                          </div>
-                        </div>
-                      )}
-
-                      <p style={{ marginTop: '20px', color: colors.textDim, fontSize: '13px', textAlign: 'center', fontStyle: 'italic' }}>
-                        One bad day. That's all it takes.
-                      </p>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </section>
+
+                {/* Cross-tool suggestion: Market Forces → Living Costs */}
+                <div style={{
+                  marginTop: '30px',
+                  padding: '15px 20px',
+                  backgroundColor: colors.bg,
+                  border: `1px solid ${colors.border}`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '10px'
+                }}>
+                  <span style={{ fontSize: '12px', color: colors.textDim }}>
+                    Calculate your personal cost of living →
+                  </span>
+                  <button
+                    onClick={() => setActiveInfoTab('living-costs')}
+                    style={{
+                      ...styles.button('secondary'),
+                      padding: '8px 16px',
+                      fontSize: '10px',
+                      borderColor: colors.success,
+                      color: colors.success
+                    }}
+                  >
+                    💰 Living Costs
+                  </button>
+                </div>
+                  </div>
+                )}
+
               </div>
             )}
 
