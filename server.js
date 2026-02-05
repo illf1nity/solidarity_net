@@ -3,6 +3,8 @@ const cors = require('cors');
 const path = require('path');
 const https = require('https');
 const { getDatabase, YEARLY_ECONOMIC_DATA, STATE_META } = require('./db');
+const { initializeForumSchema, seedForumData } = require('./forum/forum-db');
+const { registerForumRoutes } = require('./forum/forum-routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,11 +13,19 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (the index.html frontend)
-app.use(express.static(path.join(__dirname)));
-
 // Initialize database
 const db = getDatabase();
+
+// Initialize forum schema & seed data
+initializeForumSchema(db);
+seedForumData(db);
+
+// Register forum routes (before static middleware so /forum route takes priority)
+registerForumRoutes(app, db);
+
+// Serve static files — forum assets served from /forum path
+app.use('/forum', express.static(path.join(__dirname, 'forum')));
+app.use(express.static(path.join(__dirname)));
 
 // Helper to format relative time from a timestamp
 function timeAgo(dateStr) {
