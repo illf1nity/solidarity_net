@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="public/empowerment.css">
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -1408,6 +1409,709 @@
     };
 
     // ============================================
+    // EMPOWERMENT COMPONENTS
+    // ============================================
+
+    // ValidationMessage Component - Displays "You deserve $X" with gold highlighting
+    const ValidationMessage = ({ deservedAmount, currentAmount, frequency, source, explainerText, onAcknowledge }) => {
+      const [showExplainer, setShowExplainer] = useState(false);
+
+      const formatCurrency = (amount, freq) => {
+        if (freq === 'hourly') return `$${amount.toFixed(2)}/hour`;
+        return `$${amount.toLocaleString()}/year`;
+      };
+
+      const gap = deservedAmount - currentAmount;
+      const gapPercent = ((gap / currentAmount) * 100).toFixed(1);
+
+      return (
+        <div className="validation-message">
+          <div className="validation-message__label">YOU DESERVE</div>
+          <div className="validation-message__amount animate-value-reveal">
+            {formatCurrency(deservedAmount, frequency)}
+          </div>
+          <div className="validation-message__source">
+            Based on {source}
+          </div>
+          {gap > 0 && (
+            <div style={{ color: '#FFD700', fontSize: '14px', marginBottom: '12px' }}>
+              That's {formatCurrency(gap, frequency)} more than your current rate ({gapPercent}% higher)
+            </div>
+          )}
+          <button
+            className="validation-message__explainer-toggle"
+            onClick={() => setShowExplainer(!showExplainer)}
+          >
+            {showExplainer ? '▼' : '▶'} Why this number?
+          </button>
+          {showExplainer && (
+            <div className="validation-message__explainer">
+              <p>{explainerText}</p>
+            </div>
+          )}
+          {onAcknowledge && (
+            <button
+              className="btn-empowerment btn-empowerment--primary"
+              onClick={onAcknowledge}
+              style={{ marginTop: '16px' }}
+            >
+              I understand my worth ✓
+            </button>
+          )}
+        </div>
+      );
+    };
+
+    // OpportunityCostTicker Component - Shows daily opportunity cost accumulating
+    const OpportunityCostTicker = ({ currentWage, deservedWage, startDate }) => {
+      const [tickerValue, setTickerValue] = useState(0);
+
+      useEffect(() => {
+        const hourlyGap = deservedWage - currentWage;
+        const dailyGap = hourlyGap * 8;
+        const start = new Date(startDate);
+        const now = new Date();
+        const daysUnderpaid = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+        const totalCost = dailyGap * daysUnderpaid;
+
+        // Animate the counter
+        const duration = 2000;
+        const steps = 60;
+        const increment = totalCost / steps;
+        let current = 0;
+
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= totalCost) {
+            setTickerValue(totalCost);
+            clearInterval(timer);
+          } else {
+            setTickerValue(current);
+          }
+        }, duration / steps);
+
+        return () => clearInterval(timer);
+      }, [currentWage, deservedWage, startDate]);
+
+      const hourlyGap = deservedWage - currentWage;
+      const dailyGap = hourlyGap * 8;
+      const start = new Date(startDate);
+      const now = new Date();
+      const daysUnderpaid = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+
+      return (
+        <div className="opportunity-ticker">
+          <div className="opportunity-ticker__header">OPPORTUNITY COST TRACKER</div>
+          <div className="opportunity-ticker__stats">
+            <div className="opportunity-ticker__stat">
+              <div className="opportunity-ticker__stat-label">Days Below Market</div>
+              <div className="opportunity-ticker__stat-value">{daysUnderpaid.toLocaleString()}</div>
+            </div>
+            <div className="opportunity-ticker__stat">
+              <div className="opportunity-ticker__stat-label">Daily Cost</div>
+              <div className="opportunity-ticker__stat-value">${dailyGap.toFixed(2)}</div>
+            </div>
+          </div>
+          <div className="opportunity-ticker__cumulative">
+            <div className="opportunity-ticker__cumulative-label">CUMULATIVE COST</div>
+            <div className="opportunity-ticker__cumulative-value">
+              ${tickerValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+          <div className="opportunity-ticker__message">
+            This is money you've already lost by not negotiating. Every day adds ${dailyGap.toFixed(2)} more.
+          </div>
+        </div>
+      );
+    };
+
+    // RaiseImpactVisualizer Component - Interactive slider showing raise impact
+    const RaiseImpactVisualizer = ({ currentSalary, yearsToRetirement = 30 }) => {
+      const [raiseAmount, setRaiseAmount] = useState(5000);
+
+      const savingsRate = 0.10;
+      const investmentReturn = 0.07;
+      const annualGrowth = 0.025;
+
+      // Calculate impacts
+      const monthlyDiff = raiseAmount / 12;
+      const hourlyDiff = raiseAmount / 2080;
+
+      // 30-year projection
+      let totalWithout = 0;
+      let totalWith = 0;
+      let savingsWithout = 0;
+      let savingsWith = 0;
+
+      for (let year = 0; year <= yearsToRetirement; year++) {
+        const baseIncome = currentSalary * Math.pow(1 + annualGrowth, year);
+        const raisedIncome = (currentSalary + raiseAmount) * Math.pow(1 + annualGrowth, year);
+
+        totalWithout += baseIncome;
+        totalWith += raisedIncome;
+
+        const yearlySavingsWithout = baseIncome * savingsRate;
+        const yearlySavingsWith = raisedIncome * savingsRate;
+
+        savingsWithout = (savingsWithout * (1 + investmentReturn)) + yearlySavingsWithout;
+        savingsWith = (savingsWith * (1 + investmentReturn)) + yearlySavingsWith;
+      }
+
+      const additionalIncome = totalWith - totalWithout;
+      const additionalSavings = savingsWith - savingsWithout;
+
+      return (
+        <div className="raise-impact">
+          <div className="raise-impact__slider-container">
+            <div className="raise-impact__slider-label">
+              <span>Requested Raise:</span>
+              <span className="raise-impact__slider-value">${raiseAmount.toLocaleString()}</span>
+            </div>
+            <input
+              type="range"
+              className="raise-impact__slider"
+              min="1000"
+              max="25000"
+              step="500"
+              value={raiseAmount}
+              onChange={(e) => setRaiseAmount(parseInt(e.target.value))}
+            />
+          </div>
+
+          <div className="raise-impact__metrics">
+            <div className="raise-impact__metric">
+              <div className="raise-impact__metric-label">Monthly Difference</div>
+              <div className="raise-impact__metric-value raise-impact__metric-value--gold">
+                +${monthlyDiff.toFixed(0)}
+              </div>
+            </div>
+            <div className="raise-impact__metric">
+              <div className="raise-impact__metric-label">Hourly Difference</div>
+              <div className="raise-impact__metric-value raise-impact__metric-value--gold">
+                +${hourlyDiff.toFixed(2)}
+              </div>
+            </div>
+            <div className="raise-impact__metric">
+              <div className="raise-impact__metric-label">{yearsToRetirement}-Year Income Boost</div>
+              <div className="raise-impact__metric-value raise-impact__metric-value--green">
+                +${additionalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </div>
+            </div>
+            <div className="raise-impact__metric">
+              <div className="raise-impact__metric-label">Retirement Savings Boost</div>
+              <div className="raise-impact__metric-value raise-impact__metric-value--green">
+                +${additionalSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </div>
+            </div>
+          </div>
+
+          <div className="raise-impact__chart-container">
+            <div style={{ textAlign: 'center', color: '#aaa' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+              <div>A ${raiseAmount.toLocaleString()} raise today becomes</div>
+              <div style={{ fontSize: '20px', color: '#FFD700', fontWeight: 'bold', marginTop: '8px' }}>
+                ${(additionalIncome + additionalSavings).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </div>
+              <div style={{ fontSize: '12px', marginTop: '4px' }}>over your career (income + investments)</div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // NegotiationScriptGenerator Component
+    const NegotiationScriptGenerator = () => {
+      const [formData, setFormData] = useState({
+        currentSalary: '',
+        frequency: 'annual',
+        yearsAtCompany: '',
+        role: '',
+        achievements: ['']
+      });
+      const [scriptData, setScriptData] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [copiedSection, setCopiedSection] = useState(null);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+          const response = await fetch(`${API_BASE}/negotiation-script`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              current_salary: parseFloat(formData.currentSalary),
+              frequency: formData.frequency,
+              years_at_company: parseInt(formData.yearsAtCompany) || 0,
+              role: formData.role,
+              achievements: formData.achievements.filter(a => a.trim())
+            })
+          });
+
+          const data = await response.json();
+          setScriptData(data);
+        } catch (error) {
+          console.error('Error generating script:', error);
+        }
+
+        setLoading(false);
+      };
+
+      const copyToClipboard = (text, section) => {
+        navigator.clipboard.writeText(text);
+        setCopiedSection(section);
+        setTimeout(() => setCopiedSection(null), 2000);
+      };
+
+      const addAchievement = () => {
+        setFormData(prev => ({
+          ...prev,
+          achievements: [...prev.achievements, '']
+        }));
+      };
+
+      const updateAchievement = (index, value) => {
+        const newAchievements = [...formData.achievements];
+        newAchievements[index] = value;
+        setFormData(prev => ({ ...prev, achievements: newAchievements }));
+      };
+
+      return (
+        <div>
+          <form onSubmit={handleSubmit} style={{ marginBottom: '30px' }}>
+            <div style={{ display: 'grid', gap: '15px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ color: '#aaa', fontSize: '12px', width: '120px' }}>Current Salary:</label>
+                <input
+                  type="number"
+                  value={formData.currentSalary}
+                  onChange={(e) => setFormData(prev => ({ ...prev, currentSalary: e.target.value }))}
+                  placeholder="e.g., 55000"
+                  style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit', width: '150px' }}
+                  required
+                />
+                <select
+                  value={formData.frequency}
+                  onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
+                  style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit' }}
+                >
+                  <option value="annual">Annual</option>
+                  <option value="hourly">Hourly</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ color: '#aaa', fontSize: '12px', width: '120px' }}>Years at Company:</label>
+                <input
+                  type="number"
+                  value={formData.yearsAtCompany}
+                  onChange={(e) => setFormData(prev => ({ ...prev, yearsAtCompany: e.target.value }))}
+                  placeholder="e.g., 3"
+                  style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit', width: '80px' }}
+                />
+                <label style={{ color: '#aaa', fontSize: '12px', marginLeft: '20px' }}>Your Role:</label>
+                <input
+                  type="text"
+                  value={formData.role}
+                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                  placeholder="e.g., Software Developer"
+                  style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit', width: '200px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '8px' }}>Key Achievements (optional):</label>
+                {formData.achievements.map((achievement, index) => (
+                  <input
+                    key={index}
+                    type="text"
+                    value={achievement}
+                    onChange={(e) => updateAchievement(index, e.target.value)}
+                    placeholder="e.g., Led project that saved 30% costs"
+                    style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit', width: '100%', marginBottom: '8px' }}
+                  />
+                ))}
+                <button
+                  type="button"
+                  onClick={addAchievement}
+                  style={{ padding: '6px 12px', backgroundColor: 'transparent', border: '1px solid #4CAF50', color: '#4CAF50', cursor: 'pointer', fontFamily: 'inherit', fontSize: '11px' }}
+                >
+                  + Add Achievement
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="btn-empowerment btn-empowerment--primary"
+              disabled={loading || !formData.currentSalary}
+            >
+              {loading ? 'Generating...' : 'Generate Negotiation Script'}
+            </button>
+          </form>
+
+          {scriptData && (
+            <div>
+              <div className="validation-message" style={{ marginBottom: '20px' }}>
+                <div className="validation-message__label">PROPOSED SALARY</div>
+                <div className="validation-message__amount">${scriptData.proposedSalary.toLocaleString()}</div>
+                <div style={{ color: '#4CAF50', fontSize: '14px' }}>
+                  +${scriptData.raiseAmount.toLocaleString()} ({scriptData.raisePercentage}% increase)
+                </div>
+              </div>
+
+              <div className="negotiation-section">
+                <div className="negotiation-section__header">
+                  <span className="negotiation-section__title">Opening Statement</span>
+                  <button
+                    className="negotiation-section__copy-btn"
+                    onClick={() => copyToClipboard(scriptData.openingStatement, 'opening')}
+                  >
+                    {copiedSection === 'opening' ? '✓ Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div className="negotiation-section__content">
+                  {scriptData.openingStatement}
+                </div>
+              </div>
+
+              <div className="negotiation-section">
+                <div className="negotiation-section__header">
+                  <span className="negotiation-section__title">Supporting Evidence</span>
+                  <button
+                    className="negotiation-section__copy-btn"
+                    onClick={() => copyToClipboard(scriptData.evidenceBullets.join('\n'), 'evidence')}
+                  >
+                    {copiedSection === 'evidence' ? '✓ Copied' : 'Copy'}
+                  </button>
+                </div>
+                <ul className="negotiation-section__evidence-list">
+                  {scriptData.evidenceBullets.map((bullet, idx) => (
+                    <li key={idx} className="negotiation-section__evidence-item">{bullet}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="negotiation-section">
+                <div className="negotiation-section__header">
+                  <span className="negotiation-section__title">Resolution Language</span>
+                  <button
+                    className="negotiation-section__copy-btn"
+                    onClick={() => copyToClipboard(scriptData.resolutionLanguage, 'resolution')}
+                  >
+                    {copiedSection === 'resolution' ? '✓ Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div className="negotiation-section__content">
+                  {scriptData.resolutionLanguage}
+                </div>
+              </div>
+
+              <div className="negotiation-section">
+                <div className="negotiation-section__header">
+                  <span className="negotiation-section__title">Counteroffer Responses</span>
+                </div>
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {Object.entries(scriptData.counterofferResponses).map(([key, response]) => (
+                    <div key={key} style={{ padding: '12px', backgroundColor: '#0a0a0a', borderRadius: '6px' }}>
+                      <div style={{ color: '#FFD700', fontSize: '11px', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        If they say "{key.replace(/([A-Z])/g, ' $1').trim()}"
+                      </div>
+                      <div style={{ color: '#aaa', fontSize: '13px' }}>{response}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="negotiation-section" style={{ backgroundColor: 'rgba(76, 175, 80, 0.1)', border: '1px solid #4CAF50' }}>
+                <div className="negotiation-section__header">
+                  <span className="negotiation-section__title" style={{ color: '#4CAF50' }}>Preparation Notes</span>
+                </div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {Object.entries(scriptData.prepNotes).map(([key, note]) => (
+                    <li key={key} style={{ padding: '8px 0', color: '#aaa', fontSize: '13px', borderBottom: '1px solid #333' }}>
+                      <strong style={{ color: '#4CAF50' }}>{key.replace(/([A-Z])/g, ' $1').trim()}:</strong> {note}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // WorthGapAnalyzer Component - Main worth gap analysis tool
+    const WorthGapAnalyzer = () => {
+      const [formData, setFormData] = useState({
+        currentWage: '',
+        frequency: 'hourly',
+        state: '',
+        startYear: new Date().getFullYear() - 5,
+        yearsExperience: ''
+      });
+      const [results, setResults] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [acknowledged, setAcknowledged] = useState(false);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+          const response = await fetch(`${API_BASE}/worth-gap-analyzer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              current_wage: parseFloat(formData.currentWage),
+              frequency: formData.frequency,
+              state: formData.state,
+              start_year: parseInt(formData.startYear),
+              years_experience: parseInt(formData.yearsExperience) || 0
+            })
+          });
+
+          const data = await response.json();
+          setResults(data);
+        } catch (error) {
+          console.error('Error calculating worth gap:', error);
+        }
+
+        setLoading(false);
+      };
+
+      return (
+        <div>
+          <form onSubmit={handleSubmit} style={{ marginBottom: '30px' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '15px' }}>
+              <label style={{ color: '#aaa', fontSize: '12px' }}>Current Wage:</label>
+              <input
+                type="number"
+                value={formData.currentWage}
+                onChange={(e) => setFormData(prev => ({ ...prev, currentWage: e.target.value }))}
+                placeholder="e.g., 22.50"
+                step="0.01"
+                style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit', width: '120px' }}
+                required
+              />
+              <select
+                value={formData.frequency}
+                onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
+                style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit' }}
+              >
+                <option value="hourly">Per Hour</option>
+                <option value="annual">Per Year</option>
+              </select>
+              <label style={{ color: '#aaa', fontSize: '12px', marginLeft: '10px' }}>State:</label>
+              <input
+                type="text"
+                value={formData.state}
+                onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value.toUpperCase() }))}
+                placeholder="e.g., CA"
+                maxLength={2}
+                style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit', width: '60px', textTransform: 'uppercase' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ color: '#aaa', fontSize: '12px' }}>Years Experience:</label>
+              <input
+                type="number"
+                value={formData.yearsExperience}
+                onChange={(e) => setFormData(prev => ({ ...prev, yearsExperience: e.target.value }))}
+                placeholder="e.g., 5"
+                min={0}
+                style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit', width: '80px' }}
+              />
+              <label style={{ color: '#aaa', fontSize: '12px', marginLeft: '10px' }}>Started Working (year):</label>
+              <input
+                type="number"
+                value={formData.startYear}
+                onChange={(e) => setFormData(prev => ({ ...prev, startYear: e.target.value }))}
+                min={1975}
+                max={new Date().getFullYear()}
+                style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit', width: '100px' }}
+              />
+              <button
+                type="submit"
+                className="btn-empowerment btn-empowerment--primary"
+                disabled={loading || !formData.currentWage}
+              >
+                {loading ? 'Calculating...' : 'Calculate My Worth'}
+              </button>
+            </div>
+          </form>
+
+          {results && (
+            <div>
+              <ValidationMessage
+                deservedAmount={formData.frequency === 'hourly' ? results.deservedWage.hourly : results.deservedWage.annual}
+                currentAmount={formData.frequency === 'hourly' ? results.currentWage.hourly : results.currentWage.annual}
+                frequency={formData.frequency}
+                source={results.marketData.source}
+                explainerText={results.validationMessage.explainer}
+                onAcknowledge={() => setAcknowledged(true)}
+              />
+
+              {results.worthGap.hourly > 0 && (
+                <div className="worth-gap-visual">
+                  <div className="worth-gap-visual__bar-container">
+                    <div className="worth-gap-visual__bar-label">
+                      <span>What you deserve</span>
+                      <span>${results.deservedWage.hourly.toFixed(2)}/hr</span>
+                    </div>
+                    <div className="worth-gap-visual__bar worth-gap-visual__bar--deserved" style={{ width: '100%' }}></div>
+                  </div>
+                  <div className="worth-gap-visual__bar-container">
+                    <div className="worth-gap-visual__bar-label">
+                      <span>What you're paid</span>
+                      <span>${results.currentWage.hourly.toFixed(2)}/hr</span>
+                    </div>
+                    <div className="worth-gap-visual__bar worth-gap-visual__bar--current" style={{ width: `${(results.currentWage.hourly / results.deservedWage.hourly) * 100}%` }}></div>
+                  </div>
+                  <div className="worth-gap-visual__gap-indicator">
+                    <div className="worth-gap-visual__gap-label">Worth Gap</div>
+                    <div className="worth-gap-visual__gap-amount">
+                      ${results.worthGap.annual.toLocaleString()}/year
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {acknowledged && results.worthGap.hourly > 0 && (
+                <div style={{ marginTop: '30px' }}>
+                  <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>What This Costs You Over Time</h3>
+                  <OpportunityCostTicker
+                    currentWage={results.currentWage.hourly}
+                    deservedWage={results.deservedWage.hourly}
+                    startDate={new Date(formData.startYear, 0, 1)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // NegotiationToolsTab - Main container for all negotiation tools
+    const NegotiationToolsTab = () => {
+      const [activeTool, setActiveTool] = useState('worth-gap');
+      const [currentSalary, setCurrentSalary] = useState(50000);
+
+      const tools = [
+        { id: 'worth-gap', label: '📊 Worth Gap', desc: 'Discover what you deserve' },
+        { id: 'negotiation-script', label: '📝 Script Generator', desc: 'Get your negotiation script' },
+        { id: 'raise-impact', label: '📈 Raise Impact', desc: 'See long-term effects' }
+      ];
+
+      return (
+        <div>
+          <section style={{ marginBottom: '40px' }}>
+            <h2 style={{ fontSize: '20px', color: '#fff', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              ✨ Negotiation Preparation Suite
+            </h2>
+            <p style={{ color: '#888', fontSize: '13px', marginBottom: '25px' }}>
+              Data-driven tools to help you understand your worth and negotiate with confidence.
+              All calculations use Bureau of Labor Statistics data and Economic Policy Institute research.
+            </p>
+
+            {/* Tool selector */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', flexWrap: 'wrap' }}>
+              {tools.map(tool => (
+                <button
+                  key={tool.id}
+                  onClick={() => setActiveTool(tool.id)}
+                  style={{
+                    padding: '12px 20px',
+                    backgroundColor: activeTool === tool.id ? '#FFD700' : 'transparent',
+                    color: activeTool === tool.id ? '#000' : '#888',
+                    border: `1px solid ${activeTool === tool.id ? '#FFD700' : '#333'}`,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: '12px',
+                    fontWeight: activeTool === tool.id ? 700 : 400,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {tool.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tool content */}
+            {activeTool === 'worth-gap' && (
+              <div>
+                <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>Worth Gap Analyzer</h3>
+                <p style={{ color: '#666', fontSize: '12px', marginBottom: '20px' }}>
+                  Calculate the gap between what you're paid and what you deserve based on market data and productivity metrics.
+                </p>
+                <WorthGapAnalyzer />
+              </div>
+            )}
+
+            {activeTool === 'negotiation-script' && (
+              <div>
+                <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>Negotiation Script Generator</h3>
+                <p style={{ color: '#666', fontSize: '12px', marginBottom: '20px' }}>
+                  Generate a personalized negotiation script with evidence-based talking points and counteroffer responses.
+                </p>
+                <NegotiationScriptGenerator />
+              </div>
+            )}
+
+            {activeTool === 'raise-impact' && (
+              <div>
+                <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>Raise Impact Visualizer</h3>
+                <p style={{ color: '#666', fontSize: '12px', marginBottom: '20px' }}>
+                  See how a raise today compounds into significant wealth over your career.
+                </p>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ color: '#aaa', fontSize: '12px', marginRight: '10px' }}>Your Current Salary:</label>
+                  <input
+                    type="number"
+                    value={currentSalary}
+                    onChange={(e) => setCurrentSalary(parseInt(e.target.value) || 0)}
+                    style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', fontFamily: 'inherit', width: '120px' }}
+                  />
+                </div>
+                <RaiseImpactVisualizer currentSalary={currentSalary} yearsToRetirement={30} />
+              </div>
+            )}
+          </section>
+
+          {/* Journey CTA */}
+          <div style={{
+            padding: '20px',
+            backgroundColor: 'rgba(255, 215, 0, 0.05)',
+            border: '1px solid rgba(255, 215, 0, 0.2)',
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '10px' }}>
+              Ready to take action? Connect with others advocating for fair wages.
+            </p>
+            <button
+              onClick={() => {}}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#4CAF50',
+                color: '#000',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '12px',
+                fontWeight: 600
+              }}
+            >
+              Join Worker Collectives →
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // ============================================
     // MAIN COMPONENT
     // ============================================
 
@@ -2574,7 +3278,8 @@
                   {[
                     { id: 'living-costs', label: '\uD83D\uDCB0 LIVING COSTS' },
                     { id: 'work-wages', label: '\u23F1\uFE0F WORK & WAGES' },
-                    { id: 'market-forces', label: '\uD83D\uDCC8 MARKET FORCES' }
+                    { id: 'market-forces', label: '\uD83D\uDCC8 MARKET FORCES' },
+                    { id: 'negotiation-tools', label: '\u2728 NEGOTIATION TOOLS' }
                   ].map(tab => (
                     <button
                       key={tab.id}
@@ -4186,6 +4891,11 @@
                   </button>
                 </div>
                   </div>
+                )}
+
+                {/* ==================== TAB 4: NEGOTIATION TOOLS ==================== */}
+                {activeInfoTab === 'negotiation-tools' && (
+                  <NegotiationToolsTab />
                 )}
 
               </div>

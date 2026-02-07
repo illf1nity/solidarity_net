@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const https = require('https');
 const { getDatabase, YEARLY_ECONOMIC_DATA, STATE_META } = require('./db');
+const calculationService = require('./services/calculationService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -836,6 +837,228 @@ app.post('/api/impact-calculator', async (req, res) => {
       'Federal Reserve (economic indicators)',
       'Census Bureau (housing cost trends)',
     ],
+  });
+});
+
+// ============================================
+// WORTH GAP ANALYZER (EMPOWERMENT-FOCUSED)
+// ============================================
+
+// MSA and State wage data (mirrored from index.html for server-side calculations)
+const MSA_WAGE_DATA = {
+  'New York-Newark-Jersey City, NY-NJ-PA': 26.48,
+  'Los Angeles-Long Beach-Anaheim, CA': 24.12,
+  'Chicago-Naperville-Elgin, IL-IN-WI': 23.67,
+  'Dallas-Fort Worth-Arlington, TX': 22.34,
+  'Houston-The Woodlands-Sugar Land, TX': 22.89,
+  'Washington-Arlington-Alexandria, DC-VA-MD-WV': 28.45,
+  'San Francisco-Oakland-Berkeley, CA': 31.45,
+  'Boston-Cambridge-Newton, MA-NH': 27.89,
+  'Seattle-Tacoma-Bellevue, WA': 28.67,
+  'San Jose-Sunnyvale-Santa Clara, CA': 35.67,
+  'default': 22.45
+};
+
+const STATE_WAGE_DATA = {
+  'AL': 20.23, 'AK': 26.41, 'AZ': 23.08, 'AR': 19.66, 'CA': 27.88,
+  'CO': 27.12, 'CT': 27.45, 'DE': 25.38, 'FL': 22.12, 'GA': 22.18,
+  'HI': 24.89, 'ID': 21.58, 'IL': 25.12, 'IN': 22.06, 'IA': 21.97,
+  'KS': 21.68, 'KY': 21.32, 'LA': 20.34, 'ME': 22.64, 'MD': 27.02,
+  'MA': 29.32, 'MI': 23.54, 'MN': 25.98, 'MS': 19.32, 'MO': 22.21,
+  'MT': 21.48, 'NE': 22.11, 'NV': 22.34, 'NH': 24.85, 'NJ': 27.36,
+  'NM': 21.12, 'NY': 27.58, 'NC': 22.06, 'ND': 24.12, 'OH': 22.76,
+  'OK': 21.04, 'OR': 25.34, 'PA': 24.02, 'RI': 25.01, 'SC': 21.24,
+  'SD': 20.87, 'TN': 21.45, 'TX': 22.67, 'UT': 23.12, 'VT': 22.98,
+  'VA': 25.67, 'WA': 27.89, 'WV': 19.87, 'WI': 22.89, 'WY': 22.34,
+  'default': 22.45
+};
+
+// POST /api/worth-gap-analyzer - Calculate worth gap with empowerment-focused response
+app.post('/api/worth-gap-analyzer', async (req, res) => {
+  const { current_wage, frequency, zip_code, state, msa, start_year, years_experience } = req.body;
+
+  // Input validation
+  if (!current_wage || current_wage <= 0) {
+    return res.status(400).json({ error: 'current_wage must be a positive number' });
+  }
+
+  // Convert to hourly if needed
+  let hourlyWage = parseFloat(current_wage);
+  if (frequency === 'annual') {
+    hourlyWage = current_wage / 2080;
+  } else if (frequency === 'monthly') {
+    hourlyWage = current_wage / 173.33;
+  }
+
+  const currentYear = new Date().getFullYear();
+  const startYear = parseInt(start_year) || currentYear - 5;
+  const yearsExp = parseInt(years_experience) || 0;
+
+  // Calculate market median
+  const marketData = calculationService.calculateMarketMedian(
+    { zipCode: zip_code, state, msa, yearsExperience: yearsExp },
+    MSA_WAGE_DATA,
+    STATE_WAGE_DATA
+  );
+
+  // Calculate worth gap
+  const worthGapData = calculationService.calculateWorthGap({
+    currentWage: hourlyWage,
+    marketMedian: marketData.adjustedMedian,
+    startYear
+  });
+
+  // Generate validation message
+  const validationMessage = calculationService.generateValidationMessage(worthGapData, marketData);
+
+  // Calculate opportunity cost if underpaid
+  let opportunityCost = null;
+  if (worthGapData.worthGap.hourly > 0) {
+    const daysWorked = (currentYear - startYear) * 260; // Approximate working days
+    opportunityCost = calculationService.calculateOpportunityCost({
+      currentWage: hourlyWage,
+      deservedWage: worthGapData.deservedWage.hourly,
+      startDate: new Date(startYear, 0, 1)
+    });
+  }
+
+  // Calculate lifetime impact
+  const yearsToRetirement = Math.max(0, 67 - (currentYear - startYear + 22)); // Assume started at 22
+  const lifetimeCost = worthGapData.worthGap.annual > 0
+    ? calculationService.calculateLifetimeCost({
+        annualGap: worthGapData.worthGap.annual,
+        yearsRemaining: yearsToRetirement
+      })
+    : null;
+
+  res.json({
+    // Primary output - what the user DESERVES (empowerment-focused)
+    deservedWage: worthGapData.deservedWage,
+    currentWage: worthGapData.currentWage,
+    worthGap: worthGapData.worthGap,
+
+    // Validation messaging
+    validationMessage,
+
+    // Market context
+    marketData: {
+      median: marketData.median,
+      adjustedMedian: marketData.adjustedMedian,
+      source: marketData.source,
+      experienceAdjustment: marketData.experienceMultiplier
+    },
+
+    // Productivity context
+    productivityContext: worthGapData.productivityAdjustment,
+
+    // Opportunity cost (if applicable)
+    opportunityCost,
+
+    // Lifetime impact projection
+    lifetimeImpact: lifetimeCost,
+
+    // Data sources for transparency
+    sources: [
+      'Bureau of Labor Statistics (BLS) Occupational Employment and Wage Statistics',
+      'Economic Policy Institute productivity-wage gap research',
+      marketData.source
+    ]
+  });
+});
+
+// POST /api/negotiation-script - Generate personalized negotiation script
+app.post('/api/negotiation-script', async (req, res) => {
+  const {
+    current_salary,
+    frequency,
+    market_median,
+    years_at_company,
+    industry,
+    role,
+    achievements
+  } = req.body;
+
+  if (!current_salary || current_salary <= 0) {
+    return res.status(400).json({ error: 'current_salary is required' });
+  }
+
+  // Convert to annual if needed
+  let annualSalary = parseFloat(current_salary);
+  if (frequency === 'hourly') {
+    annualSalary = current_salary * 2080;
+  } else if (frequency === 'monthly') {
+    annualSalary = current_salary * 12;
+  }
+
+  const marketMedianAnnual = parseFloat(market_median) || annualSalary * 1.15;
+
+  // Calculate proposed salary (aim 5% above market median)
+  const proposedSalary = Math.round(marketMedianAnnual * 1.05);
+  const raiseAmount = proposedSalary - annualSalary;
+  const raisePercentage = ((raiseAmount / annualSalary) * 100).toFixed(1);
+
+  // Get productivity data for evidence
+  const currentYear = new Date().getFullYear();
+  const currentData = YEARLY_ECONOMIC_DATA[currentYear] || YEARLY_ECONOMIC_DATA[2024];
+  const baselineData = YEARLY_ECONOMIC_DATA[1975];
+  const productivityGrowth = ((currentData.productivity_index / baselineData.productivity_index - 1) * 100).toFixed(0);
+  const wageGrowth = ((currentData.wage_index / baselineData.wage_index - 1) * 100).toFixed(0);
+
+  // Generate opening statement
+  const openingStatement = `Based on my research using Bureau of Labor Statistics data, ` +
+    `I'd like to discuss adjusting my compensation to better reflect the value I bring to this role. ` +
+    `The market median for ${role || 'this position'} in our area is $${marketMedianAnnual.toLocaleString()}, ` +
+    `and I believe my ${years_at_company ? `${years_at_company} years of experience here` : 'experience'} ` +
+    `and contributions warrant a discussion about my current rate.`;
+
+  // Generate evidence bullets
+  const evidenceBullets = [
+    `The median salary for ${role || 'comparable roles'} in our metro area is $${marketMedianAnnual.toLocaleString()} (BLS ${currentYear})`,
+    `Worker productivity has grown ${productivityGrowth}% since 1975 while wages grew only ${wageGrowth}% (Economic Policy Institute)`,
+  ];
+
+  // Add achievements if provided
+  if (achievements && achievements.length > 0) {
+    achievements.forEach(achievement => {
+      evidenceBullets.push(`Demonstrated value: ${achievement}`);
+    });
+  }
+
+  // Generate resolution language
+  const resolutionLanguage = `I'm proposing a salary adjustment to $${proposedSalary.toLocaleString()} annually, ` +
+    `which represents a ${raisePercentage}% increase. This would bring my compensation in line with market rates ` +
+    `while recognizing my contributions to the team.`;
+
+  // Generate counteroffer responses
+  const counterofferResponses = {
+    lowBall: `I appreciate the offer, but $[AMOUNT] is still significantly below market rate. ` +
+      `Given my track record and the data I've shared, I'd like to find a middle ground that better reflects my value.`,
+    nonMonetary: `While I value professional development opportunities, they don't address the compensation gap. ` +
+      `I'd like to discuss both salary adjustment AND those additional benefits.`,
+    waitUntilReview: `I understand the timing concern, but my research shows I'm currently ${raisePercentage}% below market. ` +
+      `Waiting another ${12 - new Date().getMonth()} months compounds that gap. ` +
+      `Can we discuss an interim adjustment?`,
+    noRoomInBudget: `I understand budget constraints. Would you be open to a phased increase? ` +
+      `Perhaps half now and the remainder at our next review cycle?`,
+    needToThinkAboutIt: `I understand you need time. When can we schedule a follow-up? ` +
+      `I'd like to resolve this within the next two weeks if possible.`
+  };
+
+  res.json({
+    proposedSalary,
+    currentSalary: annualSalary,
+    raiseAmount,
+    raisePercentage: parseFloat(raisePercentage),
+    openingStatement,
+    evidenceBullets,
+    resolutionLanguage,
+    counterofferResponses,
+    prepNotes: {
+      bestTimeToAsk: 'After a successful project completion or positive performance feedback',
+      avoidAsking: 'During company-wide budget freezes or layoffs',
+      documentEverything: 'Keep notes of this conversation and any promises made',
+      followUpEmail: 'Send a summary email after the meeting to create a paper trail'
+    }
   });
 });
 
