@@ -18,8 +18,9 @@
       box-sizing: border-box;
     }
     body {
-      background-color: #0a0a0a;
+      background-color: #000000;
       font-family: 'IBM Plex Mono', 'Courier New', monospace;
+      -webkit-tap-highlight-color: rgba(255, 215, 0, 0.2);
     }
     ::-webkit-scrollbar {
       width: 8px;
@@ -36,7 +37,7 @@
       background: #444;
     }
     input:focus, textarea:focus, button:focus {
-      outline: 1px solid #ff3333;
+      outline: 2px solid #FFD700;
       outline-offset: 2px;
     }
     @keyframes slideIn {
@@ -78,6 +79,22 @@
       animation: pulse 1s infinite;
     }
   </style>
+  <script>
+    // Low bandwidth detection - enables simplified UI for slow connections
+    if ('connection' in navigator) {
+      const conn = navigator.connection;
+      if (conn.saveData || conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g') {
+        document.documentElement.classList.add('low-bandwidth');
+      }
+      conn.addEventListener('change', () => {
+        if (conn.saveData || conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g') {
+          document.documentElement.classList.add('low-bandwidth');
+        } else {
+          document.documentElement.classList.remove('low-bandwidth');
+        }
+      });
+    }
+  </script>
 </head>
 <body>
   <div id="root"></div>
@@ -2000,20 +2017,20 @@
       const [currentSalary, setCurrentSalary] = useState(50000);
 
       const tools = [
-        { id: 'worth-gap', label: '📊 Worth Gap', desc: 'Discover what you deserve' },
-        { id: 'negotiation-script', label: '📝 Script Generator', desc: 'Get your negotiation script' },
-        { id: 'raise-impact', label: '📈 Raise Impact', desc: 'See long-term effects' }
+        { id: 'worth-gap', label: '📊 What Am I Worth?', desc: 'See what you deserve' },
+        { id: 'negotiation-script', label: '📝 What Do I Say?', desc: 'Get a script for your boss' },
+        { id: 'raise-impact', label: '📈 What Happens If I Get a Raise?', desc: 'See how a raise adds up' }
       ];
 
       return (
         <div>
           <section style={{ marginBottom: '40px' }}>
-            <h2 style={{ fontSize: '20px', color: '#fff', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              ✨ Negotiation Preparation Suite
+            <h2 style={{ fontSize: '20px', color: '#FFD700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              Get What You Deserve
             </h2>
-            <p style={{ color: '#888', fontSize: '13px', marginBottom: '25px' }}>
-              Data-driven tools to help you understand your worth and negotiate with confidence.
-              All calculations use Bureau of Labor Statistics data and Economic Policy Institute research.
+            <p style={{ color: '#888', fontSize: '14px', marginBottom: '25px', lineHeight: '1.7' }}>
+              You deserve more. Here's the proof — with real government numbers.
+              Here's what to say to your boss. Copy it, use it, get paid.
             </p>
 
             {/* Tool selector */}
@@ -2023,15 +2040,17 @@
                   key={tool.id}
                   onClick={() => setActiveTool(tool.id)}
                   style={{
-                    padding: '12px 20px',
+                    padding: '14px 22px',
                     backgroundColor: activeTool === tool.id ? '#FFD700' : 'transparent',
-                    color: activeTool === tool.id ? '#000' : '#888',
-                    border: `1px solid ${activeTool === tool.id ? '#FFD700' : '#333'}`,
+                    color: activeTool === tool.id ? '#000' : '#aaa',
+                    border: `2px solid ${activeTool === tool.id ? '#FFD700' : '#444'}`,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
-                    fontSize: '12px',
-                    fontWeight: activeTool === tool.id ? 700 : 400,
-                    transition: 'all 0.2s'
+                    fontSize: '13px',
+                    fontWeight: activeTool === tool.id ? 700 : 500,
+                    transition: 'all 0.2s',
+                    minHeight: '48px',
+                    borderRadius: '6px'
                   }}
                 >
                   {tool.label}
@@ -2042,9 +2061,9 @@
             {/* Tool content */}
             {activeTool === 'worth-gap' && (
               <div>
-                <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>Worth Gap Analyzer</h3>
-                <p style={{ color: '#666', fontSize: '12px', marginBottom: '20px' }}>
-                  Calculate the gap between what you're paid and what you deserve based on market data and productivity metrics.
+                <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>What Am I Worth?</h3>
+                <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px' }}>
+                  Find out what workers like you earn in your area — and how much more you should be making.
                 </p>
                 <WorthGapAnalyzer />
               </div>
@@ -2052,9 +2071,9 @@
 
             {activeTool === 'negotiation-script' && (
               <div>
-                <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>Negotiation Script Generator</h3>
-                <p style={{ color: '#666', fontSize: '12px', marginBottom: '20px' }}>
-                  Generate a personalized negotiation script with evidence-based talking points and counteroffer responses.
+                <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>What Do I Say to My Boss?</h3>
+                <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px' }}>
+                  Get a script you can actually use. We'll give you the words, the data to back it up, and what to say when they push back.
                 </p>
                 <NegotiationScriptGenerator />
               </div>
@@ -2062,9 +2081,9 @@
 
             {activeTool === 'raise-impact' && (
               <div>
-                <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>Raise Impact Visualizer</h3>
-                <p style={{ color: '#666', fontSize: '12px', marginBottom: '20px' }}>
-                  See how a raise today compounds into significant wealth over your career.
+                <h3 style={{ color: '#FFD700', marginBottom: '15px' }}>What Happens If I Get a Raise?</h3>
+                <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px' }}>
+                  Even a small raise adds up fast. See how getting paid what you're worth today changes your life over the next 5, 10, or 20 years.
                 </p>
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ color: '#aaa', fontSize: '12px', marginRight: '10px' }}>Your Current Salary:</label>
@@ -2122,6 +2141,80 @@
       const [activeInfoTab, setActiveInfoTab] = useState('living-costs');
       const [showOneBadDay, setShowOneBadDay] = useState(false);
       const [notification, setNotification] = useState(null);
+      const [stealthMode, setStealthMode] = useState(false);
+
+      // Stealth mode: dims screen so shoulder-surfers can't read it
+      const toggleStealthMode = () => {
+        const newState = !stealthMode;
+        setStealthMode(newState);
+        document.body.classList.toggle('stealth-mode', newState);
+      };
+
+      // Triple-tap anywhere = toggle stealth (faster than finding button)
+      const tapCountRef = React.useRef(0);
+      const tapTimerRef = React.useRef(null);
+      React.useEffect(() => {
+        const handleTap = () => {
+          tapCountRef.current++;
+          if (tapCountRef.current === 3) {
+            toggleStealthMode();
+            tapCountRef.current = 0;
+          }
+          clearTimeout(tapTimerRef.current);
+          tapTimerRef.current = setTimeout(() => { tapCountRef.current = 0; }, 600);
+        };
+        document.addEventListener('touchstart', handleTap);
+        return () => document.removeEventListener('touchstart', handleTap);
+      }, [stealthMode]);
+
+      // Quick Win Landing
+      const [showQuickWin, setShowQuickWin] = useState(true);
+      const [quickWinZip, setQuickWinZip] = useState('');
+      const [quickWinWage, setQuickWinWage] = useState('');
+      const [quickWinResult, setQuickWinResult] = useState(null);
+      const [quickWinLoading, setQuickWinLoading] = useState(false);
+      const [showCelebration, setShowCelebration] = useState(false);
+
+      const handleQuickWinSubmit = async () => {
+        if (!quickWinZip || !quickWinWage) return;
+        setQuickWinLoading(true);
+        try {
+          const res = await fetch(`/api/zip/${quickWinZip}`);
+          const data = await res.json();
+          const hourlyWage = parseFloat(quickWinWage);
+          const medianWage = data.median_wage || 22.45;
+          const gap = medianWage - hourlyWage;
+          const annualGap = gap > 0 ? Math.round(gap * 2080) : 0;
+          setQuickWinResult({
+            yourWage: hourlyWage,
+            marketMedian: medianWage,
+            gap: Math.round(gap * 100) / 100,
+            annualGap,
+            area: data.area || 'your area'
+          });
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 3000);
+        } catch (e) {
+          const hourlyWage = parseFloat(quickWinWage);
+          const medianWage = 22.45;
+          const gap = medianWage - hourlyWage;
+          setQuickWinResult({
+            yourWage: hourlyWage,
+            marketMedian: medianWage,
+            gap: Math.round(gap * 100) / 100,
+            annualGap: gap > 0 ? Math.round(gap * 2080) : 0,
+            area: 'US average'
+          });
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 3000);
+        }
+        setQuickWinLoading(false);
+      };
+
+      const enterFullSite = () => {
+        setShowQuickWin(false);
+        if (quickWinZip) setZipCode(quickWinZip);
+      };
 
       // Information State
       const [zipCode, setZipCode] = useState('');
@@ -2197,6 +2290,9 @@
       const [monthlyIncome, setMonthlyIncome] = useState('');
       const [calendarResults, setCalendarResults] = useState(null);
 
+      // Progressive disclosure state
+      const [showSolDetails, setShowSolDetails] = useState(false);
+
       // One Bad Day State
       const [currentSavings, setCurrentSavings] = useState('');
       const [selectedEmergency, setSelectedEmergency] = useState(null);
@@ -2215,161 +2311,161 @@
         // Header
         header_title: 'SOLIDARITY',
         header_title_suffix: 'NET',
-        header_tagline: 'Formation • Information • Accountability',
+        header_tagline: 'See what you\'re owed. Get it.',
         header_no_tracking: 'NO TRACKING • NO PROFILES',
-        header_workers_first: 'WORKERS FIRST',
+        header_workers_first: 'YOUR LABOR HAS VALUE',
 
         // Navigation tabs
-        nav_information: 'information',
-        nav_formation: 'formation',
-        nav_accountability: 'accountability',
+        nav_information: 'know your worth',
+        nav_formation: 'find your people',
+        nav_accountability: 'hold them accountable',
 
         // Formation sub-tabs
-        subtab_sentiment: '📊 Work Sentiment',
-        subtab_tenant: '🏢 Tenant Unions',
-        subtab_worker: '⚡ Worker Collectives',
-        subtab_consumer: '🛒 Consumer Groups',
+        subtab_sentiment: '📊 Is Your Job Worth It?',
+        subtab_tenant: '🏢 Connect With Neighbors',
+        subtab_worker: '⚡ Talk to Coworkers',
+        subtab_consumer: '🛒 Consumer Power',
         subtab_petitions: '📋 Petitions',
 
         // Standard of Living Calculator
-        sol_section_title: 'Standard of Living Calculator',
-        sol_zip_label: 'ZIP CODE:',
+        sol_section_title: 'Can You Afford to Live Here?',
+        sol_zip_label: 'YOUR ZIP CODE:',
         sol_zip_placeholder: 'Enter ZIP',
-        sol_calculate_btn: 'Calculate',
+        sol_calculate_btn: 'Show Me',
         sol_loading_btn: 'Loading...',
-        sol_helper_text: 'Enter any US ZIP code — data sourced from BLS, HUD, USDA, AAA, and EIA',
-        sol_weeks_label: 'weeks of work to afford one month of living',
-        sol_deficit_label: 'DEFICIT: You need',
-        sol_deficit_suffix: 'more hours than a full-time job provides',
-        sol_surplus_prefix: 'Technically sustainable with',
-        sol_surplus_suffix: 'hours of margin',
-        sol_gross_wage: 'Gross hourly wage',
-        sol_federal_tax: 'Federal income tax',
+        sol_helper_text: 'Enter your ZIP code — we pulled official government numbers for your area',
+        sol_weeks_label: 'weeks of work just to cover one month of basic living',
+        sol_deficit_label: 'YOUR EMPLOYER OWES YOU',
+        sol_deficit_suffix: 'hours of pay — your full-time job should cover your bills',
+        sol_surplus_prefix: 'You have',
+        sol_surplus_suffix: 'hours of breathing room',
+        sol_gross_wage: 'What workers earn here (median)',
+        sol_federal_tax: 'Federal tax taken out',
         sol_state_tax: 'State tax',
-        sol_fica: 'FICA (SS + Medicare)',
-        sol_after_tax: 'After-tax hourly wage',
-        sol_effective_rate: 'Effective tax rate:',
-        sol_hours_label: 'Hours needed per month (at after-tax wage):',
+        sol_fica: 'Social Security + Medicare',
+        sol_after_tax: 'What you actually take home',
+        sol_effective_rate: 'What you pay in taxes:',
+        sol_hours_label: 'Hours you have to work each month to cover:',
         sol_rent: 'Rent',
         sol_food: 'Food',
         sol_healthcare: 'Healthcare',
-        sol_transport: 'Transport',
+        sol_transport: 'Getting to work',
         sol_utilities: 'Utilities',
-        sol_total_required: 'TOTAL REQUIRED',
-        sol_available: 'Available (40hr/wk × 4)',
-        sol_monthly_result: 'MONTHLY DEFICIT / SURPLUS',
+        sol_total_required: 'TOTAL HOURS NEEDED',
+        sol_available: 'Hours in a full-time month (40hr/wk)',
+        sol_monthly_result: 'MONTHLY BALANCE',
         sol_data_quality: 'Data quality:',
 
-        // The Exploitation Calculator
-        impact_section_title: 'The Exploitation Calculator',
-        impact_description: 'See how the productivity-wage gap has affected your earnings over your career.',
-        impact_start_year_label: 'YEAR STARTED WORKING:',
-        impact_start_salary_label: 'STARTING SALARY ($):',
-        impact_current_salary_label: 'CURRENT SALARY ($):',
+        // Your True Worth Calculator
+        impact_section_title: 'Your True Worth Calculator',
+        impact_description: 'You make money for your boss every day. This shows what you earned — and what they didn\'t pay you.',
+        impact_start_year_label: 'YEAR YOU STARTED WORKING:',
+        impact_start_salary_label: 'FIRST PAYCHECK ($):',
+        impact_current_salary_label: 'WHAT YOU EARN NOW ($):',
         impact_current_rent_label: 'MONTHLY RENT ($):',
         impact_start_year_placeholder: '2000',
         impact_start_salary_placeholder: '35000',
         impact_current_salary_placeholder: '65000',
         impact_current_rent_placeholder: '1500',
-        impact_calculate_btn: 'Calculate Impact',
-        impact_cumulative_label: 'Unpaid Labor Value',
-        impact_unrealized_label: 'Productivity-Wage Deficit',
-        impact_rent_label: 'Excess Rent Burden',
-        impact_years_label: 'Time Owed to You',
+        impact_calculate_btn: 'Show Me What I\'m Worth',
+        impact_cumulative_label: 'Total You\'re Owed',
+        impact_unrealized_label: 'What You Earned But Weren\'t Paid',
+        impact_rent_label: 'Extra You Paid in Rent',
+        impact_years_label: 'Years of Work That Should Have Been Yours',
 
         // Consumer Price Resistance
-        price_section_title: 'Consumer Price Resistance',
-        price_vote_prompt: 'Is this the right price?',
+        price_section_title: 'Are These Prices Fair?',
+        price_vote_prompt: 'What do you think of this price?',
         price_too_high: 'Too High',
-        price_seems_right: 'Seems Right',
+        price_seems_right: 'Fair',
         price_too_low: 'Too Low',
 
         // Work Sentiment
-        sentiment_section_title: 'Work Sentiment — Your Area',
-        sentiment_question: 'Do you feel like working today?',
+        sentiment_section_title: 'Is Your Job Worth It?',
+        sentiment_question: 'Is your job treating you right?',
         sentiment_yes: 'YES',
         sentiment_no: 'NO',
-        sentiment_recorded: 'Response recorded anonymously (fingerprint-based, no account)',
-        sentiment_unwilling: "Don't want to work today",
-        sentiment_responses: 'Responses in your area',
-        sentiment_trend: '4-Week Trend (% unwilling to work)',
-        sentiment_trend_msg: 'Worker unwillingness rising 14 points over 4 weeks',
+        sentiment_recorded: 'Your answer was recorded — no account needed, totally anonymous',
+        sentiment_unwilling: 'Say their job isn\'t worth it',
+        sentiment_responses: 'Workers in your area answered',
+        sentiment_trend: '4-Week Trend (% saying it\'s not worth it)',
+        sentiment_trend_msg: 'More workers saying it\'s not worth it — up 14 points in 4 weeks',
 
         // Tenant Union Builder
-        tenant_section_title: 'Tenant Union Builder',
-        tenant_description: 'Find and connect with other tenants in your building. No personal data required.',
-        tenant_search_placeholder: 'Enter ZIP to find buildings',
-        tenant_search_btn: 'Search Buildings',
+        tenant_section_title: 'Connect With Your Neighbors About Rent',
+        tenant_description: 'Find other renters in your building who want things to change. No sign-up, no personal info collected.',
+        tenant_search_placeholder: 'Enter your ZIP code',
+        tenant_search_btn: 'Find Buildings',
         tenant_landlord: 'Landlord:',
-        tenant_joined: 'Joined',
-        tenant_members: 'Members',
-        tenant_organization: 'Organization %',
-        tenant_join_btn: 'Join Building',
-        tenant_message_btn: 'Message Building',
+        tenant_joined: 'You\'re In',
+        tenant_members: 'Neighbors',
+        tenant_organization: 'Organized',
+        tenant_join_btn: 'Join Your Neighbors',
+        tenant_message_btn: 'Talk to Your Building',
 
         // Worker Collectives
-        worker_section_title: 'Worker Collectives',
-        worker_form_title: 'Start a Worker Collective',
-        worker_company_label: 'COMPANY NAME',
-        worker_industry_label: 'INDUSTRY TYPE',
-        worker_issues_label: 'ISSUE TYPE (select all that apply)',
-        worker_create_btn: 'Create Collective',
-        worker_join_btn: 'Join Collective',
+        worker_section_title: 'Talk to Coworkers',
+        worker_form_title: 'Find Others at Your Company',
+        worker_company_label: 'WHERE DO YOU WORK?',
+        worker_industry_label: 'WHAT KIND OF WORK?',
+        worker_issues_label: 'WHAT\'S THE PROBLEM? (pick all that apply)',
+        worker_create_btn: 'Start the Conversation',
+        worker_join_btn: 'Join In',
         worker_message_btn: 'Message',
 
-        // Issue types
-        issue_wage_theft: 'Wage theft',
-        issue_unsafe: 'Unsafe conditions',
-        issue_retaliation: 'Retaliation',
-        issue_discrimination: 'Discrimination',
+        // Issue types — plain language
+        issue_wage_theft: 'Not getting paid for all my time',
+        issue_unsafe: 'Workplace isn\'t safe',
+        issue_retaliation: 'Boss punished me for speaking up',
+        issue_discrimination: 'Treated unfairly because of who I am',
         issue_harassment: 'Harassment',
-        issue_scheduling: 'Scheduling abuse',
-        issue_unpaid_ot: 'Unpaid overtime',
-        issue_other: 'Other',
-        issue_no_repairs: 'No repairs',
-        issue_illegal_fees: 'Illegal fees',
+        issue_scheduling: 'Schedule keeps changing on me',
+        issue_unpaid_ot: 'Working overtime without extra pay',
+        issue_other: 'Something else',
+        issue_no_repairs: 'Things are broken and nobody fixes them',
+        issue_illegal_fees: 'Charged fees that seem illegal',
         issue_safety_hazard: 'Safety hazard',
-        issue_pest: 'Pest infestation',
-        issue_no_heat: 'No heat/AC',
+        issue_pest: 'Pest problem',
+        issue_no_heat: 'No heat or AC',
 
         // Consumer Groups
-        consumer_section_title: 'Consumer Collectives',
-        consumer_join_btn: 'Join Group',
+        consumer_section_title: 'Consumer Power',
+        consumer_join_btn: 'Join This Group',
 
         // Petitions
-        petition_section_title: 'Local Petitions',
-        petition_form_title: 'Link Change.org Petition',
-        petition_url_label: 'PETITION URL',
-        petition_title_label: 'PETITION TITLE',
-        petition_area_label: 'AREA / LOCATION',
-        petition_desc_label: 'DESCRIPTION (OPTIONAL)',
+        petition_section_title: 'Petitions Near You',
+        petition_form_title: 'Add a Change.org Petition',
+        petition_url_label: 'PETITION LINK',
+        petition_title_label: 'WHAT\'S IT ABOUT?',
+        petition_area_label: 'WHERE?',
+        petition_desc_label: 'DETAILS (OPTIONAL)',
         petition_url_placeholder: 'https://www.change.org/p/your-petition',
-        petition_title_placeholder: 'What are you petitioning for?',
-        petition_area_placeholder: 'Where does this apply?',
-        petition_desc_placeholder: 'Explain the issue...',
-        petition_create_btn: 'Create Petition',
-        petition_refresh_btn: 'Refresh Count',
+        petition_title_placeholder: 'What are you fighting for?',
+        petition_area_placeholder: 'City or neighborhood',
+        petition_desc_placeholder: 'Tell people why this matters...',
+        petition_create_btn: 'Add Petition',
+        petition_refresh_btn: 'Update Count',
 
         // Accountability
-        report_section_title: 'Submit Report',
-        report_type_landlord: '🏠 Landlord',
-        report_type_employer: '💼 Employer',
-        report_name_landlord: 'Landlord Name or Management Company',
+        report_section_title: 'Report a Problem',
+        report_type_landlord: '🏠 Bad Landlord',
+        report_type_employer: '💼 Bad Employer',
+        report_name_landlord: 'Landlord or Property Manager Name',
         report_name_employer: 'Company Name',
-        report_address_label: 'Property Address (optional)',
-        report_issues_label: 'Issue Type (select all that apply)',
-        report_desc_label: 'Description (optional)',
-        report_anonymous: 'Post anonymously',
+        report_address_label: 'Address (optional)',
+        report_issues_label: 'What happened? (pick all that apply)',
+        report_desc_label: 'Tell your story (optional)',
+        report_anonymous: 'Keep me anonymous',
         report_name_landlord_placeholder: 'e.g., Greystone Properties',
-        report_name_employer_placeholder: 'e.g., MegaCorp Inc',
+        report_name_employer_placeholder: 'e.g., Amazon, Walmart, etc.',
         report_address_placeholder: 'e.g., 123 Main St',
-        report_desc_placeholder: 'What happened? Be specific but protect your identity.',
+        report_desc_placeholder: 'What happened? Be honest but protect yourself.',
         report_submit_btn: 'Submit Report',
-        report_footer: 'Reports are public. No moderation by corporations or landlords.',
+        report_footer: 'Reports are public. Corporations and landlords can\'t take them down.',
 
         // Recent Reports
-        reports_section_title: 'Recent Reports',
-        reports_filter_all: 'All Reports',
+        reports_section_title: 'What Others Are Reporting',
+        reports_filter_all: 'All',
         reports_filter_landlord: 'Landlords',
         reports_filter_employer: 'Employers',
         reports_count_label: 'REPORTS',
@@ -2377,9 +2473,9 @@
 
         // Footer
         footer_brand: 'SOLIDARITY_NET',
-        footer_tagline: 'Open source. No tracking. No profiles. No ads.',
+        footer_tagline: 'Open source. No tracking. No profiles. No ads. Built for workers.',
         footer_source: 'Source Code',
-        footer_data: 'Data Sources',
+        footer_data: 'Where Our Data Comes From',
         footer_privacy: 'Privacy',
       };
 
@@ -2832,6 +2928,22 @@
         }
       };
 
+      // Utility: Email yourself your results
+      const emailResults = (subject, body) => {
+        const encodedSubject = encodeURIComponent(subject);
+        const encodedBody = encodeURIComponent(body);
+        window.location.href = `mailto:?subject=${encodedSubject}&body=${encodedBody}`;
+      };
+
+      // Utility: Copy text to clipboard with notification
+      const copyResults = (text) => {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(() => {
+            showNotification('Copied to clipboard!', 'success');
+          });
+        }
+      };
+
       const handleImpactCalculate = async (e) => {
         e.preventDefault();
         const startYear = parseInt(impactStartYear, 10);
@@ -3052,22 +3164,24 @@
       // ============================================
 
       const colors = {
-        bg: colorConfig.bg || '#0a0a0a',
-        bgLight: colorConfig.bgLight || '#111',
+        bg: colorConfig.bg || '#000000',
+        bgLight: colorConfig.bgLight || '#111111',
         bgLighter: '#1a1a1a',
-        border: colorConfig.border || '#222',
-        borderLight: '#333',
-        text: colorConfig.text || '#e8e8e8',
-        textMuted: colorConfig.textMuted || '#888',
-        textDim: colorConfig.textDim || '#666',
-        textDimmer: '#555',
-        textDimmest: '#444',
+        border: colorConfig.border || '#2a2a2a',
+        borderLight: '#3a3a3a',
+        text: colorConfig.text || '#f0f0f0',
+        textMuted: colorConfig.textMuted || '#999999',
+        textDim: colorConfig.textDim || '#777777',
+        textDimmer: '#888888',
+        textDimmest: '#666666',
         primary: colorConfig.primary || '#ff3333',
         primaryDark: '#cc2929',
         success: colorConfig.success || '#33ff33',
         successDark: '#29cc29',
         warning: colorConfig.warning || '#ffaa00',
         purple: '#aa00ff',
+        gold: '#FFD700',
+        goldDim: 'rgba(255, 215, 0, 0.15)',
       };
 
       const styles = {
@@ -3076,11 +3190,11 @@
           backgroundColor: colors.bg,
           color: colors.text,
           fontFamily: fontConfig.primary || "'IBM Plex Mono', 'Courier New', monospace",
-          fontSize: '14px',
+          fontSize: '16px',
           lineHeight: '1.6'
         },
         header: {
-          borderBottom: `2px solid ${colors.primary}`,
+          borderBottom: '2px solid #FFD700',
           padding: '20px 40px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -3095,18 +3209,19 @@
         },
         navButton: (active) => ({
           flex: 1,
-          padding: '16px 20px',
-          backgroundColor: active ? colors.bgLighter : 'transparent',
-          color: active ? colors.primary : colors.textDim,
+          padding: '16px 12px',
+          backgroundColor: active ? 'rgba(255, 215, 0, 0.08)' : 'transparent',
+          color: active ? '#FFD700' : colors.textDim,
           border: 'none',
-          borderBottom: active ? `2px solid ${colors.primary}` : '2px solid transparent',
+          borderBottom: active ? '3px solid #FFD700' : '3px solid transparent',
           cursor: 'pointer',
           fontFamily: 'inherit',
-          fontSize: '12px',
+          fontSize: '14px',
           textTransform: 'uppercase',
-          letterSpacing: '2px',
+          letterSpacing: '1px',
           fontWeight: active ? 700 : 400,
-          transition: 'all 0.2s'
+          transition: 'all 0.2s',
+          minHeight: '54px'
         }),
         subNav: {
           display: 'flex',
@@ -3115,43 +3230,48 @@
           flexWrap: 'wrap'
         },
         subNavButton: (active) => ({
-          padding: '10px 15px',
+          padding: '12px 18px',
           backgroundColor: active ? colors.primary : 'transparent',
           color: active ? '#000' : colors.textMuted,
           border: `1px solid ${active ? colors.primary : colors.borderLight}`,
           cursor: 'pointer',
           fontFamily: 'inherit',
-          fontSize: '11px',
+          fontSize: '12px',
           textTransform: 'uppercase',
           letterSpacing: '1px',
-          transition: 'all 0.15s'
+          transition: 'all 0.15s',
+          minHeight: '48px',
+          borderRadius: '4px'
         }),
         infoSubNavButton: (active) => ({
-          padding: '10px 18px',
-          backgroundColor: active ? colors.success : 'transparent',
+          padding: '12px 20px',
+          backgroundColor: active ? '#FFD700' : 'transparent',
           color: active ? '#000' : colors.textMuted,
-          border: `1px solid ${active ? colors.success : colors.borderLight}`,
+          border: `1px solid ${active ? '#FFD700' : colors.borderLight}`,
           cursor: 'pointer',
           fontFamily: 'inherit',
-          fontSize: '11px',
-          textTransform: 'uppercase',
-          letterSpacing: '1px',
-          fontWeight: active ? 700 : 400,
-          transition: 'all 0.15s'
+          fontSize: '14px',
+          textTransform: 'none',
+          letterSpacing: '0',
+          fontWeight: active ? 700 : 500,
+          transition: 'all 0.15s',
+          minHeight: '48px',
+          borderRadius: '4px'
         }),
         main: {
-          padding: '40px',
+          padding: '24px 16px',
           maxWidth: '1200px',
           margin: '0 auto'
         },
         sectionHeader: {
-          fontSize: '11px',
-          color: colors.textDimmer,
-          textTransform: 'uppercase',
-          letterSpacing: '3px',
+          fontSize: '14px',
+          color: '#999999',
+          textTransform: 'none',
+          letterSpacing: '0.5px',
           marginBottom: '20px',
           borderBottom: `1px solid ${colors.border}`,
-          paddingBottom: '10px'
+          paddingBottom: '10px',
+          fontWeight: 600
         },
         card: {
           backgroundColor: colors.bgLight,
@@ -3163,14 +3283,30 @@
           backgroundColor: colors.bgLighter,
           border: `1px solid ${colors.borderLight}`,
           color: '#fff',
-          padding: '12px',
+          padding: '14px 16px',
           fontFamily: 'inherit',
-          fontSize: '14px',
+          fontSize: '16px',
           width: '100%',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          minHeight: '48px',
+          borderRadius: '4px'
+        },
+        select: {
+          backgroundColor: colors.bgLighter,
+          border: `1px solid ${colors.borderLight}`,
+          color: '#fff',
+          padding: '14px 16px',
+          fontFamily: 'inherit',
+          fontSize: '16px',
+          width: '100%',
+          boxSizing: 'border-box',
+          minHeight: '48px',
+          borderRadius: '4px',
+          appearance: 'none',
+          WebkitAppearance: 'none'
         },
         button: (variant = 'primary') => ({
-          padding: '12px 20px',
+          padding: '14px 24px',
           backgroundColor: variant === 'primary' ? colors.primary : 'transparent',
           color: variant === 'primary' ? '#000' : colors.primary,
           border: variant === 'primary' ? 'none' : `1px solid ${colors.primary}`,
@@ -3179,22 +3315,24 @@
           fontWeight: 700,
           textTransform: 'uppercase',
           letterSpacing: '1px',
-          fontSize: '11px',
-          transition: 'all 0.15s'
+          fontSize: '13px',
+          transition: 'all 0.15s',
+          minHeight: '48px',
+          borderRadius: '4px'
         }),
         badge: (color) => ({
           display: 'inline-block',
-          padding: '3px 8px',
+          padding: '4px 10px',
           backgroundColor: `${color}20`,
           color: color,
-          fontSize: '10px',
+          fontSize: '11px',
           textTransform: 'uppercase',
           marginRight: '8px'
         }),
         grid: {
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '15px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '16px'
         },
         modal: {
           position: 'fixed',
@@ -3236,20 +3374,190 @@
 
           {/* Header */}
           <header style={styles.header}>
-            <div>
-              <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, letterSpacing: '-0.5px', color: '#ffffff', fontFamily: fontConfig.heading }}>
-                {textConfig.header_title}<span style={{ color: colors.primary }}>_</span>{textConfig.header_title_suffix}
+            <div style={{ flex: '1 1 auto' }}>
+              <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, letterSpacing: '-0.5px', color: '#ffffff', fontFamily: fontConfig.heading }}>
+                {textConfig.header_title}<span style={{ color: '#FFD700' }}>_</span>{textConfig.header_title_suffix}
               </h1>
-              <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px' }}>
+              <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: '#FFD700', textTransform: 'uppercase', letterSpacing: '2px' }}>
                 {textConfig.header_tagline}
               </p>
             </div>
-            <div style={{ fontSize: '11px', color: colors.textDimmer, textAlign: 'right' }}>
-              <div>{textConfig.header_no_tracking}</div>
-              <div style={{ color: colors.primary, marginTop: '4px' }}>{textConfig.header_workers_first}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <button
+                onClick={toggleStealthMode}
+                title={stealthMode ? 'Stealth mode ON — tap to show screen' : 'Stealth mode — dims screen so others can\'t read it'}
+                style={{
+                  background: stealthMode ? 'rgba(255, 215, 0, 0.2)' : 'transparent',
+                  border: `1px solid ${stealthMode ? '#FFD700' : colors.borderLight}`,
+                  color: stealthMode ? '#FFD700' : colors.textDim,
+                  padding: '10px 14px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                  minHeight: '48px',
+                  minWidth: '48px',
+                  borderRadius: '4px',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {stealthMode ? '◐' : '◑'} <span style={{ fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' }}>{stealthMode ? 'visible' : 'stealth'}</span>
+              </button>
+              <div style={{ fontSize: '12px', color: colors.textDimmer, textAlign: 'right' }}>
+                <div>{textConfig.header_no_tracking}</div>
+                <div style={{ color: '#FFD700', marginTop: '4px', fontWeight: 700 }}>{textConfig.header_workers_first}</div>
+              </div>
             </div>
           </header>
 
+          {/* ==================== QUICK WIN LANDING ==================== */}
+          {showQuickWin && (
+            <div style={{ maxWidth: '600px', margin: '0 auto', padding: '60px 20px 40px', textAlign: 'center' }}>
+              <h2 style={{ fontSize: '28px', color: '#FFD700', fontWeight: 700, marginBottom: '12px', lineHeight: 1.3 }}>
+                Are you getting paid what you're worth?
+              </h2>
+              <p style={{ fontSize: '16px', color: '#ccc', marginBottom: '40px', lineHeight: 1.6 }}>
+                Enter your ZIP code and hourly wage. We'll show you in 30 seconds. All numbers come from the government.
+              </p>
+
+              {!quickWinResult && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '360px', margin: '0 auto' }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <label style={{ display: 'block', fontSize: '13px', color: '#999', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>Your ZIP code</label>
+                    <input
+                      type="text"
+                      value={quickWinZip}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                        setQuickWinZip(val);
+                      }}
+                      placeholder="e.g. 90210"
+                      style={{ ...styles.input, fontSize: '20px', textAlign: 'center', padding: '16px' }}
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <label style={{ display: 'block', fontSize: '13px', color: '#999', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>Your hourly wage ($)</label>
+                    <input
+                      type="number"
+                      value={quickWinWage}
+                      onChange={(e) => setQuickWinWage(e.target.value)}
+                      placeholder="e.g. 15"
+                      style={{ ...styles.input, fontSize: '20px', textAlign: 'center', padding: '16px' }}
+                      inputMode="decimal"
+                    />
+                  </div>
+                  <button
+                    onClick={handleQuickWinSubmit}
+                    disabled={!quickWinZip || !quickWinWage || quickWinLoading}
+                    style={{
+                      padding: '18px 32px',
+                      backgroundColor: (!quickWinZip || !quickWinWage) ? '#333' : '#FFD700',
+                      color: (!quickWinZip || !quickWinWage) ? '#666' : '#000',
+                      border: 'none',
+                      cursor: (!quickWinZip || !quickWinWage) ? 'default' : 'pointer',
+                      fontFamily: 'inherit',
+                      fontWeight: 700,
+                      fontSize: '16px',
+                      borderRadius: '8px',
+                      transition: 'all 0.2s',
+                      minHeight: '54px'
+                    }}
+                  >
+                    {quickWinLoading ? 'Checking...' : 'Show Me What I Deserve'}
+                  </button>
+                  <div style={{ fontSize: '12px', color: '#555', marginTop: '8px' }}>
+                    No tracking. No sign-up. Your data stays on your device.
+                  </div>
+                </div>
+              )}
+
+              {quickWinResult && (
+                <div className="animate-value-reveal" style={{ marginTop: '10px' }}>
+                  {/* Celebration */}
+                  {showCelebration && (
+                    <div style={{ fontSize: '14px', color: '#4CAF50', marginBottom: '20px', animation: 'fadeIn 0.5s' }}>
+                      You just checked your worth. Most workers never do. That takes guts.
+                    </div>
+                  )}
+
+                  {quickWinResult.gap > 0 ? (
+                    <div>
+                      <div style={{ fontSize: '14px', color: '#FFD700', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '12px' }}>
+                        You deserve more
+                      </div>
+                      <div style={{ fontSize: '64px', fontWeight: 700, color: '#FFD700', lineHeight: 1, textShadow: '0 0 40px rgba(255,215,0,0.4)' }}>
+                        ${quickWinResult.gap.toFixed(2)}/hr
+                      </div>
+                      <div style={{ fontSize: '16px', color: '#ccc', marginTop: '16px', lineHeight: 1.6 }}>
+                        more than you're getting paid right now
+                      </div>
+                      <div style={{ fontSize: '22px', color: '#FFD700', fontWeight: 600, marginTop: '12px' }}>
+                        That's ${quickWinResult.annualGap.toLocaleString()}/year you're leaving on the table
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#888', marginTop: '12px' }}>
+                        Workers in {quickWinResult.area} earn ${quickWinResult.marketMedian}/hr (median). You earn ${quickWinResult.yourWage}/hr.
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ fontSize: '14px', color: '#4CAF50', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '12px' }}>
+                        You're being paid fairly
+                      </div>
+                      <div style={{ fontSize: '48px', fontWeight: 700, color: '#4CAF50', lineHeight: 1 }}>
+                        ${quickWinResult.yourWage}/hr
+                      </div>
+                      <div style={{ fontSize: '16px', color: '#ccc', marginTop: '16px' }}>
+                        You're earning at or above the ${quickWinResult.marketMedian}/hr median for {quickWinResult.area}.
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '30px', maxWidth: '360px', margin: '30px auto 0' }}>
+                    <button
+                      onClick={() => { enterFullSite(); setActiveInfoTab('work-wages'); }}
+                      style={{
+                        padding: '16px 28px',
+                        backgroundColor: '#FFD700',
+                        color: '#000',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        fontWeight: 700,
+                        fontSize: '15px',
+                        borderRadius: '8px',
+                        minHeight: '54px'
+                      }}
+                    >
+                      Get a deeper analysis + negotiation script
+                    </button>
+                    <button
+                      onClick={enterFullSite}
+                      style={{
+                        padding: '14px 28px',
+                        backgroundColor: 'transparent',
+                        color: '#999',
+                        border: '1px solid #444',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        fontSize: '14px',
+                        borderRadius: '8px',
+                        minHeight: '48px'
+                      }}
+                    >
+                      Explore all tools
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ==================== FULL SITE ==================== */}
+          {!showQuickWin && (
+          <>
           {/* Navigation */}
           <nav style={styles.nav}>
             {[
@@ -3276,10 +3584,10 @@
                 {/* Information Sub-Navigation Tabs */}
                 <div style={styles.subNav}>
                   {[
-                    { id: 'living-costs', label: '\uD83D\uDCB0 LIVING COSTS' },
-                    { id: 'work-wages', label: '\u23F1\uFE0F WORK & WAGES' },
-                    { id: 'market-forces', label: '\uD83D\uDCC8 MARKET FORCES' },
-                    { id: 'negotiation-tools', label: '\u2728 NEGOTIATION TOOLS' }
+                    { id: 'living-costs', label: 'Cost of Living' },
+                    { id: 'work-wages', label: 'Your Worth' },
+                    { id: 'market-forces', label: 'Market Data' },
+                    { id: 'negotiation-tools', label: 'Get a Raise' }
                   ].map(tab => (
                     <button
                       key={tab.id}
@@ -3341,119 +3649,226 @@
 
                   {localData && (
                     <div style={styles.card}>
-                      {/* Key Metric */}
+                      {/* INSIGHT FIRST — Hero finding */}
                       <div style={{
                         textAlign: 'center',
-                        padding: '30px',
-                        marginBottom: '30px',
+                        padding: '30px 20px',
+                        marginBottom: '24px',
                         backgroundColor: deficit < 0 ? '#1a0505' : '#051a05',
-                        border: `2px solid ${deficit < 0 ? colors.primary : colors.success}`
+                        border: `2px solid ${deficit < 0 ? colors.primary : colors.success}`,
+                        borderRadius: '8px'
                       }}>
-                        <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '12px', color: colors.textDim, letterSpacing: '0.5px', marginBottom: '12px' }}>
                           {localData.area}
                         </div>
-                        <div style={{ fontSize: '72px', fontWeight: 700, color: deficit < 0 ? colors.primary : colors.success, lineHeight: 1 }}>
-                          {weeksToAffordMonth}
-                        </div>
-                        <div style={{ fontSize: '14px', color: colors.textMuted, marginTop: '10px' }}>
-                          {textConfig.sol_weeks_label}
-                        </div>
-                        {deficit < 0 && (
-                          <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#ff333320', color: '#ff6666', fontSize: '12px' }}>
-                            ⚠ {textConfig.sol_deficit_label} <strong>{Math.abs(deficit)} </strong>{textConfig.sol_deficit_suffix}
+                        {deficit < 0 ? (
+                          <div>
+                            <div style={{ fontSize: '18px', color: '#ff6666', fontWeight: 600, marginBottom: '8px' }}>
+                              A full-time job doesn't cover your bills here.
+                            </div>
+                            <div style={{ fontSize: '48px', fontWeight: 700, color: colors.primary, lineHeight: 1, margin: '16px 0' }}>
+                              {Math.abs(deficit)} hours short
+                            </div>
+                            <div style={{ fontSize: '15px', color: colors.textMuted, lineHeight: 1.6 }}>
+                              You need <strong style={{ color: '#fff' }}>{totalMonthlyHours} hours</strong> of work each month just for basics — but a full-time job only gives you <strong style={{ color: '#fff' }}>{availableHours}</strong>.
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ fontSize: '18px', color: '#66ff66', fontWeight: 600, marginBottom: '8px' }}>
+                              Your job covers your basic bills.
+                            </div>
+                            <div style={{ fontSize: '48px', fontWeight: 700, color: colors.success, lineHeight: 1, margin: '16px 0' }}>
+                              {deficit} hours to spare
+                            </div>
+                            <div style={{ fontSize: '15px', color: colors.textMuted, lineHeight: 1.6 }}>
+                              You need <strong style={{ color: '#fff' }}>{totalMonthlyHours} hours</strong> for basics out of <strong style={{ color: '#fff' }}>{availableHours}</strong> available. But one emergency could wipe that out.
+                            </div>
                           </div>
                         )}
-                        {deficit >= 0 && (
-                          <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#33ff3320', color: '#66ff66', fontSize: '12px' }}>
-                            ✓ {textConfig.sol_surplus_prefix} {deficit} {textConfig.sol_surplus_suffix}
+                      </div>
+
+                      {/* WHAT THIS MEANS — Personal interpretation */}
+                      <div style={{
+                        padding: '20px',
+                        marginBottom: '24px',
+                        backgroundColor: 'rgba(255, 215, 0, 0.05)',
+                        border: '1px solid rgba(255, 215, 0, 0.15)',
+                        borderRadius: '8px'
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#FFD700', marginBottom: '10px' }}>
+                          What this means for you
+                        </div>
+                        <p style={{ fontSize: '14px', color: colors.textMuted, lineHeight: 1.7, margin: 0 }}>
+                          {deficit < 0
+                            ? `At $${localData.netWage.toFixed(2)}/hr after taxes, you'd need to work ${weeksToAffordMonth} weeks just to cover one month of living. That's not a personal failing — rent alone costs $${localData.rent}/month in your area. ${Math.abs(deficit)} hours of your life are unaccounted for.`
+                            : `At $${localData.netWage.toFixed(2)}/hr after taxes, you can cover basics in ${weeksToAffordMonth} weeks. But your surplus of ${deficit} hours per month means only $${Math.round(deficit * localData.netWage)} in breathing room. That's not much of a cushion.`
+                          }
+                        </p>
+                      </div>
+
+                      {/* QUICK STATS — key numbers at a glance */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+                        <div style={{ textAlign: 'center', padding: '16px', backgroundColor: colors.bg, borderRadius: '6px' }}>
+                          <div style={{ fontSize: '24px', fontWeight: 700, color: colors.warning }}>${localData.netWage.toFixed(2)}</div>
+                          <div style={{ fontSize: '12px', color: colors.textDimmer }}>after-tax hourly</div>
+                        </div>
+                        <div style={{ textAlign: 'center', padding: '16px', backgroundColor: colors.bg, borderRadius: '6px' }}>
+                          <div style={{ fontSize: '24px', fontWeight: 700, color: colors.primary }}>{totalMonthlyHours}h</div>
+                          <div style={{ fontSize: '12px', color: colors.textDimmer }}>needed monthly</div>
+                        </div>
+                        <div style={{ textAlign: 'center', padding: '16px', backgroundColor: colors.bg, borderRadius: '6px' }}>
+                          <div style={{ fontSize: '24px', fontWeight: 700, color: colors.text }}>{(localData.taxData.effectiveRate * 100).toFixed(0)}%</div>
+                          <div style={{ fontSize: '12px', color: colors.textDimmer }}>goes to taxes</div>
+                        </div>
+                      </div>
+
+                      {/* PROGRESSIVE DISCLOSURE — Show me the math */}
+                      <button
+                        onClick={() => setShowSolDetails(!showSolDetails)}
+                        style={{
+                          width: '100%',
+                          padding: '14px 20px',
+                          backgroundColor: 'transparent',
+                          color: colors.textMuted,
+                          border: `1px solid ${colors.border}`,
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: showSolDetails ? '20px' : '0',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <span>{showSolDetails ? 'Hide the math' : 'Show me the math'}</span>
+                        <span style={{ transform: showSolDetails ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+                      </button>
+
+                      {showSolDetails && (
+                        <div>
+                          {/* Wage & Tax Breakdown */}
+                          <div style={{ padding: '15px 0', borderBottom: `1px solid ${colors.border}`, marginBottom: '15px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <span style={{ color: colors.textMuted }}>{textConfig.sol_gross_wage}</span>
+                              <span style={{ fontWeight: 700, fontSize: '18px' }}>${localData.medianWage.toFixed(2)}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_federal_tax}</span>
+                              <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.federalTax / 2080).toFixed(2)}/hr</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_state_tax} ({localData.taxData.stateCode})</span>
+                              <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.stateTax / 2080).toFixed(2)}/hr</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_fica}</span>
+                              <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.ficaTax / 2080).toFixed(2)}/hr</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: `1px dashed ${colors.border}` }}>
+                              <span style={{ color: colors.warning, fontWeight: 700 }}>{textConfig.sol_after_tax}</span>
+                              <span style={{ fontWeight: 700, fontSize: '18px', color: colors.warning }}>${localData.netWage.toFixed(2)}</span>
+                            </div>
+                            <div style={{ textAlign: 'right', fontSize: '11px', color: colors.textDimmest }}>
+                              {textConfig.sol_effective_rate} {(localData.taxData.effectiveRate * 100).toFixed(1)}%
+                            </div>
                           </div>
-                        )}
-                      </div>
 
-                      {/* Wage & Tax Breakdown */}
-                      <div style={{ padding: '15px 0', borderBottom: `1px solid ${colors.border}`, marginBottom: '15px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <span style={{ color: colors.textMuted }}>{textConfig.sol_gross_wage}</span>
-                          <span style={{ fontWeight: 700, fontSize: '18px' }}>${localData.medianWage.toFixed(2)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_federal_tax}</span>
-                          <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.federalTax / 2080).toFixed(2)}/hr</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_state_tax} ({localData.taxData.stateCode})</span>
-                          <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.stateTax / 2080).toFixed(2)}/hr</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <span style={{ color: colors.textDimmer, fontSize: '12px', paddingLeft: '10px' }}>{textConfig.sol_fica}</span>
-                          <span style={{ color: colors.textDim, fontSize: '12px' }}>-${(localData.taxData.ficaTax / 2080).toFixed(2)}/hr</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: `1px dashed ${colors.border}` }}>
-                          <span style={{ color: colors.warning, fontWeight: 700 }}>{textConfig.sol_after_tax}</span>
-                          <span style={{ fontWeight: 700, fontSize: '18px', color: colors.warning }}>${localData.netWage.toFixed(2)}</span>
-                        </div>
-                        <div style={{ textAlign: 'right', fontSize: '11px', color: colors.textDimmest }}>
-                          {textConfig.sol_effective_rate} {(localData.taxData.effectiveRate * 100).toFixed(1)}%
-                        </div>
-                      </div>
+                          <div style={{ fontSize: '12px', color: colors.textDimmer, marginBottom: '10px', fontWeight: 600 }}>
+                            {textConfig.sol_hours_label}
+                          </div>
 
-                      <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        {textConfig.sol_hours_label}
-                      </div>
-
-                      {[
-                        { label: textConfig.sol_rent, cost: localData.rent, icon: '🏠' },
-                        { label: textConfig.sol_food, cost: localData.food, icon: '🍎' },
-                        { label: textConfig.sol_healthcare, cost: localData.healthcare, icon: '🏥' },
-                        { label: textConfig.sol_transport, cost: localData.transport, icon: '🚗' },
-                        { label: textConfig.sol_utilities, cost: localData.utilities, icon: '💡' },
-                      ].map(item => {
-                        const hours = calculateHours(item.cost, effectiveWage);
-                        const pct = (hours / totalMonthlyHours) * 100;
-                        return (
-                          <div key={item.label} style={{ marginBottom: '12px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                              <span style={{ color: colors.textMuted }}>{item.icon} {item.label}</span>
-                              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                <span style={{ color: colors.textDimmer, fontSize: '12px' }}>${item.cost}</span>
-                                <span style={{ color: '#fff', fontWeight: 700, minWidth: '70px', textAlign: 'right' }}>
-                                  {hours} hrs
-                                </span>
+                          {[
+                            { label: textConfig.sol_rent, cost: localData.rent, icon: '🏠' },
+                            { label: textConfig.sol_food, cost: localData.food, icon: '🍎' },
+                            { label: textConfig.sol_healthcare, cost: localData.healthcare, icon: '🏥' },
+                            { label: textConfig.sol_transport, cost: localData.transport, icon: '🚗' },
+                            { label: textConfig.sol_utilities, cost: localData.utilities, icon: '💡' },
+                          ].map(item => {
+                            const hours = calculateHours(item.cost, effectiveWage);
+                            const pct = (hours / totalMonthlyHours) * 100;
+                            return (
+                              <div key={item.label} style={{ marginBottom: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                  <span style={{ color: colors.textMuted }}>{item.icon} {item.label}</span>
+                                  <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                    <span style={{ color: colors.textDimmer, fontSize: '12px' }}>${item.cost}</span>
+                                    <span style={{ color: '#fff', fontWeight: 700, minWidth: '70px', textAlign: 'right' }}>
+                                      {hours} hrs
+                                    </span>
+                                  </div>
+                                </div>
+                                <div style={{ height: '4px', backgroundColor: colors.border, borderRadius: '2px' }}>
+                                  <div style={{ height: '100%', width: `${pct}%`, backgroundColor: colors.primary, borderRadius: '2px' }} />
+                                </div>
                               </div>
-                            </div>
-                            <div style={{ height: '4px', backgroundColor: colors.border, borderRadius: '2px' }}>
-                              <div style={{ height: '100%', width: `${pct}%`, backgroundColor: colors.primary, borderRadius: '2px' }} />
-                            </div>
+                            );
+                          })}
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', borderTop: `2px solid ${colors.borderLight}`, marginTop: '15px' }}>
+                            <span style={{ fontWeight: 700 }}>TOTAL REQUIRED</span>
+                            <span style={{ fontWeight: 700, color: colors.primary, fontSize: '18px' }}>{totalMonthlyHours} hrs</span>
                           </div>
-                        );
-                      })}
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', borderTop: `2px solid ${colors.borderLight}`, marginTop: '15px' }}>
-                        <span style={{ fontWeight: 700 }}>TOTAL REQUIRED</span>
-                        <span style={{ fontWeight: 700, color: colors.primary, fontSize: '18px' }}>{totalMonthlyHours} hrs</span>
-                      </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', color: colors.textDim }}>
+                            <span>Available (40hr/wk x 4)</span>
+                            <span>{availableHours} hrs</span>
+                          </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', color: colors.textDim }}>
-                        <span>Available (40hr/wk × 4)</span>
-                        <span>{availableHours} hrs</span>
-                      </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontWeight: 700, fontSize: '16px', color: deficit < 0 ? colors.primary : colors.success }}>
+                            <span>{deficit < 0 ? 'MONTHLY DEFICIT' : 'MONTHLY SURPLUS'}</span>
+                            <span>{deficit} hrs</span>
+                          </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontWeight: 700, fontSize: '16px', color: deficit < 0 ? colors.primary : colors.success }}>
-                        <span>{deficit < 0 ? 'MONTHLY DEFICIT' : 'MONTHLY SURPLUS'}</span>
-                        <span>{deficit} hrs</span>
-                      </div>
-
-                      <div style={{ marginTop: '20px', padding: '15px', backgroundColor: colors.bg, fontSize: '11px', color: colors.textDimmest }}>
-                        <div style={{ marginBottom: '8px' }}>
-                          <strong>Data quality:</strong>{' '}
-                          <span style={{ color: localData.msa ? colors.success : colors.warning }}>
-                            {localData.dataQuality}
-                          </span>
-                          {localData.msa && (
-                            <span style={{ color: colors.textDimmer }}> — {localData.msa}</span>
-                          )}
+                          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: colors.bg, fontSize: '11px', color: colors.textDimmest }}>
+                            <div style={{ marginBottom: '8px' }}>
+                              <strong>Data quality:</strong>{' '}
+                              <span style={{ color: localData.msa ? colors.success : colors.warning }}>
+                                {localData.dataQuality}
+                              </span>
+                              {localData.msa && (
+                                <span style={{ color: colors.textDimmer }}> — {localData.msa}</span>
+                              )}
+                            </div>
+                            <strong>Sources:</strong> BLS OEWS Q3 2024 (wages), HUD FMR FY2024 (housing), USDA Thrifty Food Plan (food), Healthcare.gov (insurance), AAA (transport), EIA (utilities), IRS 2024 brackets (federal tax), Tax Foundation 2024 (state tax), SSA (FICA)
+                          </div>
                         </div>
-                        <strong>Sources:</strong> BLS OEWS Q3 2024 (wages), HUD FMR FY2024 (housing), USDA Thrifty Food Plan (food), Healthcare.gov (insurance), AAA (transport), EIA (utilities), IRS 2024 brackets (federal tax), Tax Foundation 2024 (state tax), SSA (FICA)
+                      )}
+
+                      {/* Save/Share Your Results */}
+                      <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => copyResults(
+                            `My Cost of Living Report — Solidarity Net\n\nLocation: ${localData.area}\nMedian wage: $${localData.medianWage.toFixed(2)}/hr\nAfter taxes: $${localData.netWage.toFixed(2)}/hr (${(localData.taxData.effectiveRate * 100).toFixed(1)}% tax rate)\n\nMonthly hours needed:\n- Rent: ${calculateHours(localData.rent, effectiveWage)}h ($${localData.rent})\n- Food: ${calculateHours(localData.food, effectiveWage)}h ($${localData.food})\n- Healthcare: ${calculateHours(localData.healthcare, effectiveWage)}h ($${localData.healthcare})\n- Transport: ${calculateHours(localData.transport, effectiveWage)}h ($${localData.transport})\n- Utilities: ${calculateHours(localData.utilities, effectiveWage)}h ($${localData.utilities})\n\nTotal: ${totalMonthlyHours}h needed / ${availableHours}h available\n${deficit < 0 ? 'DEFICIT: ' + Math.abs(deficit) + ' hours — my job doesn\'t cover basic bills' : 'Surplus: ' + deficit + ' hours'}\n\nSource: Official government data`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#FFD700',
+                            color: '#FFD700',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Copy My Numbers
+                        </button>
+                        <button
+                          onClick={() => emailResults(
+                            'My Cost of Living Report',
+                            `My Cost of Living Report — Solidarity Net\n\nLocation: ${localData.area}\nMedian wage: $${localData.medianWage.toFixed(2)}/hr\nAfter taxes: $${localData.netWage.toFixed(2)}/hr\n\nTotal hours needed for basics: ${totalMonthlyHours}h/month\nAvailable hours: ${availableHours}h/month\n${deficit < 0 ? 'DEFICIT: ' + Math.abs(deficit) + ' hours — a full-time job doesn\'t cover basic bills in my area' : 'Surplus: ' + deficit + ' hours'}\n\nSource: Official government data\nGenerated at: Solidarity Net`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#2196F3',
+                            color: '#2196F3',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Email Me This
+                        </button>
                       </div>
 
                       {/* ⚠️ One Bad Day - Embedded Collapsible Section */}
@@ -3492,20 +3907,20 @@
                             alignItems: 'center'
                           }}
                         >
-                          <span>⚠️ What if something goes wrong?</span>
+                          <span>⚠️ What happens when something goes wrong?</span>
                           <span style={{ fontSize: '11px', color: colors.textDim }}>
-                            {showOneBadDay ? '▲ Collapse' : 'See how one emergency could impact your finances →'}
+                            {showOneBadDay ? '▲ Close' : 'One flat tire, one ER visit — see what happens →'}
                           </span>
                         </button>
 
                         {showOneBadDay && (
                           <div style={{ padding: '0 20px 20px' }}>
-                            <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                              Test your financial resilience. One emergency. That's all it takes.
+                            <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '14px', lineHeight: '1.7' }}>
+                              Most workers are one emergency away from crisis. A flat tire. An ER visit. A broken phone. See how fast things fall apart when you're not paid enough.
                             </p>
 
                             <div style={{ marginBottom: '20px' }}>
-                              <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                              <label style={{ display: 'block', color: colors.textMuted, fontSize: '12px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                                 Current Savings {deficit > 0 ? `(pre-filled from your ${deficit}hr surplus ≈ $${Math.round(deficit * effectiveWage)}/mo)` : ''}
                               </label>
                               <input
@@ -3645,13 +4060,13 @@
                 {/* The Shelter Tax */}
                 <section style={{ marginTop: '60px' }}>
                   <h2 style={styles.sectionHeader}>The Shelter Tax</h2>
-                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '14px', lineHeight: '1.7' }}>
                     Compare housing costs in Time, not Dollars. How many hours of your life does rent claim?
                   </p>
 
                   <form onSubmit={calculateShelterTax} style={{ marginBottom: '30px' }}>
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>MONTHLY RENT ($):</label>
+                      <label style={{ color: colors.textMuted, fontSize: '13px' }}>MONTHLY RENT ($):</label>
                       <input
                         type="number"
                         value={shelterRent}
@@ -3660,7 +4075,7 @@
                         min={1}
                         style={{ ...styles.input, width: '120px' }}
                       />
-                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>ANNUAL SALARY ($):</label>
+                      <label style={{ color: colors.textMuted, fontSize: '13px' }}>ANNUAL SALARY ($):</label>
                       <input
                         type="number"
                         value={shelterSalary}
@@ -3678,7 +4093,7 @@
                   {shelterResults && (
                     <div style={{ ...styles.card, padding: '30px' }}>
                       <div style={{ marginBottom: '25px' }}>
-                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                           Hours per Month (160 = Full-Time)
                         </div>
                         <div style={{ position: 'relative', height: '60px', backgroundColor: colors.bgLight, border: `1px solid ${colors.border}` }}>
@@ -3710,14 +4125,14 @@
                             left: `${(40 / 160) * 100}%`,
                             top: '-20px',
                             transform: 'translateX(-50%)',
-                            fontSize: '10px',
+                            fontSize: '11px',
                             color: colors.success,
                             whiteSpace: 'nowrap'
                           }}>
                             1985 Standard (40h)
                           </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: '10px', color: colors.textDimmest }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', fontSize: '11px', color: colors.textDimmest }}>
                           <span>0h</span>
                           <span>40h</span>
                           <span>80h</span>
@@ -3752,22 +4167,55 @@
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '20px' }}>
                         <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
                           <div style={{ fontSize: '24px', fontWeight: 700, color: colors.primary }}>{shelterResults.percentOfMonth}%</div>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>of work month</div>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer }}>of work month</div>
                         </div>
                         <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
                           <div style={{ fontSize: '24px', fontWeight: 700, color: colors.text }}>${shelterResults.hourlyWage}</div>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>hourly rate</div>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer }}>hourly rate</div>
                         </div>
                         <div style={{ textAlign: 'center', padding: '15px', backgroundColor: colors.bg }}>
                           <div style={{ fontSize: '24px', fontWeight: 700, color: shelterResults.extraHours > 0 ? colors.warning : colors.success }}>
                             {shelterResults.extraHours > 0 ? '+' : ''}{shelterResults.extraHours}h
                           </div>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer }}>vs 1985</div>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer }}>vs 1985</div>
                         </div>
                       </div>
 
-                      <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
+                      <div style={{ marginTop: '20px', fontSize: '11px', color: colors.textDimmest, textAlign: 'center' }}>
                         1985 baseline: 25% of gross income = 40 hours of a 160-hour work month. Source: Census Bureau rent-to-income data.
+                      </div>
+
+                      {/* Save/Share Your Results */}
+                      <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => copyResults(
+                            `Shelter Tax Report — Solidarity Net\n\nIn 1985, a worker paid 40 hours for shelter.\nI pay ${shelterResults.hoursRentNow} hours.\n${shelterResults.extraHours > 0 ? 'The market claims ' + shelterResults.extraHours + ' extra hours of my life.' : 'My rent burden is below the 1985 baseline.'}\n\nRent takes ${shelterResults.percentOfMonth}% of my work month\nMy hourly rate: $${shelterResults.hourlyWage}\n\nSource: Census Bureau rent-to-income data`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#FFD700',
+                            color: '#FFD700',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Copy My Numbers
+                        </button>
+                        <button
+                          onClick={() => emailResults(
+                            'My Shelter Tax Report',
+                            `Shelter Tax Report — Solidarity Net\n\nIn 1985, a worker paid 40 hours for shelter.\nI pay ${shelterResults.hoursRentNow} hours — ${shelterResults.extraHours > 0 ? shelterResults.extraHours + ' extra hours stolen by the housing market.' : 'below the 1985 baseline.'}\n\nRent takes ${shelterResults.percentOfMonth}% of my work month.\n\nSource: Census Bureau rent-to-income data\nGenerated at: Solidarity Net`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#2196F3',
+                            color: '#2196F3',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Email Me This
+                        </button>
                       </div>
                     </div>
                   )}
@@ -3793,7 +4241,7 @@
                     style={{
                       ...styles.button('secondary'),
                       padding: '8px 16px',
-                      fontSize: '10px',
+                      fontSize: '11px',
                       borderColor: colors.success,
                       color: colors.success
                     }}
@@ -3810,26 +4258,27 @@
                 {/* Economic Impact Calculator */}
                 <section style={{ marginBottom: '60px' }}>
                   <h2 style={styles.sectionHeader}>{textConfig.impact_section_title}</h2>
-                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '14px', lineHeight: '1.7' }}>
                     {textConfig.impact_description}
                   </p>
 
                   {/* Disclaimer */}
                   <div style={{
-                    padding: '15px 20px',
+                    padding: '16px 20px',
                     marginBottom: '20px',
                     backgroundColor: 'rgba(255, 165, 0, 0.08)',
                     border: `1px solid ${colors.warning}`,
-                    fontSize: '12px',
+                    fontSize: '13px',
                     color: colors.textDim,
-                    lineHeight: '1.6'
+                    lineHeight: '1.7',
+                    borderRadius: '4px'
                   }}>
-                    <strong style={{ color: colors.text }}>Disclaimer:</strong> This calculator provides educational estimates based on aggregate economic data. Your individual "Fair Value" represents what you would have earned if wages had tracked productivity gains since the year you started working. These calculations use interpolated growth curves based on CPI inflation and seniority factors, normalized to your actual salary endpoints. Results are illustrative, not financial advice. Data sources: Economic Policy Institute, Bureau of Labor Statistics, Federal Reserve, Census Bureau.
+                    <strong style={{ color: colors.text }}>How this works:</strong> We use real government numbers to show what you'd earn if your pay kept up with how much more you produce. Your "true worth" comes from the same data the government uses in official reports. These are estimates — not financial advice — but they show you the big picture.
                   </div>
 
                   <form onSubmit={handleImpactCalculate} style={{ marginBottom: '30px' }}>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '15px' }}>
-                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>{textConfig.impact_start_year_label}</label>
+                      <label style={{ color: colors.textMuted, fontSize: '13px' }}>{textConfig.impact_start_year_label}</label>
                       <input
                         type="number"
                         value={impactStartYear}
@@ -3840,7 +4289,7 @@
                         style={{ ...styles.input, width: '100px' }}
                         disabled={impactLoading}
                       />
-                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>{textConfig.impact_start_salary_label}</label>
+                      <label style={{ color: colors.textMuted, fontSize: '13px' }}>{textConfig.impact_start_salary_label}</label>
                       <input
                         type="number"
                         value={impactStartSalary}
@@ -3852,7 +4301,7 @@
                       />
                     </div>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>{textConfig.impact_current_salary_label}</label>
+                      <label style={{ color: colors.textMuted, fontSize: '13px' }}>{textConfig.impact_current_salary_label}</label>
                       <input
                         type="number"
                         value={impactCurrentSalary}
@@ -3862,7 +4311,7 @@
                         style={{ ...styles.input, width: '120px' }}
                         disabled={impactLoading}
                       />
-                      <label style={{ color: colors.textMuted, fontSize: '11px' }}>{textConfig.impact_current_rent_label}</label>
+                      <label style={{ color: colors.textMuted, fontSize: '13px' }}>{textConfig.impact_current_rent_label}</label>
                       <input
                         type="number"
                         value={impactCurrentRent}
@@ -3888,28 +4337,58 @@
                       <p style={{ fontSize: '12px', color: colors.primary, marginTop: '8px' }}>{impactError}</p>
                     )}
                     <p style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '8px' }}>
-                      Calculates year-over-year economic impact using rolling productivity and wage data from 1975-2024 — data from EPI, BLS, Federal Reserve, Census Bureau
+                      Uses real government data from 1975-2024. Same numbers the government uses in official reports.
                     </p>
                   </form>
 
                   {impactResults && (
                     <div>
-                      {/* Hero total */}
+                      {/* Validation message - show worth FIRST */}
+                      <div className="validation-message animate-value-reveal" style={{
+                        textAlign: 'center',
+                        padding: '35px 30px',
+                        marginBottom: '15px',
+                        background: 'linear-gradient(135deg, rgba(255,215,0,0.08) 0%, rgba(255,215,0,0.03) 100%)',
+                        border: '2px solid #FFD700',
+                        borderRadius: '12px'
+                      }}>
+                        <div style={{ fontSize: '12px', color: '#FFD700', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>
+                          Your work created this much value
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#aaa', marginBottom: '15px' }}>
+                          Over {impactResults.inputs.years_worked} years, you made real money for your employer. Here's what they should have paid you.
+                        </div>
+                        <div style={{ fontSize: '20px', color: '#ccc', marginBottom: '6px' }}>
+                          You deserved
+                        </div>
+                        <div className="hero-number" style={{ fontSize: '56px', fontWeight: 700, color: '#FFD700', lineHeight: 1, textShadow: '0 0 40px rgba(255,215,0,0.4)' }}>
+                          ${(impactResults.summary.cumulative_economic_impact + (impactResults.inputs.current_salary * impactResults.inputs.years_worked)).toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#888', marginTop: '12px' }}>
+                          over your career — that's what workers with your experience should earn
+                        </div>
+                      </div>
+
+                      {/* The gap - what you're owed */}
                       <div style={{
                         textAlign: 'center',
-                        padding: '40px 30px',
+                        padding: '30px',
                         marginBottom: '20px',
-                        backgroundColor: '#1a0a0a',
-                        border: `2px solid ${colors.textMuted}`
+                        backgroundColor: '#1a0a05',
+                        border: '2px solid #FFD700',
+                        borderRadius: '8px'
                       }}>
-                        <div style={{ fontSize: '11px', color: colors.textDim, textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '12px', color: '#FFD700', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}>
                           {textConfig.impact_cumulative_label} ({impactResults.inputs.years_worked} years)
                         </div>
-                        <div style={{ fontSize: '64px', fontWeight: 700, color: colors.text, lineHeight: 1 }}>
+                        <div style={{ fontSize: '56px', fontWeight: 700, color: '#FFD700', lineHeight: 1, textShadow: '0 0 30px rgba(255,215,0,0.3)' }}>
                           ${impactResults.summary.cumulative_economic_impact.toLocaleString()}
                         </div>
-                        <div style={{ fontSize: '14px', color: colors.textMuted, marginTop: '12px' }}>
-                          {textConfig.impact_years_label}: <strong style={{ color: colors.text, fontSize: '18px' }}>{impactResults.summary.years_of_work_equivalent}</strong> years of labor
+                        <div style={{ fontSize: '14px', color: '#ccc', marginTop: '15px' }}>
+                          That's <strong style={{ color: '#FFD700', fontSize: '18px' }}>{impactResults.summary.years_of_work_equivalent} years</strong> of full-time work they didn't pay you for
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#888', marginTop: '10px' }}>
+                          This isn't your fault — wages stopped keeping up with productivity in 1979
                         </div>
                       </div>
 
@@ -3925,8 +4404,8 @@
                         flexWrap: 'wrap'
                       }}>
                         <div style={{ flex: '1 1 auto' }}>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                            Productivity vs. Wage Growth
+                          <div style={{ fontSize: '11px', color: '#FFD700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                            You're making your boss more money — but your paycheck didn't go up
                           </div>
                           <div style={{ fontSize: '11px', color: colors.textDim }}>
                             {impactResults.metrics.gap.detail}
@@ -3934,20 +4413,20 @@
                         </div>
                         <div style={{ display: 'flex', gap: '20px', alignItems: 'baseline', flexShrink: 0 }}>
                           <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '4px' }}>PRODUCTIVITY</div>
+                            <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '4px' }}>PRODUCTIVITY</div>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: colors.success }}>{impactResults.metrics.productivity.value}</div>
-                            <div style={{ fontSize: '10px', color: colors.textDimmest }}>growth</div>
+                            <div style={{ fontSize: '11px', color: colors.textDimmest }}>growth</div>
                           </div>
                           <div style={{ fontSize: '18px', color: colors.textDimmer }}>&rarr;</div>
                           <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '4px' }}>WAGES</div>
+                            <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '4px' }}>WAGES</div>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: colors.warning }}>{impactResults.metrics.wages.value}</div>
-                            <div style={{ fontSize: '10px', color: colors.textDimmest }}>growth</div>
+                            <div style={{ fontSize: '11px', color: colors.textDimmest }}>growth</div>
                           </div>
                           <div style={{ textAlign: 'center', padding: '8px 12px', backgroundColor: '#ffa50020', marginLeft: '5px' }}>
-                            <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '4px' }}>GAP</div>
+                            <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '4px' }}>GAP</div>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: colors.warning }}>{impactResults.metrics.gap.value}</div>
-                            <div style={{ fontSize: '10px', color: colors.textDimmest }}>divergence</div>
+                            <div style={{ fontSize: '11px', color: colors.textDimmest }}>divergence</div>
                           </div>
                         </div>
                       </div>
@@ -3959,14 +4438,14 @@
                           borderLeft: `3px solid ${colors.warning}`,
                           padding: '20px'
                         }}>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
                             ▲ {textConfig.impact_unrealized_label}
                           </div>
                           <div style={{ fontSize: '28px', fontWeight: 700, color: colors.warning, marginBottom: '8px' }}>
                             ${impactResults.summary.unrealized_productivity_gains.toLocaleString()}
                           </div>
                           <div style={{ fontSize: '11px', color: colors.textDim }}>
-                            Value you would have earned if wages had tracked productivity growth over your career
+                            You made this much more for your employers, but your paycheck didn't reflect it
                           </div>
                         </div>
                         <div style={{
@@ -3974,7 +4453,7 @@
                           borderLeft: `3px solid #ff6644`,
                           padding: '20px'
                         }}>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
                             ▬ {textConfig.impact_rent_label}
                           </div>
                           <div style={{ fontSize: '28px', fontWeight: 700, color: '#ff6644', marginBottom: '8px' }}>
@@ -3994,7 +4473,7 @@
                           padding: '20px',
                           marginBottom: '15px'
                         }}>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
                             🏠 {impactResults.metrics.housing.label}
                           </div>
                           <div style={{ fontSize: '28px', fontWeight: 700, color: '#ff4444', marginBottom: '8px' }}>
@@ -4017,8 +4496,8 @@
                         backgroundColor: '#0a1a0a',
                         borderLeft: `3px solid ${colors.success}`
                       }}>
-                        <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text, marginBottom: '15px' }}>
-                          ⚡ Union Negotiation Simulator
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#4CAF50', marginBottom: '15px' }}>
+                          ⚡ What If You Negotiated a Raise?
                         </div>
                         <div style={{ marginBottom: '20px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
@@ -4045,8 +4524,8 @@
                           />
                         </div>
                         <div style={{ padding: '15px', backgroundColor: colors.bg, borderRadius: '4px' }}>
-                          <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '8px' }}>
-                            IF YOU NEGOTIATED A {unionRaisePercent}% RAISE THROUGH COLLECTIVE BARGAINING:
+                          <div style={{ fontSize: '11px', color: '#FFD700', marginBottom: '8px', fontWeight: 600 }}>
+                            IF YOU GOT A {unionRaisePercent}% RAISE:
                           </div>
                           <div style={{ fontSize: '13px', color: colors.text, marginBottom: '6px' }}>
                             New Annual Salary: <strong style={{ color: colors.success }}>
@@ -4070,8 +4549,8 @@
                               })()}
                             </strong> hours
                           </div>
-                          <div style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '10px', fontStyle: 'italic' }}>
-                            "Buying back time" means reclaiming hours you would otherwise need to work to maintain your current standard of living. A raise gives you the same purchasing power in fewer hours.
+                          <div style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '10px' }}>
+                            "Buying back time" = hours you won't have to work because your pay went up. A raise means you can work less and still pay your bills.
                           </div>
                         </div>
                       </div>
@@ -4084,7 +4563,7 @@
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                           <div style={{ fontSize: '14px', fontWeight: 700, color: colors.text }}>
-                            📊 Your Inflation-Adjusted Resume
+                            📊 Your Pay History — What You Should Have Earned
                           </div>
                           <button
                             onClick={() => setShowInflationResume(!showInflationResume)}
@@ -4139,7 +4618,7 @@
                                 })}
                               </tbody>
                             </table>
-                            <div style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '10px' }}>
+                            <div style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '10px' }}>
                               All values adjusted to 2024 dollars using CPI inflation data. "Real Value Change" shows year-over-year change in purchasing power.
                             </div>
                           </div>
@@ -4154,10 +4633,10 @@
                         padding: '30px'
                       }}>
                         <div style={{ fontSize: '16px', fontWeight: 700, color: colors.text, marginBottom: '10px' }}>
-                          These gaps are the result of policy choices, not economic inevitability.
+                          This isn't bad luck. Your pay was kept low on purpose.
                         </div>
-                        <div style={{ fontSize: '12px', color: colors.textMuted, marginBottom: '20px' }}>
-                          Join a worker collective, tenant union, or consumer group to advocate for change.
+                        <div style={{ fontSize: '14px', color: colors.textMuted, marginBottom: '20px' }}>
+                          Talk to coworkers, neighbors, or other workers who feel the same way.
                         </div>
                         <button
                           onClick={() => { setActiveTab('formation'); setActiveSubTab('worker'); }}
@@ -4171,8 +4650,41 @@
                         </button>
                       </div>
 
+                      {/* Save/Share Your Results */}
+                      <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => copyResults(
+                            `My Worth Report from Solidarity Net\n\nTotal owed: $${impactResults.summary.cumulative_economic_impact.toLocaleString()}\nYears worked: ${impactResults.inputs.years_worked}\nProductivity growth: ${impactResults.metrics.productivity.value}\nWage growth: ${impactResults.metrics.wages.value}\n\nSource: Government data (BLS, EPI, Federal Reserve)`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#FFD700',
+                            color: '#FFD700',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Copy My Numbers
+                        </button>
+                        <button
+                          onClick={() => emailResults(
+                            'My Worth Report',
+                            `My Worth Report from Solidarity Net\n\nTotal owed: $${impactResults.summary.cumulative_economic_impact.toLocaleString()}\nYears worked: ${impactResults.inputs.years_worked}\nProductivity growth: ${impactResults.metrics.productivity.value}\nWage growth: ${impactResults.metrics.wages.value}\n\nI'm underpaid by $${impactResults.summary.cumulative_economic_impact.toLocaleString()} over my career.\n\nSource: Government data (BLS, EPI, Federal Reserve)\nGenerated at: Solidarity Net`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#2196F3',
+                            color: '#2196F3',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Email Me This
+                        </button>
+                      </div>
+
                       {/* Sources */}
-                      <div style={{ marginTop: '15px', padding: '15px', backgroundColor: colors.bg, fontSize: '11px', color: colors.textDimmest }}>
+                      <div style={{ marginTop: '15px', padding: '15px', backgroundColor: colors.bg, fontSize: '12px', color: colors.textDimmest }}>
                         <strong>Sources:</strong> {impactResults.sources.join(' • ')}
                       </div>
                     </div>
@@ -4186,13 +4698,118 @@
                   )}
                 </section>
 
-                {/* Cross-tool suggestion: Exploitation → Stopwatch */}
+                {/* ACTION PATHWAY - The critical bridge between knowing and doing */}
                 {impactResults && (
                   <div style={{
-                    marginTop: '20px',
-                    padding: '15px 20px',
+                    marginTop: '25px',
+                    padding: '30px',
+                    background: 'linear-gradient(135deg, rgba(255,215,0,0.06) 0%, rgba(76,175,80,0.06) 100%)',
+                    border: '2px solid #FFD700',
+                    borderRadius: '12px'
+                  }}>
+                    <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                      <div style={{ fontSize: '20px', fontWeight: 700, color: '#FFD700', marginBottom: '8px' }}>
+                        You're owed ${impactResults.summary.cumulative_economic_impact.toLocaleString()}. Now what?
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#aaa' }}>
+                        Pick the path that feels right for you. There's no wrong answer.
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '15px' }}>
+                      {/* Path 1: Negotiate Alone */}
+                      <div style={{
+                        padding: '20px',
+                        backgroundColor: '#0a0a0a',
+                        border: '1px solid #FFD700',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                        onClick={() => setActiveInfoTab('negotiation-tools')}
+                      >
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>💬</div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#FFD700', marginBottom: '8px' }}>Talk to Your Boss</div>
+                        <div style={{ fontSize: '13px', color: '#aaa', marginBottom: '12px', lineHeight: '1.6' }}>
+                          Get a script with the data to back you up. We'll tell you exactly what to say — and what to say when they push back.
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#666' }}>Takes about 30 minutes to prepare</div>
+                        <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#FFD70015', borderRadius: '4px', fontSize: '12px', color: '#FFD700', fontWeight: 600, textAlign: 'center' }}>
+                          Get My Script →
+                        </div>
+                      </div>
+
+                      {/* Path 2: Find Others */}
+                      <div style={{
+                        padding: '20px',
+                        backgroundColor: '#0a0a0a',
+                        border: '1px solid #4CAF50',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                        onClick={() => { setActiveTab('formation'); setActiveSubTab('worker'); }}
+                      >
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>👥</div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#4CAF50', marginBottom: '8px' }}>Find Coworkers Dealing With This</div>
+                        <div style={{ fontSize: '13px', color: '#aaa', marginBottom: '12px', lineHeight: '1.6' }}>
+                          You're not the only one. Find others at your company who feel the same way. There's strength in numbers — and legal protection too.
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#666' }}>Federal law protects you when you organize with coworkers (NLRA Section 7)</div>
+                        <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#4CAF5015', borderRadius: '4px', fontSize: '12px', color: '#4CAF50', fontWeight: 600, textAlign: 'center' }}>
+                          Find Others →
+                        </div>
+                      </div>
+
+                      {/* Path 3: Document & Prepare */}
+                      <div style={{
+                        padding: '20px',
+                        backgroundColor: '#0a0a0a',
+                        border: '1px solid #2196F3',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                        onClick={() => {
+                          if (navigator.clipboard) {
+                            const text = `My True Worth Report\n\nTotal owed: $${impactResults.summary.cumulative_economic_impact.toLocaleString()}\nYears worked: ${impactResults.inputs.years_worked}\nProductivity growth: ${impactResults.metrics.productivity.value}\nWage growth: ${impactResults.metrics.wages.value}\n\nSource: Solidarity Net (BLS, EPI, Federal Reserve data)`;
+                            navigator.clipboard.writeText(text);
+                          }
+                        }}
+                      >
+                        <div style={{ fontSize: '24px', marginBottom: '8px' }}>📋</div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#2196F3', marginBottom: '8px' }}>Save This Data</div>
+                        <div style={{ fontSize: '13px', color: '#aaa', marginBottom: '12px', lineHeight: '1.6' }}>
+                          Not ready yet? That's fine. Copy these numbers, save them, and bring them to your next performance review. Your data doesn't expire.
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#666' }}>Come back any time to update your numbers</div>
+                        <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#2196F315', borderRadius: '4px', fontSize: '12px', color: '#2196F3', fontWeight: 600, textAlign: 'center' }}>
+                          Copy My Data →
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Legal rights notice */}
+                    <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#0a1a0a', border: '1px solid #4CAF50', borderRadius: '6px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#4CAF50', marginBottom: '6px' }}>
+                        Know Your Rights
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.7' }}>
+                        <strong style={{ color: '#fff' }}>You CAN talk about wages with coworkers.</strong> It's federal law (NLRA Section 7).
+                        Your employer cannot fire you or punish you for discussing pay. If they do, that's illegal — file a complaint at <span style={{ color: '#4CAF50' }}>nlrb.gov</span>.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cross-tool suggestion */}
+                {impactResults && (
+                  <div style={{
+                    marginTop: '15px',
+                    padding: '12px 20px',
                     backgroundColor: colors.bg,
                     border: `1px solid ${colors.border}`,
+                    borderRadius: '6px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -4200,24 +4817,23 @@
                     gap: '10px'
                   }}>
                     <span style={{ fontSize: '12px', color: colors.textDim }}>
-                      See how this breaks down hour-by-hour → Profit Stopwatch
+                      Want to see this hour-by-hour? Check the Profit Stopwatch below ↓
                     </span>
-                    <span style={{ fontSize: '11px', color: colors.textDimmer }}>↓ Scroll down</span>
                   </div>
                 )}
 
                 {/* (Shelter Tax moved to Living Costs tab, Corporate Conquest Map & Price Resistance moved to Market Forces tab) */}
                 {/* ==================== THE PROFIT STOPWATCH ==================== */}
                 <section style={{ marginTop: '60px' }}>
-                  <h2 style={styles.sectionHeader}>The Profit Stopwatch</h2>
-                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
-                    Visualize how much of your workday goes to shareholders vs. your own survival. Watch the clock divide.
+                  <h2 style={styles.sectionHeader}>Where Does Your Workday Go?</h2>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '14px', lineHeight: '1.7' }}>
+                    You work 8 hours. But how much of that time are you working for yourself vs. for company profits? See the breakdown.
                   </p>
 
                   <form onSubmit={handleStopwatchCalculate} style={{ marginBottom: '30px' }}>
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                       <div>
-                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '12px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                           Hourly Wage
                         </label>
                         <input
@@ -4230,7 +4846,7 @@
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '12px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                           Hours Per Day
                         </label>
                         <input
@@ -4243,7 +4859,7 @@
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '12px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                           Industry
                         </label>
                         <select
@@ -4358,7 +4974,7 @@
 
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
                         <div style={{ ...styles.card, borderLeft: `3px solid ${colors.primary}`, padding: '20px' }}>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
                             Stolen Time
                           </div>
                           <div style={{ fontSize: '32px', fontWeight: 700, color: colors.primary, marginBottom: '5px' }}>
@@ -4369,7 +4985,7 @@
                           </div>
                         </div>
                         <div style={{ ...styles.card, borderLeft: `3px solid ${colors.warning}`, padding: '20px' }}>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
                             Profit Per Hour
                           </div>
                           <div style={{ fontSize: '32px', fontWeight: 700, color: colors.warning, marginBottom: '5px' }}>
@@ -4384,6 +5000,39 @@
                       <p style={{ marginTop: '20px', color: colors.textDim, fontSize: '13px', textAlign: 'center', fontStyle: 'italic' }}>
                         By {stopwatchResults.breakEvenTime}, you're paid up. The red slice? Pure volunteer work for shareholders.
                       </p>
+
+                      {/* Save/Share Your Results */}
+                      <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => copyResults(
+                            `Profit Stopwatch Report — Solidarity Net\n\nBy ${stopwatchResults.breakEvenTime}, I've earned my pay. After that, I'm working for free.\n\nStolenTime: ${stopwatchResults.stolenHours} hours/day\nProfit I generate: $${stopwatchResults.profitPerHour}/hour (${stopwatchResults.profitMargin}% margin)\n\nEvery day, ${stopwatchResults.stolenHours} hours of my labor go straight to shareholders.`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#FFD700',
+                            color: '#FFD700',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Copy My Numbers
+                        </button>
+                        <button
+                          onClick={() => emailResults(
+                            'My Profit Stopwatch Report',
+                            `Profit Stopwatch Report — Solidarity Net\n\nBy ${stopwatchResults.breakEvenTime}, I've earned my pay. After that, I work for free.\n\nStolenTime: ${stopwatchResults.stolenHours} hours/day of unpaid labor\nProfit I generate: $${stopwatchResults.profitPerHour}/hour (${stopwatchResults.profitMargin}% industry margin)\n\nGenerated at: Solidarity Net`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#2196F3',
+                            color: '#2196F3',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Email Me This
+                        </button>
+                      </div>
                     </div>
                   )}
                 </section>
@@ -4391,14 +5040,14 @@
                 {/* ==================== THE CALENDAR OF SERVITUDE ==================== */}
                 <section style={{ marginTop: '60px' }}>
                   <h2 style={styles.sectionHeader}>The Calendar of Servitude</h2>
-                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '14px', lineHeight: '1.7' }}>
                     How many days of the month do you work just to pay rent? See when you start earning for yourself.
                   </p>
 
                   <form onSubmit={handleCalendarCalculate} style={{ marginBottom: '30px' }}>
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                       <div>
-                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '12px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                           Monthly Rent
                         </label>
                         <input
@@ -4411,7 +5060,7 @@
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '11px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <label style={{ display: 'block', color: colors.textMuted, fontSize: '12px', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                           Monthly Income
                         </label>
                         <input
@@ -4502,7 +5151,7 @@
                       {/* Stats */}
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
                         <div style={{ ...styles.card, borderLeft: `3px solid ${colors.primary}`, padding: '20px' }}>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
                             Rent Burden
                           </div>
                           <div style={{ fontSize: '36px', fontWeight: 700, color: colors.primary, marginBottom: '5px' }}>
@@ -4513,7 +5162,7 @@
                           </div>
                         </div>
                         <div style={{ ...styles.card, borderLeft: `3px solid ${colors.success}`, padding: '20px' }}>
-                          <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
                             Freedom Day
                           </div>
                           <div style={{ fontSize: '36px', fontWeight: 700, color: colors.success, marginBottom: '5px' }}>
@@ -4528,6 +5177,39 @@
                       <p style={{ marginTop: '20px', color: colors.textDim, fontSize: '13px', textAlign: 'center', fontStyle: 'italic' }}>
                         You don't start earning for yourself until the {calendarResults.freedomDay}th.
                       </p>
+
+                      {/* Save/Share Your Results */}
+                      <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => copyResults(
+                            `Calendar of Servitude — Solidarity Net\n\nRent takes ${calendarResults.rentPercent}% of my income.\nI work ${calendarResults.rentDays} days just for my landlord.\nI don't start earning for myself until the ${calendarResults.freedomDay}th of every month.\nFree days: ${calendarResults.freeDays} out of 30.`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#FFD700',
+                            color: '#FFD700',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Copy My Numbers
+                        </button>
+                        <button
+                          onClick={() => emailResults(
+                            'My Calendar of Servitude',
+                            `Calendar of Servitude — Solidarity Net\n\nRent takes ${calendarResults.rentPercent}% of my income.\nI work ${calendarResults.rentDays} days every month just for my landlord.\nI don't start earning for myself until the ${calendarResults.freedomDay}th.\nFree days: only ${calendarResults.freeDays} out of 30.\n\nGenerated at: Solidarity Net`
+                          )}
+                          style={{
+                            ...styles.button('secondary'),
+                            flex: '1 1 auto',
+                            borderColor: '#2196F3',
+                            color: '#2196F3',
+                            fontSize: '13px'
+                          }}
+                        >
+                          Email Me This
+                        </button>
+                      </div>
                     </div>
                   )}
                 </section>
@@ -4552,7 +5234,7 @@
                     style={{
                       ...styles.button('secondary'),
                       padding: '8px 16px',
-                      fontSize: '10px',
+                      fontSize: '11px',
                       borderColor: colors.success,
                       color: colors.success
                     }}
@@ -4569,7 +5251,7 @@
                 {/* Corporate Conquest Map */}
                 <section style={{ marginBottom: '60px' }}>
                   <h2 style={styles.sectionHeader}>Corporate Conquest Map</h2>
-                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '13px' }}>
+                  <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '14px', lineHeight: '1.7' }}>
                     State-by-state corporate investor ownership of housing. Hover over states to see details in the info bar above the map. Red = High corporate ownership.
                   </p>
 
@@ -4787,7 +5469,7 @@
                           })}
                       </div>
 
-                      <div style={{ marginTop: '20px', fontSize: '10px', color: colors.textDimmest, textAlign: 'center' }}>
+                      <div style={{ marginTop: '20px', fontSize: '11px', color: colors.textDimmest, textAlign: 'center' }}>
                         Sources: CoreLogic, ATTOM Data, Redfin investor activity reports. "Corporate" includes institutional investors, REITs, and investment LLCs.
                       </div>
                     </div>
@@ -4813,13 +5495,13 @@
                         <div style={{ fontSize: '13px', color: colors.textMuted, marginBottom: '12px', fontWeight: 500 }}>{item.item}</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
                           <div>
-                            <div style={{ fontSize: '10px', color: colors.textDimmer }}>CURRENT</div>
+                            <div style={{ fontSize: '11px', color: colors.textDimmer }}>CURRENT</div>
                             <div style={{ fontSize: '20px', fontWeight: 700 }}>
                               ${item.current < 10 ? item.current.toFixed(2) : item.current}
                             </div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '10px', color: colors.textDimmer }}>COMMUNITY THRESHOLD</div>
+                            <div style={{ fontSize: '11px', color: colors.textDimmer }}>COMMUNITY THRESHOLD</div>
                             <div style={{ fontSize: '20px', fontWeight: 700, color: colors.primary }}>
                               ${item.resistance < 10 ? item.resistance.toFixed(2) : item.resistance}
                             </div>
@@ -4829,7 +5511,7 @@
                         <div style={{ height: '6px', backgroundColor: colors.border, borderRadius: '3px', marginBottom: '8px' }}>
                           <div style={{ height: '100%', width: `${item.atResistance}%`, backgroundColor: colors.primary, borderRadius: '3px', transition: 'width 0.3s' }} />
                         </div>
-                        <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '15px' }}>
+                        <div style={{ fontSize: '11px', color: colors.textDimmer, marginBottom: '15px' }}>
                           {item.atResistance}% of {item.votes.toLocaleString()} people at resistance
                         </div>
 
@@ -4882,7 +5564,7 @@
                     style={{
                       ...styles.button('secondary'),
                       padding: '8px 16px',
-                      fontSize: '10px',
+                      fontSize: '11px',
                       borderColor: colors.success,
                       color: colors.success
                     }}
@@ -4978,7 +5660,7 @@
 
                       {/* Trend */}
                       <div>
-                        <div style={{ fontSize: '10px', color: colors.textDimmer, textTransform: 'uppercase', marginBottom: '15px' }}>
+                        <div style={{ fontSize: '11px', color: colors.textDimmer, textTransform: 'uppercase', marginBottom: '15px' }}>
                           {textConfig.sentiment_trend}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'flex-end', height: '120px', gap: '15px' }}>
@@ -5053,17 +5735,17 @@
                             <div style={{ display: 'flex', gap: '25px', marginBottom: '15px' }}>
                               <div>
                                 <div style={{ fontSize: '28px', fontWeight: 700 }}>{building.members}</div>
-                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>MEMBERS</div>
+                                <div style={{ fontSize: '11px', color: colors.textDimmer }}>MEMBERS</div>
                               </div>
                               <div>
                                 <div style={{ fontSize: '28px', fontWeight: 700, color: colors.textDim }}>{building.units}</div>
-                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>UNITS</div>
+                                <div style={{ fontSize: '11px', color: colors.textDimmer }}>UNITS</div>
                               </div>
                               <div>
                                 <div style={{ fontSize: '28px', fontWeight: 700, color: orgPct > 30 ? colors.success : colors.primary }}>
                                   {orgPct}%
                                 </div>
-                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>ORGANIZED</div>
+                                <div style={{ fontSize: '11px', color: colors.textDimmer }}>ORGANIZED</div>
                               </div>
                             </div>
 
@@ -5153,7 +5835,7 @@
                             Post
                           </button>
                         </div>
-                        <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '10px', marginBottom: 0 }}>
+                        <p style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '10px', marginBottom: 0 }}>
                           Messages are anonymous. Tied to browser fingerprint, not identity.
                         </p>
                       </div>
@@ -5165,9 +5847,32 @@
                 {activeSubTab === 'worker' && (
                   <section>
                     <h2 style={styles.sectionHeader}>Worker Collectives</h2>
-                    <p style={{ color: colors.textDim, marginBottom: '20px' }}>
-                      Anonymous coordination for workplace issues. Find your coworkers.
+                    <p style={{ color: colors.textDim, marginBottom: '20px', fontSize: '14px', lineHeight: 1.7 }}>
+                      Find coworkers dealing with the same problems. Browse freely — no sign-up required.
                     </p>
+
+                    {/* Privacy Promise Banner */}
+                    <div style={{
+                      padding: '16px 20px',
+                      marginBottom: '24px',
+                      backgroundColor: 'rgba(76, 175, 80, 0.06)',
+                      border: '1px solid rgba(76, 175, 80, 0.2)',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px'
+                    }}>
+                      <span style={{ fontSize: '20px', flexShrink: 0 }}>🔒</span>
+                      <div>
+                        <div style={{ fontWeight: 600, color: colors.success, fontSize: '14px', marginBottom: '4px' }}>
+                          Your privacy is protected
+                        </div>
+                        <p style={{ margin: 0, fontSize: '13px', color: colors.textMuted, lineHeight: 1.6 }}>
+                          No real names. No email required. No tracking. Browse everything anonymously.
+                          You only share what you choose to, when you're ready.
+                        </p>
+                      </div>
+                    </div>
 
                     <div style={styles.grid}>
                       {workerCollectives.map(collective => {
@@ -5188,7 +5893,7 @@
                             <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '12px' }}>{collective.company}</div>
 
                             <div style={{ marginBottom: '15px' }}>
-                              <div style={{ fontSize: '10px', color: colors.textDimmer, marginBottom: '6px' }}>ORGANIZING AROUND:</div>
+                              <div style={{ fontSize: '12px', color: colors.textDimmer, marginBottom: '6px', fontWeight: 500 }}>Issues:</div>
                               <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                                 {collective.issues.map(issue => (
                                   <span key={issue} style={{ ...styles.badge(colors.primary), marginRight: 0 }}>{issue}</span>
@@ -5218,6 +5923,7 @@
                                   textDecoration: 'none',
                                   fontSize: '12px',
                                   fontWeight: 500,
+                                  borderRadius: '6px'
                                 }}
                               >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -5227,16 +5933,22 @@
                               </a>
                             )}
 
+                            {/* Trust ladder: browse → join → discuss */}
                             {!joined ? (
-                              <button onClick={() => handleJoinCollective(collective)} style={{ ...styles.button('secondary'), width: '100%' }}>
-                                Join Collective →
-                              </button>
+                              <div>
+                                <button onClick={() => handleJoinCollective(collective)} style={{ ...styles.button('secondary'), width: '100%', marginBottom: '8px' }}>
+                                  Join anonymously
+                                </button>
+                                <div style={{ fontSize: '11px', color: colors.textDimmer, textAlign: 'center' }}>
+                                  No personal info needed
+                                </div>
+                              </div>
                             ) : (
                               <button
                                 onClick={() => setSelectedCollective(collective.id === selectedCollective ? null : collective.id)}
                                 style={{ ...styles.button('primary'), width: '100%' }}
                               >
-                                {selectedCollective === collective.id ? 'Hide Discussion' : 'Open Discussion →'}
+                                {selectedCollective === collective.id ? 'Hide Discussion' : 'Open Discussion'}
                               </button>
                             )}
                           </div>
@@ -5318,8 +6030,11 @@
 
                     {/* New Collective */}
                     <div style={{ ...styles.card, marginTop: '30px', textAlign: 'center' }}>
-                      <p style={{ color: colors.textMuted, marginBottom: '15px' }}>Don't see your workplace?</p>
-                      <button onClick={() => setShowNewCollectiveForm(true)} style={styles.button('secondary')}>
+                      <p style={{ color: colors.textMuted, marginBottom: '8px', fontSize: '14px' }}>Don't see your workplace?</p>
+                      <p style={{ color: colors.textDimmer, marginBottom: '15px', fontSize: '12px' }}>
+                        Start one anonymously. Only share what you're comfortable with.
+                      </p>
+                      <button onClick={() => setShowNewCollectiveForm(true)} style={{ ...styles.button('secondary'), borderColor: colors.success, color: colors.success }}>
                         + Start a New Collective
                       </button>
                     </div>
@@ -5328,23 +6043,26 @@
                     {showNewCollectiveForm && (
                       <div style={styles.modal} className="modal-enter">
                         <div style={{ ...styles.card, maxWidth: '500px', width: '100%' }}>
-                          <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Start a Worker Collective</h3>
+                          <h3 style={{ marginTop: 0, marginBottom: '8px' }}>Start a Worker Collective</h3>
+                          <p style={{ color: colors.textDimmer, fontSize: '13px', marginBottom: '20px' }}>
+                            Everything here is anonymous. Use a nickname for the company if you want.
+                          </p>
 
                           <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
-                              Company Name
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px' }}>
+                              Workplace name or nickname
                             </label>
                             <input
                               type="text"
                               value={newCollective.company}
                               onChange={(e) => setNewCollective({ ...newCollective, company: e.target.value })}
-                              placeholder="Where do you work?"
+                              placeholder="e.g. 'Downtown Target' or 'The Warehouse'"
                               style={styles.input}
                             />
                           </div>
 
                           <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                               Telegram Channel <span style={{ color: colors.textDimmer, fontWeight: 400 }}>(optional)</span>
                             </label>
                             <input
@@ -5354,13 +6072,13 @@
                               placeholder="https://t.me/your_channel"
                               style={styles.input}
                             />
-                            <div style={{ fontSize: '10px', color: colors.textDimmer, marginTop: '4px' }}>
+                            <div style={{ fontSize: '11px', color: colors.textDimmer, marginTop: '4px' }}>
                               Link a Telegram channel for organizing outside this site
                             </div>
                           </div>
 
                           <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                               Industry
                             </label>
                             <select
@@ -5376,7 +6094,7 @@
                           </div>
 
                           <div style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', marginBottom: '10px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                            <label style={{ display: 'block', marginBottom: '10px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                               Issues to organize around
                             </label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -5439,11 +6157,11 @@
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                               <div>
                                 <div style={{ fontSize: '28px', fontWeight: 700 }}>{group.members}</div>
-                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>MEMBERS</div>
+                                <div style={{ fontSize: '11px', color: colors.textDimmer }}>MEMBERS</div>
                               </div>
                               <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '28px', fontWeight: 700, color: colors.success }}>{group.savings}</div>
-                                <div style={{ fontSize: '10px', color: colors.textDimmer }}>AVG SAVINGS</div>
+                                <div style={{ fontSize: '11px', color: colors.textDimmer }}>AVG SAVINGS</div>
                               </div>
                             </div>
 
@@ -5544,7 +6262,7 @@
                           <h3 style={{ marginTop: 0, marginBottom: '20px' }}>Link Change.org Petition</h3>
 
                           <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                               Change.org URL *
                             </label>
                             <input
@@ -5554,13 +6272,13 @@
                               placeholder="https://www.change.org/p/your-petition"
                               style={styles.input}
                             />
-                            <p style={{ fontSize: '10px', color: colors.textDimmest, margin: '5px 0 0 0' }}>
+                            <p style={{ fontSize: '11px', color: colors.textDimmest, margin: '5px 0 0 0' }}>
                               Paste the full URL of your Change.org petition. Signature counts will be pulled automatically.
                             </p>
                           </div>
 
                           <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                               Title *
                             </label>
                             <input
@@ -5573,7 +6291,7 @@
                           </div>
 
                           <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                               Area (ZIP or Neighborhood) *
                             </label>
                             <input
@@ -5586,7 +6304,7 @@
                           </div>
 
                           <div style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                               Description
                             </label>
                             <textarea
@@ -5613,7 +6331,7 @@
                               Link Petition
                             </button>
                           </div>
-                          <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', marginBottom: 0 }}>
+                          <p style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '15px', marginBottom: 0 }}>
                             Signatures and goals are pulled directly from Change.org. Click "Refresh" on any petition to update.
                           </p>
                         </div>
@@ -5655,7 +6373,7 @@
 
                   <div style={styles.card}>
                     <div style={{ marginBottom: '20px' }}>
-                      <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                      <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                         {reportType === 'landlord' ? textConfig.report_name_landlord : textConfig.report_name_employer}
                       </label>
                       <input
@@ -5669,7 +6387,7 @@
 
                     {reportType === 'landlord' && (
                       <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                           {textConfig.report_address_label}
                         </label>
                         <input
@@ -5683,7 +6401,7 @@
                     )}
 
                     <div style={{ marginBottom: '20px' }}>
-                      <label style={{ display: 'block', marginBottom: '10px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                      <label style={{ display: 'block', marginBottom: '10px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                         {textConfig.report_issues_label}
                       </label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -5714,7 +6432,7 @@
                     </div>
 
                     <div style={{ marginBottom: '20px' }}>
-                      <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '11px', textTransform: 'uppercase' }}>
+                      <label style={{ display: 'block', marginBottom: '5px', color: colors.textMuted, fontSize: '12px', textTransform: 'uppercase' }}>
                         {textConfig.report_desc_label}
                       </label>
                       <textarea
@@ -5742,7 +6460,7 @@
                       {textConfig.report_submit_btn}
                     </button>
 
-                    <p style={{ fontSize: '10px', color: colors.textDimmest, marginTop: '15px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '15px', textAlign: 'center' }}>
                       {textConfig.report_footer}
                     </p>
                   </div>
@@ -5801,7 +6519,7 @@
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '36px', fontWeight: 700, color: colors.primary }}>{report.reports}</div>
-                        <div style={{ fontSize: '10px', color: colors.textDimmer }}>{textConfig.reports_count_label}</div>
+                        <div style={{ fontSize: '11px', color: colors.textDimmer }}>{textConfig.reports_count_label}</div>
                         <div style={{ fontSize: '11px', color: colors.textDimmest, marginTop: '5px' }}>{textConfig.reports_last} {report.lastReport}</div>
                       </div>
                     </div>
@@ -5960,7 +6678,7 @@
                             <div key={key} style={{ marginBottom: '12px' }}>
                               <label style={{
                                 display: 'block',
-                                fontSize: '10px',
+                                fontSize: '11px',
                                 color: colors.textDim,
                                 marginBottom: '4px',
                                 textTransform: 'uppercase',
@@ -6022,7 +6740,7 @@
                           }}>
                             {key.replace(/([A-Z])/g, ' $1').trim()}
                           </div>
-                          <div style={{ fontSize: '10px', color: colors.textDim }}>
+                          <div style={{ fontSize: '11px', color: colors.textDim }}>
                             {value}
                           </div>
                         </div>
@@ -6106,7 +6824,7 @@
                       ...styles.button('secondary'),
                       flex: 1,
                       padding: '10px',
-                      fontSize: '10px',
+                      fontSize: '11px',
                     }}
                   >
                     Export
@@ -6115,7 +6833,7 @@
                     ...styles.button('secondary'),
                     flex: 1,
                     padding: '10px',
-                    fontSize: '10px',
+                    fontSize: '11px',
                     textAlign: 'center',
                     cursor: 'pointer',
                   }}>
@@ -6133,7 +6851,7 @@
                   style={{
                     ...styles.button('primary'),
                     padding: '10px',
-                    fontSize: '10px',
+                    fontSize: '11px',
                     backgroundColor: colors.warning,
                     color: '#000',
                   }}
@@ -6142,6 +6860,9 @@
                 </button>
               </div>
             </div>
+          )}
+
+          </>
           )}
 
           {/* Footer */}
