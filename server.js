@@ -35,6 +35,15 @@ function timeAgo(dateStr) {
   return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
 }
 
+// Helper: derive state from ZIP code using local_data table
+// area column stores "City, ST" format — extract the 2-letter state code
+function getStateFromZip(zipCode) {
+  const row = db.prepare('SELECT area FROM local_data WHERE zip_code = ?').get(zipCode);
+  if (!row || !row.area) return null;
+  const match = row.area.match(/,\s*([A-Z]{2})$/);
+  return match ? match[1] : null;
+}
+
 // ============================================
 // CHANGE.ORG SCRAPING
 // ============================================
@@ -760,6 +769,10 @@ app.post('/api/impact-calculator', async (req, res) => {
     ? (cumulativeEconomicImpact / currentSalary).toFixed(1)
     : '0.0';
 
+  // Sum all fair values for Value Recognition Ceremony
+  const totalValueGenerated = yearlyBreakdown.reduce((sum, yr) => sum + yr.fair_value, 0);
+  const totalWagesReceived = yearlyBreakdown.reduce((sum, yr) => sum + yr.income, 0);
+
   // Get first and last year data for summary statistics
   const firstYearData = mergedEconomicData[startYear] || YEARLY_ECONOMIC_DATA[1975];
   const lastYearData = mergedEconomicData[currentYear] || YEARLY_ECONOMIC_DATA[2024];
@@ -795,6 +808,8 @@ app.post('/api/impact-calculator', async (req, res) => {
       unrealized_productivity_gains: Math.round(cumulativeProductivityGap),
       excess_rent_burden: Math.round(cumulativeRentBurden),
       years_of_work_equivalent: parseFloat(yearsOfWorkEquivalent),
+      total_value_generated: totalValueGenerated,
+      total_wages_received: totalWagesReceived,
     },
     metrics: {
       productivity: {
@@ -827,6 +842,19 @@ app.post('/api/impact-calculator', async (req, res) => {
       },
     },
     yearly_breakdown: yearlyBreakdown,
+    methodology: {
+      fair_value_formula: "Fair Value = Your Income x (Productivity Index / Wage Index)",
+      seniority_model: "2.5% growth per year for first 15 years, 1% after",
+      work_year: "2,080 hours (40 hours/week x 52 weeks)",
+      rent_burden: `Baseline rent burden: ${(firstYearData.baseline_rent_burden * 100).toFixed(0)}% in ${startYear}, ${(lastYearData.baseline_rent_burden * 100).toFixed(0)}% today`,
+      interpolation: "Linear interpolation ensures Year 1 = your starting salary and current year = your current salary",
+      sources: [
+        { name: "Economic Policy Institute", type: "Productivity-wage gap data (1979-2024)", url: "https://www.epi.org/productivity-pay-gap/" },
+        { name: "Bureau of Labor Statistics", type: `CPI inflation data (${cpiDataSource})`, url: "https://www.bls.gov/cpi/" },
+        { name: "Federal Reserve", type: "Economic indicators", url: "https://fred.stlouisfed.org/" },
+        { name: "Census Bureau", type: "Housing cost trends", url: "https://www.census.gov/topics/housing.html" }
+      ]
+    },
     data_sources: {
       cpi_inflation: cpiDataSource,
       productivity_wage: 'LOCAL',
@@ -844,34 +872,7 @@ app.post('/api/impact-calculator', async (req, res) => {
 // WORTH GAP ANALYZER (EMPOWERMENT-FOCUSED)
 // ============================================
 
-// MSA and State wage data (mirrored from index.html for server-side calculations)
-const MSA_WAGE_DATA = {
-  'New York-Newark-Jersey City, NY-NJ-PA': 26.48,
-  'Los Angeles-Long Beach-Anaheim, CA': 24.12,
-  'Chicago-Naperville-Elgin, IL-IN-WI': 23.67,
-  'Dallas-Fort Worth-Arlington, TX': 22.34,
-  'Houston-The Woodlands-Sugar Land, TX': 22.89,
-  'Washington-Arlington-Alexandria, DC-VA-MD-WV': 28.45,
-  'San Francisco-Oakland-Berkeley, CA': 31.45,
-  'Boston-Cambridge-Newton, MA-NH': 27.89,
-  'Seattle-Tacoma-Bellevue, WA': 28.67,
-  'San Jose-Sunnyvale-Santa Clara, CA': 35.67,
-  'default': 22.45
-};
-
-const STATE_WAGE_DATA = {
-  'AL': 20.23, 'AK': 26.41, 'AZ': 23.08, 'AR': 19.66, 'CA': 27.88,
-  'CO': 27.12, 'CT': 27.45, 'DE': 25.38, 'FL': 22.12, 'GA': 22.18,
-  'HI': 24.89, 'ID': 21.58, 'IL': 25.12, 'IN': 22.06, 'IA': 21.97,
-  'KS': 21.68, 'KY': 21.32, 'LA': 20.34, 'ME': 22.64, 'MD': 27.02,
-  'MA': 29.32, 'MI': 23.54, 'MN': 25.98, 'MS': 19.32, 'MO': 22.21,
-  'MT': 21.48, 'NE': 22.11, 'NV': 22.34, 'NH': 24.85, 'NJ': 27.36,
-  'NM': 21.12, 'NY': 27.58, 'NC': 22.06, 'ND': 24.12, 'OH': 22.76,
-  'OK': 21.04, 'OR': 25.34, 'PA': 24.02, 'RI': 25.01, 'SC': 21.24,
-  'SD': 20.87, 'TN': 21.45, 'TX': 22.67, 'UT': 23.12, 'VT': 22.98,
-  'VA': 25.67, 'WA': 27.89, 'WV': 19.87, 'WI': 22.89, 'WY': 22.34,
-  'default': 22.45
-};
+const { MSA_WAGE_DATA, STATE_WAGE_DATA } = require('./services/wageData');
 
 // POST /api/worth-gap-analyzer - Calculate worth gap with empowerment-focused response
 app.post('/api/worth-gap-analyzer', async (req, res) => {
@@ -892,11 +893,14 @@ app.post('/api/worth-gap-analyzer', async (req, res) => {
 
   const currentYear = new Date().getFullYear();
   const startYear = parseInt(start_year) || currentYear - 5;
-  const yearsExp = parseInt(years_experience) || 0;
+  // Derive years_experience from start_year if not provided
+  const yearsExp = parseInt(years_experience) || (currentYear - startYear);
+  // Derive state from ZIP if not provided
+  const derivedState = state || getStateFromZip(zip_code);
 
   // Calculate market median
   const marketData = calculationService.calculateMarketMedian(
-    { zipCode: zip_code, state, msa, yearsExperience: yearsExp },
+    { zipCode: zip_code, state: derivedState, msa, yearsExperience: yearsExp },
     MSA_WAGE_DATA,
     STATE_WAGE_DATA
   );
@@ -1491,9 +1495,18 @@ app.post('/api/reports', (req, res) => {
 });
 
 // ============================================
+// RUPTURA ECONOMIC EXPERIENCE (econ.ruptura.co)
+// ============================================
+
+app.get('/econ', (req, res) => {
+  res.sendFile(path.join(__dirname, 'econ.html'));
+});
+
+// ============================================
 // START SERVER
 // ============================================
 
 app.listen(PORT, () => {
   console.log(`SOLIDARITY_NET backend running on port ${PORT}`);
+  console.log(`Ruptura Economic Experience available at http://localhost:${PORT}/econ`);
 });
