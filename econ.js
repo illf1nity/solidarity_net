@@ -14,15 +14,12 @@
   let content = null;       // loaded from content.json
   let resultsData = null;   // aggregated API responses
   let formValues = {};      // raw form values at submit time
-  let frequencyIndex = 0;   // 0=Hourly, 1=Monthly, 2=Annual
   let html2canvasLoaded = false;
 
   var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Progressive commitment ladder state
   var commitmentState = { download: false, share: false, negotiate: false };
-
-  const FREQUENCY_MAP = ['hourly', 'monthly', 'annual'];
 
   // SVG icon templates for cost translator
   var COST_ICONS = {
@@ -115,34 +112,10 @@
       if (errorEl) errorEl.textContent = fields[key].error;
     });
 
-    // Pay frequency toggle buttons
-    const toggle = document.querySelector('.frequency-toggle');
-    const options = fields.frequency.options;
-    options.forEach((label, i) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'frequency-option' + (i === 0 ? ' active' : '');
-      btn.setAttribute('role', 'radio');
-      btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
-      btn.textContent = label;
-      btn.addEventListener('click', () => setFrequency(i));
-      toggle.appendChild(btn);
-    });
-
     document.getElementById('submit-btn').textContent = content.form.submit_text;
 
     var privacyText = document.getElementById('privacy-note-text');
     if (privacyText) privacyText.textContent = content.form.privacy_note;
-  }
-
-  function setFrequency(index) {
-    frequencyIndex = index;
-    const slider = document.querySelector('.frequency-slider');
-    slider.setAttribute('data-pos', index);
-    document.querySelectorAll('.frequency-option').forEach((btn, i) => {
-      btn.classList.toggle('active', i === index);
-      btn.setAttribute('aria-checked', i === index ? 'true' : 'false');
-    });
   }
 
   // ------------------------------------
@@ -165,6 +138,9 @@
     document.getElementById('share-btn-text').textContent = content.results.share_text;
     document.getElementById('breakdown-trigger-text').textContent = content.results.breakdown_trigger;
     document.getElementById('methodology-trigger-text').textContent = content.results.methodology_trigger;
+    // Populate CTA button text from content.json
+    var collectBtnText = document.getElementById('collect-btn-text');
+    if (collectBtnText) collectBtnText.textContent = content.phase3d.negotiation.button;
   }
 
   // ------------------------------------
@@ -386,6 +362,9 @@
 
     document.getElementById('negotiation-btn').addEventListener('click', handleNegotiation);
 
+    // Primary CTA button (above the fold, after results)
+    document.getElementById('collect-btn').addEventListener('click', handleNegotiation);
+
     document.getElementById('methodology-trigger').addEventListener('click', function() {
       var methodContent = document.getElementById('methodology-content');
       var expanded = this.classList.toggle('expanded');
@@ -440,6 +419,7 @@
       current_wage: v => stripCurrency(v) > 0,
       start_salary: v => stripCurrency(v) > 0,
       start_year: v => { const y = parseInt(v); return y >= 1975 && y <= currentYear; },
+      years_in_role: v => { const n = parseInt(v); return n >= 0 && n <= 50; },
       current_rent: () => true,
     };
 
@@ -470,22 +450,15 @@
     formValues = {
       zip_code: document.getElementById('zip_code').value.trim(),
       current_wage: stripCurrency(document.getElementById('current_wage').value),
-      frequency: FREQUENCY_MAP[frequencyIndex],
       start_salary: stripCurrency(document.getElementById('start_salary').value),
       start_year: parseInt(document.getElementById('start_year').value.trim()),
+      years_in_role: parseInt(document.getElementById('years_in_role').value.trim()),
       current_rent: stripCurrency(document.getElementById('current_rent').value),
     };
     formValues.years_experience = currentYear - formValues.start_year;
 
-    let annualSalary = formValues.current_wage;
-    let annualStartSalary = formValues.start_salary;
-    if (formValues.frequency === 'hourly') {
-      annualSalary = formValues.current_wage * 2080;
-      annualStartSalary = formValues.start_salary * 2080;
-    } else if (formValues.frequency === 'monthly') {
-      annualSalary = formValues.current_wage * 12;
-      annualStartSalary = formValues.start_salary * 12;
-    }
+    const annualSalary = formValues.current_wage;
+    const annualStartSalary = formValues.start_salary;
 
     btn.textContent = content.form.calculating_text;
     btn.classList.add('calculating');
@@ -511,11 +484,12 @@
         fetchJSON('/api/worth-gap-analyzer', {
           method: 'POST',
           body: {
-            current_wage: formValues.current_wage,
-            frequency: formValues.frequency,
+            current_wage: annualSalary,
+            frequency: 'annual',
             zip_code: formValues.zip_code,
             start_year: formValues.start_year,
             years_experience: formValues.years_experience,
+            years_experience_role: formValues.years_in_role,
           }
         }),
         fetchJSON('/api/local-data/' + encodeURIComponent(formValues.zip_code)),
@@ -546,7 +520,21 @@
         document.getElementById(id).hidden = false;
       });
 
+      // Reset reveal states so staggered animations replay on resubmission
+      ['results-card', 'value-generated', 'wages-received', 'hero-stat',
+       'hero-context', 'secondary-stat', 'survival-metrics', 'primary-cta'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.remove('revealed');
+      });
+
+      // Reset script content for fresh negotiation on resubmission
+      var scriptInner = document.getElementById('script-inner');
+      if (scriptInner) scriptInner.innerHTML = '';
+      var scriptContent = document.getElementById('script-content');
+      if (scriptContent) scriptContent.classList.remove('expanded');
+
       populateResults();
+      populateSurvivalMetrics();
       populatePhase3b();
       populatePhase3c();
       populateDownloadCardData();
@@ -582,9 +570,19 @@
         document.getElementById('hero-context').classList.add('revealed');
         document.getElementById('secondary-stat').classList.add('revealed');
       }, 1900);
+      // Survival metrics reveal
+      setTimeout(function() {
+        var sm = document.getElementById('survival-metrics');
+        if (sm && !sm.hidden) sm.classList.add('revealed');
+      }, 2300);
+      // Primary CTA reveal
+      setTimeout(function() {
+        var cta = document.getElementById('primary-cta');
+        if (cta) { cta.hidden = false; cta.classList.add('revealed'); }
+      }, 2700);
 
       // Initialize sticky bar after reveal
-      setTimeout(function() { initStickyBar(); }, 2200);
+      setTimeout(function() { initStickyBar(); }, 3100);
 
     } catch (err) {
       console.error('API error:', err);
@@ -604,6 +602,60 @@
     document.getElementById('error-state').hidden = true;
     document.getElementById('worker-form').classList.remove('faded');
     document.getElementById('submit-btn').disabled = false;
+  }
+
+  // ------------------------------------
+  // SURVIVAL METRICS — visceral gap translation
+  // ------------------------------------
+  function calculateSurvivalMetrics(gapAnnual, annualSalary, monthlyRent, localData) {
+    var dailyWage = annualSalary / 260; // ~260 working days per year
+    var daysWorkedFree = dailyWage > 0 ? Math.round(gapAnnual / dailyWage) : 0;
+
+    // Use user's rent, or local median rent from API
+    var rent = monthlyRent > 0 ? monthlyRent : (localData && localData.rent ? localData.rent : 0);
+    var rentMonths = rent > 0 ? parseFloat((gapAnnual / rent).toFixed(1)) : 0;
+
+    return { daysWorkedFree: daysWorkedFree, rentMonths: rentMonths };
+  }
+
+  function populateSurvivalMetrics() {
+    var impact = resultsData.impact;
+    var worth = resultsData.worth;
+    var local = resultsData.local;
+    var gapAnnual = impact.summary.cumulative_economic_impact;
+    var yearsWorked = impact.inputs.years_worked || 1;
+
+    // Use annual gap (per year), not cumulative, for visceral per-year framing
+    var annualGap = worth.worthGap && worth.worthGap.annual > 0
+      ? worth.worthGap.annual
+      : gapAnnual / yearsWorked;
+
+    if (annualGap <= 0) return;
+
+    var metrics = calculateSurvivalMetrics(
+      annualGap,
+      resultsData.annualSalary,
+      resultsData.formValues.current_rent,
+      local
+    );
+
+    var container = document.getElementById('survival-metrics');
+    var daysEl = document.getElementById('days-free-value');
+    var rentEl = document.getElementById('rent-equiv-value');
+
+    if (metrics.daysWorkedFree > 0) {
+      daysEl.textContent = metrics.daysWorkedFree;
+    } else {
+      daysEl.textContent = '--';
+    }
+
+    if (metrics.rentMonths > 0) {
+      rentEl.textContent = metrics.rentMonths;
+    } else {
+      rentEl.textContent = '--';
+    }
+
+    container.hidden = false;
   }
 
   // ------------------------------------
@@ -1203,26 +1255,36 @@
   // ------------------------------------
   async function handleNegotiation() {
     const btn = document.getElementById('negotiation-btn');
+    const collectBtn = document.getElementById('collect-btn');
     const scriptContent = document.getElementById('script-content');
     const scriptInner = document.getElementById('script-inner');
 
     if (scriptInner.children.length > 0) {
-      scriptContent.classList.toggle('expanded');
+      if (!scriptContent.classList.contains('expanded')) {
+        scriptContent.classList.add('expanded');
+      }
+      scriptContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
 
     btn.disabled = true;
+    if (collectBtn) collectBtn.disabled = true;
+    var stickyBtn = document.getElementById('sticky-script-btn');
+    if (stickyBtn) stickyBtn.disabled = true;
     const btnText = document.getElementById('negotiation-btn-text');
-    const originalText = btnText.textContent;
-    btnText.textContent = content.form.calculating_text;
+    const collectBtnText = document.getElementById('collect-btn-text');
+    const originalText = btnText ? btnText.textContent : '';
+    const originalCollectText = collectBtnText ? collectBtnText.textContent : '';
+    if (btnText) btnText.textContent = content.form.calculating_text;
+    if (collectBtnText) collectBtnText.textContent = content.form.calculating_text;
 
     try {
       const worth = resultsData.worth;
       const data = await fetchJSON('/api/negotiation-script', {
         method: 'POST',
         body: {
-          current_salary: resultsData.formValues.current_wage,
-          frequency: resultsData.formValues.frequency,
+          current_salary: resultsData.annualSalary,
+          frequency: 'annual',
           market_median: worth.marketData ? worth.marketData.adjustedMedian * 2080 : null,
           years_at_company: resultsData.formValues.years_experience,
         }
@@ -1248,13 +1310,17 @@
 
       addSaveScriptButton(scriptInner, sections);
       scriptContent.classList.add('expanded');
+      scriptContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
       markStepComplete('negotiate');
     } catch (err) {
       console.error('Negotiation script error:', err);
     }
 
-    btnText.textContent = originalText;
+    if (btnText) btnText.textContent = originalText;
     btn.disabled = false;
+    if (collectBtnText) collectBtnText.textContent = originalCollectText;
+    if (collectBtn) collectBtn.disabled = false;
+    if (stickyBtn) stickyBtn.disabled = false;
   }
 
   // ------------------------------------

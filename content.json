@@ -28,16 +28,12 @@
         "error": "Please enter a valid 5-digit ZIP code."
       },
       "current_wage": {
-        "label": "Current Salary / Wage",
+        "label": "Current Annual Salary",
         "placeholder": "e.g. 45,000",
-        "error": "Please enter your current wage so we can calculate your value."
-      },
-      "frequency": {
-        "label": "Pay Frequency",
-        "options": ["Hourly", "Monthly", "Annual"]
+        "error": "Please enter your annual salary so we can calculate your value."
       },
       "start_salary": {
-        "label": "Starting Salary",
+        "label": "Starting Annual Salary",
         "placeholder": "e.g. 30,000",
         "error": "Please enter your starting salary."
       },
@@ -45,6 +41,11 @@
         "label": "Year You Started Working",
         "placeholder": "e.g. 2010",
         "error": "Please enter a valid year between 1975 and the current year."
+      },
+      "years_in_role": {
+        "label": "Years Doing This Kind of Work",
+        "placeholder": "e.g. 5",
+        "error": "Please enter a number between 0 and 50."
       },
       "current_rent": {
         "label": "Monthly Rent (optional)",
@@ -195,7 +196,7 @@
       "description": "Your story might be the push someone else needs."
     },
     "negotiation": {
-      "button": "Get Your Negotiation Script",
+      "button": "GET WHAT YOU'RE OWED",
       "description": "A private, personalized script for your next conversation about pay.",
       "section_labels": {
         "opening": "Opening Statement",

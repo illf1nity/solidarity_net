@@ -571,6 +571,123 @@ body {
   margin-top: var(--space-4);
 }
 
+/* ============================================
+   SURVIVAL METRICS — Visceral gap translation
+   ============================================ */
+.survival-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.survival-metrics.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.survival-metric {
+  flex: 1;
+  text-align: center;
+}
+
+.survival-value {
+  font-family: var(--font-data);
+  font-weight: 700;
+  font-size: 28px;
+  font-feature-settings: 'tnum';
+  color: var(--gap-red-card);
+  line-height: 1.2;
+}
+
+.survival-label {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.survival-divider {
+  width: 1px;
+  height: 48px;
+  background: var(--border-subtle);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   PRIMARY CTA — "Collect Your Unpaid Wages"
+   ============================================ */
+.primary-cta {
+  max-width: 400px;
+  width: 100%;
+  margin-top: var(--space-4);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.primary-cta.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.btn-cta-collect {
+  width: 100%;
+  height: 60px;
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  transition: background-color 200ms ease, transform 100ms ease, box-shadow 200ms ease;
+  box-shadow: 0 4px 24px rgba(212, 160, 84, 0.25);
+}
+
+.btn-cta-collect:hover {
+  background: var(--accent-gold-light);
+  box-shadow: 0 6px 32px rgba(212, 160, 84, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-cta-collect:active {
+  background: var(--accent-gold-hover);
+  transform: scale(0.98) translateY(0);
+  box-shadow: 0 2px 16px rgba(212, 160, 84, 0.2);
+}
+
+.btn-cta-collect:disabled {
+  background: var(--border-subtle);
+  color: var(--text-tertiary-accessible);
+  cursor: wait;
+  box-shadow: none;
+  transform: none;
+}
+
+.cta-subtext {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-tertiary-accessible);
+  margin-top: var(--space-1);
+}
+
 /* Card action buttons */
 .card-actions {
   display: flex;
@@ -1983,6 +2100,19 @@ body {
     padding-left: var(--space-2);
   }
 
+  .survival-value {
+    font-size: 32px;
+  }
+
+  .survival-label {
+    font-size: 14px;
+  }
+
+  .btn-cta-collect {
+    font-size: 20px;
+    height: 64px;
+  }
+
   .urgency-callouts {
     gap: var(--space-2);
   }
@@ -2044,6 +2174,16 @@ body {
 
   .reframe-statement {
     font-size: 36px;
+  }
+
+  .survival-value {
+    font-size: 36px;
+  }
+
+  .btn-cta-collect {
+    font-size: 22px;
+    height: 68px;
+    border-radius: 14px;
   }
 
   .commitment-step {

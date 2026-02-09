@@ -40,18 +40,6 @@
         <span class="field-error" data-error="current_wage"></span>
       </div>
 
-      <!-- Pay Frequency Toggle -->
-      <div class="form-field" data-field="frequency">
-        <label class="form-label">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          <span data-label="frequency"></span>
-        </label>
-        <div class="frequency-toggle" role="radiogroup" aria-label="Pay frequency">
-          <div class="frequency-slider" data-pos="0"></div>
-          <!-- Buttons populated from content.json -->
-        </div>
-      </div>
-
       <!-- Starting Salary -->
       <div class="form-field" data-field="start_salary">
         <label class="form-label" for="start_salary">
@@ -70,6 +58,16 @@
         </label>
         <input class="form-input" type="text" id="start_year" name="start_year" inputmode="numeric" maxlength="4" autocomplete="off">
         <span class="field-error" data-error="start_year"></span>
+      </div>
+
+      <!-- Years Doing This Kind of Work -->
+      <div class="form-field" data-field="years_in_role">
+        <label class="form-label" for="years_in_role">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          <span data-label="years_in_role"></span>
+        </label>
+        <input class="form-input" type="text" id="years_in_role" name="years_in_role" inputmode="numeric" maxlength="2" autocomplete="off">
+        <span class="field-error" data-error="years_in_role"></span>
       </div>
 
       <!-- Monthly Rent -->
@@ -144,6 +142,20 @@
       <div class="card-divider"></div>
       <div class="secondary-stat" id="secondary-stat"></div>
       <p class="secondary-stat-context" id="secondary-stat-context"></p>
+
+      <!-- Survival Metrics: visceral translation of the gap -->
+      <div class="survival-metrics" id="survival-metrics" role="group" aria-label="Impact of your annual pay gap" hidden>
+        <div class="survival-metric">
+          <div class="survival-value" id="days-free-value"></div>
+          <div class="survival-label">days per year your employer keeps</div>
+        </div>
+        <div class="survival-divider"></div>
+        <div class="survival-metric">
+          <div class="survival-value" id="rent-equiv-value"></div>
+          <div class="survival-label">months of rent that could be yours</div>
+        </div>
+      </div>
+
       <span class="card-url" id="card-url"></span>
     </div>
 
@@ -176,6 +188,15 @@
       <div class="methodology-inner" id="methodology-inner">
         <!-- Populated by JS -->
       </div>
+    </div>
+
+    <!-- PRIMARY CTA — Immediately after results, before context -->
+    <div class="primary-cta" id="primary-cta" hidden>
+      <button class="btn-cta-collect" id="collect-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        <span id="collect-btn-text"></span>
+      </button>
+      <p class="cta-subtext" id="cta-subtext">Get a personalized negotiation script backed by your numbers.</p>
     </div>
   </section>
 
@@ -275,7 +296,7 @@
   <div id="sticky-bar" class="sticky-bar" hidden aria-label="Quick actions">
     <button class="sticky-bar-btn btn-secondary" id="sticky-share-btn">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-      Share
+      <span>Share</span>
     </button>
     <button class="sticky-bar-btn btn-primary" id="sticky-script-btn">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
