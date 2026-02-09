@@ -35,6 +35,15 @@ function timeAgo(dateStr) {
   return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
 }
 
+// Helper: derive state from ZIP code using local_data table
+// area column stores "City, ST" format — extract the 2-letter state code
+function getStateFromZip(zipCode) {
+  const row = db.prepare('SELECT area FROM local_data WHERE zip_code = ?').get(zipCode);
+  if (!row || !row.area) return null;
+  const match = row.area.match(/,\s*([A-Z]{2})$/);
+  return match ? match[1] : null;
+}
+
 // ============================================
 // CHANGE.ORG SCRAPING
 // ============================================
@@ -760,6 +769,10 @@ app.post('/api/impact-calculator', async (req, res) => {
     ? (cumulativeEconomicImpact / currentSalary).toFixed(1)
     : '0.0';
 
+  // Sum all fair values for Value Recognition Ceremony
+  const totalValueGenerated = yearlyBreakdown.reduce((sum, yr) => sum + yr.fair_value, 0);
+  const totalWagesReceived = yearlyBreakdown.reduce((sum, yr) => sum + yr.income, 0);
+
   // Get first and last year data for summary statistics
   const firstYearData = mergedEconomicData[startYear] || YEARLY_ECONOMIC_DATA[1975];
   const lastYearData = mergedEconomicData[currentYear] || YEARLY_ECONOMIC_DATA[2024];
@@ -795,6 +808,8 @@ app.post('/api/impact-calculator', async (req, res) => {
       unrealized_productivity_gains: Math.round(cumulativeProductivityGap),
       excess_rent_burden: Math.round(cumulativeRentBurden),
       years_of_work_equivalent: parseFloat(yearsOfWorkEquivalent),
+      total_value_generated: totalValueGenerated,
+      total_wages_received: totalWagesReceived,
     },
     metrics: {
       productivity: {
@@ -827,6 +842,19 @@ app.post('/api/impact-calculator', async (req, res) => {
       },
     },
     yearly_breakdown: yearlyBreakdown,
+    methodology: {
+      fair_value_formula: "Fair Value = Your Income x (Productivity Index / Wage Index)",
+      seniority_model: "2.5% growth per year for first 15 years, 1% after",
+      work_year: "2,080 hours (40 hours/week x 52 weeks)",
+      rent_burden: `Baseline rent burden: ${(firstYearData.baseline_rent_burden * 100).toFixed(0)}% in ${startYear}, ${(lastYearData.baseline_rent_burden * 100).toFixed(0)}% today`,
+      interpolation: "Linear interpolation ensures Year 1 = your starting salary and current year = your current salary",
+      sources: [
+        { name: "Economic Policy Institute", type: "Productivity-wage gap data (1979-2024)", url: "https://www.epi.org/productivity-pay-gap/" },
+        { name: "Bureau of Labor Statistics", type: `CPI inflation data (${cpiDataSource})`, url: "https://www.bls.gov/cpi/" },
+        { name: "Federal Reserve", type: "Economic indicators", url: "https://fred.stlouisfed.org/" },
+        { name: "Census Bureau", type: "Housing cost trends", url: "https://www.census.gov/topics/housing.html" }
+      ]
+    },
     data_sources: {
       cpi_inflation: cpiDataSource,
       productivity_wage: 'LOCAL',
@@ -892,11 +920,14 @@ app.post('/api/worth-gap-analyzer', async (req, res) => {
 
   const currentYear = new Date().getFullYear();
   const startYear = parseInt(start_year) || currentYear - 5;
-  const yearsExp = parseInt(years_experience) || 0;
+  // Derive years_experience from start_year if not provided
+  const yearsExp = parseInt(years_experience) || (currentYear - startYear);
+  // Derive state from ZIP if not provided
+  const derivedState = state || getStateFromZip(zip_code);
 
   // Calculate market median
   const marketData = calculationService.calculateMarketMedian(
-    { zipCode: zip_code, state, msa, yearsExperience: yearsExp },
+    { zipCode: zip_code, state: derivedState, msa, yearsExperience: yearsExp },
     MSA_WAGE_DATA,
     STATE_WAGE_DATA
   );
@@ -1491,9 +1522,18 @@ app.post('/api/reports', (req, res) => {
 });
 
 // ============================================
+// RUPTURA ECONOMIC EXPERIENCE (econ.ruptura.co)
+// ============================================
+
+app.get('/econ', (req, res) => {
+  res.sendFile(path.join(__dirname, 'econ.html'));
+});
+
+// ============================================
 // START SERVER
 // ============================================
 
 app.listen(PORT, () => {
   console.log(`SOLIDARITY_NET backend running on port ${PORT}`);
+  console.log(`Ruptura Economic Experience available at http://localhost:${PORT}/econ`);
 });
