@@ -1491,9 +1491,18 @@ app.post('/api/reports', (req, res) => {
 });
 
 // ============================================
+// RUPTURA ECONOMIC EXPERIENCE (econ.ruptura.co)
+// ============================================
+
+app.get('/econ', (req, res) => {
+  res.sendFile(path.join(__dirname, 'econ.html'));
+});
+
+// ============================================
 // START SERVER
 // ============================================
 
 app.listen(PORT, () => {
   console.log(`SOLIDARITY_NET backend running on port ${PORT}`);
+  console.log(`Ruptura Economic Experience available at http://localhost:${PORT}/econ`);
 });

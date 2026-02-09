@@ -1,0 +1,284 @@
+{
+  "meta": {
+    "title": "Ruptura — Your Economic Reality",
+    "description": "See how you've been affected. Anonymous. No tracking."
+  },
+
+  "opening": {
+    "lines": [
+      { "type": "Welcome.", "text": "Welcome." },
+      { "type": "You work hard. You do what you can:", "text": "You work hard. You do what you can:" },
+      { "type": "To provide for those you love.", "text": "To provide for those you love." },
+      { "type": "Wages do not match the prices we face.", "text": "Wages do not match the prices we face." },
+      { "type": "Instead of raises, we get surveillance, more cameras.", "text": "Instead of raises, we get surveillance, more cameras." },
+      { "type": "Instead of transparency, we get tracked, more data.", "text": "Instead of transparency, we get tracked, more data." },
+      { "type": "Instead of valuing attention, it is sold, and shared.", "text": "Instead of valuing attention, it is sold, and shared." },
+      { "type": "pause", "text": "" },
+      { "type": "There is no simple tool that can fix these things.", "text": "There is no simple tool that can fix these things." },
+      { "type": "But together, with effort, we can fix these things.", "text": "But together, with effort, we can fix these things." },
+      { "type": "So that workers can make enough to afford a place to live in their lifetime.", "text": "So that workers can make enough to afford a place to live in their lifetime." },
+      { "type": "So that those who provide, are also being provided for.", "text": "So that those who provide, are also being provided for." },
+      { "type": "We have made these tools to show you, we are all effected.", "text": "We have made these tools to show you, we are all effected." },
+      { "type": "Input your numbers below, and see how you have been effected.", "text": "Input your numbers below, and see how you have been effected." }
+    ]
+  },
+
+  "form": {
+    "fields": {
+      "zip_code": {
+        "label": "ZIP Code",
+        "placeholder": "e.g. 10001",
+        "error": "Please enter a valid 5-digit ZIP code."
+      },
+      "current_wage": {
+        "label": "Current Salary / Wage",
+        "placeholder": "e.g. 45,000",
+        "error": "Please enter your current wage so we can calculate your value."
+      },
+      "frequency": {
+        "label": "Pay Frequency",
+        "options": ["Hourly", "Monthly", "Annual"]
+      },
+      "start_salary": {
+        "label": "Starting Salary",
+        "placeholder": "e.g. 30,000",
+        "error": "Please enter your starting salary."
+      },
+      "start_year": {
+        "label": "Year You Started Working",
+        "placeholder": "e.g. 2010",
+        "error": "Please enter a valid year between 1975 and the current year."
+      },
+      "current_rent": {
+        "label": "Monthly Rent",
+        "placeholder": "e.g. 1,500",
+        "error": "Please enter your monthly rent amount."
+      },
+      "years_experience": {
+        "label": "Years of Experience",
+        "placeholder": "e.g. 8",
+        "error": "Please enter your years of experience."
+      },
+      "state": {
+        "label": "State",
+        "placeholder": "Select your state",
+        "error": "Please select your state."
+      }
+    },
+    "submit_text": "See Your Results",
+    "calculating_text": "Calculating..."
+  },
+
+  "loading": {
+    "text": "Analyzing your numbers..."
+  },
+
+  "error": {
+    "heading": "We couldn't crunch your numbers right now.",
+    "body": "Try again in a moment. Your data wasn't saved or sent anywhere.",
+    "button": "Try Again"
+  },
+
+  "results": {
+    "card_label": "YOUR ECONOMIC IMPACT",
+    "hero_context_template": "in productivity your wages never reflected",
+    "secondary_context_template": "less per year than your labor produces",
+    "card_url": "econ.ruptura.co",
+    "edge_case": {
+      "hero_text": "You're ahead of the curve.",
+      "context": "Your earnings are within range of your productivity-adjusted value. Here's what workers in your state typically face:"
+    },
+    "download_text": "Download",
+    "share_text": "Share",
+    "share_copied": "Link copied!",
+    "breakdown_trigger": "See Full Breakdown",
+    "breakdown_sections": {
+      "productivity_gap": "Productivity-Wage Gap",
+      "worth_gap": "Worth Gap vs. Local Median",
+      "housing_cost": "Housing Opportunity Cost",
+      "rent_burden": "Rent Burden Over Time",
+      "corporate_ownership": "Corporate Housing Ownership"
+    }
+  },
+
+  "download_card": {
+    "header": "YOUR LABOR, YOUR NUMBERS",
+    "tagline": "See what your work is really worth.",
+    "url": "econ.ruptura.co",
+    "watermark": "ruptura"
+  },
+
+  "phase3a": {
+    "stats": [
+      {
+        "number": "XX%",
+        "text": "Placeholder statistic one context text.",
+        "source": "Source attribution placeholder"
+      },
+      {
+        "number": "XX%",
+        "text": "Placeholder statistic two context text.",
+        "source": "Source attribution placeholder"
+      },
+      {
+        "number": "XX%",
+        "text": "Placeholder statistic three context text.",
+        "source": "Source attribution placeholder"
+      },
+      {
+        "number": "$XX billion",
+        "text": "Placeholder statistic four context text.",
+        "source": "Source attribution placeholder"
+      },
+      {
+        "number": "XX%",
+        "text": "Placeholder statistic five context text.",
+        "source": "Source attribution placeholder"
+      },
+      {
+        "number": "$XXX million",
+        "text": "Placeholder statistic six context text.",
+        "source": "Source attribution placeholder"
+      },
+      {
+        "number": "$XX million",
+        "text": "Placeholder statistic seven context text.",
+        "source": "Source attribution placeholder"
+      },
+      {
+        "number": "XX%",
+        "text": "Placeholder statistic eight context text.",
+        "source": "Source attribution placeholder"
+      }
+    ],
+    "reframe": "Placeholder reframe statement goes here."
+  },
+
+  "phase3b": {
+    "blocks": [
+      {
+        "question": "Placeholder doubt question one?",
+        "answer": "Placeholder validation answer one. Your data shows {{worth_gap_annual}} in annual difference."
+      },
+      {
+        "question": "Placeholder doubt question two?",
+        "answer": "Placeholder validation answer two."
+      },
+      {
+        "question": "Placeholder doubt question three?",
+        "answer": "Placeholder validation answer three. Productivity has grown {{total_productivity_growth}} while wages grew {{total_wage_growth}}."
+      },
+      {
+        "question": "Placeholder doubt question four?",
+        "answer": "Placeholder validation answer four."
+      }
+    ]
+  },
+
+  "phase3c": {
+    "raise_heading": "What a raise would mean for your life",
+    "bar_labels": {
+      "current": "Your current annual income",
+      "projected": "With the gap closed by half"
+    },
+    "projection_periods": ["Year 1", "5 Years", "10 Years"],
+    "wins_heading": "What collective action has won",
+    "wins": [
+      {
+        "text": "Placeholder collective action win one.",
+        "source": "Source placeholder"
+      },
+      {
+        "text": "Placeholder collective action win two.",
+        "source": "Source placeholder"
+      },
+      {
+        "text": "Placeholder collective action win three.",
+        "source": "Source placeholder"
+      },
+      {
+        "text": "Placeholder collective action win four.",
+        "source": "Source placeholder"
+      }
+    ]
+  },
+
+  "phase3d": {
+    "heading": "Take a Step",
+    "share": {
+      "button": "Share Your Results",
+      "description": "Placeholder share description."
+    },
+    "negotiation": {
+      "button": "Get Your Negotiation Script",
+      "description": "Placeholder negotiation script description.",
+      "section_labels": {
+        "opening": "Opening Statement",
+        "evidence": "Your Evidence",
+        "resolution": "Your Ask",
+        "counters": "If They Push Back"
+      }
+    },
+    "forum": {
+      "heading": "Join the Conversation",
+      "body": "Placeholder forum description.",
+      "button": "Go to the Forum",
+      "url": "https://forum.ruptura.co"
+    },
+    "closing": "Placeholder closing line."
+  },
+
+  "states": [
+    { "value": "AL", "label": "Alabama" },
+    { "value": "AK", "label": "Alaska" },
+    { "value": "AZ", "label": "Arizona" },
+    { "value": "AR", "label": "Arkansas" },
+    { "value": "CA", "label": "California" },
+    { "value": "CO", "label": "Colorado" },
+    { "value": "CT", "label": "Connecticut" },
+    { "value": "DE", "label": "Delaware" },
+    { "value": "DC", "label": "District of Columbia" },
+    { "value": "FL", "label": "Florida" },
+    { "value": "GA", "label": "Georgia" },
+    { "value": "HI", "label": "Hawaii" },
+    { "value": "ID", "label": "Idaho" },
+    { "value": "IL", "label": "Illinois" },
+    { "value": "IN", "label": "Indiana" },
+    { "value": "IA", "label": "Iowa" },
+    { "value": "KS", "label": "Kansas" },
+    { "value": "KY", "label": "Kentucky" },
+    { "value": "LA", "label": "Louisiana" },
+    { "value": "ME", "label": "Maine" },
+    { "value": "MD", "label": "Maryland" },
+    { "value": "MA", "label": "Massachusetts" },
+    { "value": "MI", "label": "Michigan" },
+    { "value": "MN", "label": "Minnesota" },
+    { "value": "MS", "label": "Mississippi" },
+    { "value": "MO", "label": "Missouri" },
+    { "value": "MT", "label": "Montana" },
+    { "value": "NE", "label": "Nebraska" },
+    { "value": "NV", "label": "Nevada" },
+    { "value": "NH", "label": "New Hampshire" },
+    { "value": "NJ", "label": "New Jersey" },
+    { "value": "NM", "label": "New Mexico" },
+    { "value": "NY", "label": "New York" },
+    { "value": "NC", "label": "North Carolina" },
+    { "value": "ND", "label": "North Dakota" },
+    { "value": "OH", "label": "Ohio" },
+    { "value": "OK", "label": "Oklahoma" },
+    { "value": "OR", "label": "Oregon" },
+    { "value": "PA", "label": "Pennsylvania" },
+    { "value": "RI", "label": "Rhode Island" },
+    { "value": "SC", "label": "South Carolina" },
+    { "value": "SD", "label": "South Dakota" },
+    { "value": "TN", "label": "Tennessee" },
+    { "value": "TX", "label": "Texas" },
+    { "value": "UT", "label": "Utah" },
+    { "value": "VT", "label": "Vermont" },
+    { "value": "VA", "label": "Virginia" },
+    { "value": "WA", "label": "Washington" },
+    { "value": "WV", "label": "West Virginia" },
+    { "value": "WI", "label": "Wisconsin" },
+    { "value": "WY", "label": "Wyoming" }
+  ]
+}
