@@ -1,0 +1,51 @@
+/* ============================================
+   RUPTURA DESIGN TOKENS
+   Shared design system for all Ruptura properties
+   ============================================ */
+
+:root {
+  /* Colors — Background */
+  --bg-primary: #0C0F14;
+  --bg-surface: #161B24;
+  --bg-elevated: #1E2430;
+  --border-subtle: #2A3040;
+
+  /* Colors — Text */
+  --text-primary: #F0EDE8;
+  --text-secondary: #9CA3AF;
+  --text-tertiary: #6B7280;
+  --text-tertiary-accessible: #7B8694;
+
+  /* Colors — Brand (Gold) */
+  --accent-gold: #D4A054;
+  --accent-gold-light: #E8C87A;
+  --accent-gold-hover: #B8883E;
+  --accent-gold-glow: rgba(212, 160, 84, 0.15);
+  --accent-gold-hover-bg: rgba(212, 160, 84, 0.1);
+  --accent-gold-active-bg: rgba(212, 160, 84, 0.2);
+
+  /* Colors — Semantic */
+  --gap-red: #C45B4A;
+  --gap-red-card: #D06A58;
+  --gap-red-subtle: rgba(196, 91, 74, 0.12);
+  --growth-green: #4A9B7F;
+  --growth-green-subtle: rgba(74, 155, 127, 0.12);
+
+  /* Typography */
+  --font-display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-data: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+
+  /* Spacing (8px rhythm) */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-7: 56px;
+  --space-8: 64px;
+  --space-10: 80px;
+  --space-15: 120px;
+  --space-20: 160px;
+}
