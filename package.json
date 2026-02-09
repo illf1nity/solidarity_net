@@ -1,7 +1,7 @@
 {
-  "name": "bottegus",
+  "name": "ruptura",
   "version": "1.0.0",
-  "description": "",
+  "description": "Ruptura Economic Experience — econ.ruptura.co",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
