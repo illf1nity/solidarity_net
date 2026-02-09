@@ -1,0 +1,289 @@
+{
+  "meta": {
+    "title": "Ruptura — Your Economic Reality",
+    "description": "See how you've been affected. Anonymous. No tracking."
+  },
+
+  "opening": {
+    "lines": [
+      { "type": "welcome", "text": "Your work creates real value." },
+      { "type": "normal", "text": "Every hour you work generates revenue, keeps systems running, helps people." },
+      { "type": "normal", "text": "You know this. Your employer knows this." },
+      { "type": "normal", "text": "The numbers prove it." },
+      { "type": "pause", "text": "" },
+      { "type": "normal", "text": "But those who profit from your work have captured the rewards." },
+      { "type": "normal", "text": "Wages haven't matched productivity in decades." },
+      { "type": "normal", "text": "Rent outpaces income. Surveillance replaces raises." },
+      { "type": "pause", "text": "" },
+      { "type": "normal", "text": "We built these tools to show you exactly how much value you create." },
+      { "type": "prompt", "text": "Enter your numbers below and see the real cost of working for someone else's profit." }
+    ]
+  },
+
+  "form": {
+    "fields": {
+      "zip_code": {
+        "label": "ZIP Code",
+        "placeholder": "e.g. 10001",
+        "error": "Please enter a valid 5-digit ZIP code."
+      },
+      "current_wage": {
+        "label": "Current Salary / Wage",
+        "placeholder": "e.g. 45,000",
+        "error": "Please enter your current wage so we can calculate your value."
+      },
+      "frequency": {
+        "label": "Pay Frequency",
+        "options": ["Hourly", "Monthly", "Annual"]
+      },
+      "start_salary": {
+        "label": "Starting Salary",
+        "placeholder": "e.g. 30,000",
+        "error": "Please enter your starting salary."
+      },
+      "start_year": {
+        "label": "Year You Started Working",
+        "placeholder": "e.g. 2010",
+        "error": "Please enter a valid year between 1975 and the current year."
+      },
+      "current_rent": {
+        "label": "Monthly Rent (optional)",
+        "placeholder": "e.g. 1,500",
+        "error": ""
+      }
+    },
+    "submit_text": "See Your Results",
+    "calculating_text": "Calculating...",
+    "privacy_note": "Anonymous. Nothing is stored or tracked."
+  },
+
+  "loading": {
+    "text": "Analyzing your numbers..."
+  },
+
+  "error": {
+    "heading": "We couldn't crunch your numbers right now.",
+    "body": "Try again in a moment. Your data wasn't saved or sent anywhere.",
+    "button": "Try Again"
+  },
+
+  "results": {
+    "card_label": "YOUR ECONOMIC IMPACT",
+    "severe_label": "YOUR ECONOMIC LOSS",
+    "edge_case_label": "YOUR ECONOMIC POSITION",
+    "hero_context_template": "in productivity your wages never reflected",
+    "secondary_context_template": "less per year than your labor produces",
+    "unpaid_labor_context": "of equivalent unpaid labor",
+    "value_generated_context": "total value you created since {{year}}",
+    "wages_received_context": "what you were actually paid",
+    "gap_claim": "That gap is yours. You earned it.",
+    "bar_difference_template": "+{{amount}}/year",
+    "context_rent_template": "That\u2019s {{months}} months of rent per year.",
+    "context_grocery_template": "That\u2019s roughly {{months}} months of groceries.",
+    "card_url": "econ.ruptura.co",
+    "edge_case": {
+      "hero_text": "You're ahead of the curve.",
+      "context": "Your earnings are within range of your productivity-adjusted value. Here's what workers in your state typically face:"
+    },
+    "download_text": "Download",
+    "download_generating": "Generating...",
+    "download_success": "\u2713",
+    "share_text": "Show Someone",
+    "share_copied": "Link copied!",
+    "breakdown_trigger": "See Full Breakdown",
+    "methodology_trigger": "How We Calculated This",
+    "methodology_labels": {
+      "fair_value": "How We Calculate Fair Value",
+      "assumptions": "Assumptions",
+      "sources": "Data Sources"
+    },
+    "breakdown_sections": {
+      "productivity_gap": "The Gap Between Your Output and Your Pay",
+      "worth_gap": "Your Pay vs. Local Market Rate",
+      "housing_cost": "How Homeownership Has Slipped Away",
+      "rent_burden": "How Rent Has Eaten Into Your Income",
+      "corporate_ownership": "Corporate Housing in Your State"
+    }
+  },
+
+  "download_card": {
+    "header": "YOUR LABOR, YOUR NUMBERS",
+    "tagline": "See what your work is really worth.",
+    "url": "econ.ruptura.co",
+    "watermark": "ruptura"
+  },
+
+  "phase3a": {
+    "stats": [
+      {
+        "number": "72%",
+        "text": "of employers use electronic monitoring on their workers, up from 35% in 2019.",
+        "source": "American Management Association, 2024"
+      },
+      {
+        "number": "$50 billion",
+        "text": "in wage theft is committed annually by U.S. employers — more than all robberies, burglaries, and car thefts combined.",
+        "source": "Economic Policy Institute"
+      },
+      {
+        "number": "160%",
+        "text": "— that's how much worker productivity has grown since 1979. Hourly pay grew just 24% in the same period.",
+        "source": "Economic Policy Institute, 2024"
+      },
+      {
+        "number": "$3,300",
+        "text": "per year — the average amount each worker loses to wage theft through unpaid overtime, missed breaks, and tip violations.",
+        "source": "Grand Larceny Report, 2023"
+      },
+      {
+        "number": "80%",
+        "text": "of U.S. workers have no meaningful ability to negotiate their pay. Employers set wages, and workers take them or leave.",
+        "source": "Treasury Dept. Report on Labor Market Competition"
+      },
+      {
+        "number": "$1.5 trillion",
+        "text": "in corporate stock buybacks in 2023 alone — money that could have gone to the workers who generated the profits.",
+        "source": "SEC Filings / Americans for Financial Reform"
+      },
+      {
+        "number": "150%",
+        "text": "annual turnover at Amazon fulfillment centers. High turnover isn't a bug — it's an anti-organizing strategy.",
+        "source": "NY Times Investigation, 2021"
+      },
+      {
+        "number": "47%",
+        "text": "of Americans can't cover a $400 emergency expense from savings, despite working full-time.",
+        "source": "Federal Reserve Economic Well-Being Report, 2023"
+      }
+    ],
+    "reframe": "They didn't ask your permission. Why are you asking for theirs?"
+  },
+
+  "phase3b": {
+    "blocks": [
+      {
+        "question": "Am I just being picky?",
+        "answer": "You're not being picky. The data shows you've earned {{worth_gap_annual}} less per year than workers with your experience in your area. That's not a feeling — it's a number."
+      },
+      {
+        "question": "But what if my employer can't afford raises?",
+        "answer": "National productivity has grown {{total_productivity_growth}} while wages grew just {{total_wage_growth}}. The money exists. The question is who gets it."
+      },
+      {
+        "question": "What if I get fired for asking?",
+        "answer": "Federal law (NLRA Section 7) protects your right to discuss wages and working conditions with coworkers. Retaliation for this is illegal. You have more protection than you think."
+      },
+      {
+        "question": "Does this actually work?",
+        "answer": "Workers who negotiate receive an average of 7.4% higher pay. Workers who negotiate collectively receive 10-25% more. The data is clear: asking works."
+      }
+    ]
+  },
+
+  "phase3c": {
+    "raise_heading": "What a raise would mean for your life",
+    "bar_labels": {
+      "current": "Your current annual income",
+      "projected": "With the gap closed by half"
+    },
+    "projection_periods": ["Year 1", "5 Years", "10 Years"],
+    "wins_heading": "What collective action has won",
+    "wins": [
+      {
+        "text": "Newly unionized workers see an average 18% wage increase in their first contract.",
+        "source": "Economic Policy Institute, 2023"
+      },
+      {
+        "text": "UPS Teamsters won a $7.50/hour raise for part-time workers in 2023 — the largest contract in their history.",
+        "source": "Teamsters Local 705"
+      },
+      {
+        "text": "Starbucks workers who unionized won guaranteed minimum hours, scheduling improvements, and tip sharing.",
+        "source": "NLRB filings, 2023-2024"
+      },
+      {
+        "text": "Amazon warehouse workers in Staten Island voted to form the first Amazon union in U.S. history in 2022.",
+        "source": "Amazon Labor Union / NLRB"
+      }
+    ]
+  },
+
+  "phase3d": {
+    "heading": "Take a Step",
+    "share": {
+      "button": "Show Someone",
+      "description": "Your story might be the push someone else needs."
+    },
+    "negotiation": {
+      "button": "Get Your Negotiation Script",
+      "description": "A private, personalized script for your next conversation about pay.",
+      "section_labels": {
+        "opening": "Opening Statement",
+        "evidence": "Your Evidence",
+        "resolution": "Your Ask",
+        "counters": "If They Push Back"
+      }
+    },
+    "forum": {
+      "heading": "Join the Conversation",
+      "body": "Anonymous. No ads. No tracking. Just workers.",
+      "button": "Go to the Forum",
+      "url": "https://forum.ruptura.co"
+    },
+    "closing": "Bookmark this page. Run your numbers again next year."
+  },
+
+  "states": [
+    { "value": "AL", "label": "Alabama" },
+    { "value": "AK", "label": "Alaska" },
+    { "value": "AZ", "label": "Arizona" },
+    { "value": "AR", "label": "Arkansas" },
+    { "value": "CA", "label": "California" },
+    { "value": "CO", "label": "Colorado" },
+    { "value": "CT", "label": "Connecticut" },
+    { "value": "DE", "label": "Delaware" },
+    { "value": "DC", "label": "District of Columbia" },
+    { "value": "FL", "label": "Florida" },
+    { "value": "GA", "label": "Georgia" },
+    { "value": "HI", "label": "Hawaii" },
+    { "value": "ID", "label": "Idaho" },
+    { "value": "IL", "label": "Illinois" },
+    { "value": "IN", "label": "Indiana" },
+    { "value": "IA", "label": "Iowa" },
+    { "value": "KS", "label": "Kansas" },
+    { "value": "KY", "label": "Kentucky" },
+    { "value": "LA", "label": "Louisiana" },
+    { "value": "ME", "label": "Maine" },
+    { "value": "MD", "label": "Maryland" },
+    { "value": "MA", "label": "Massachusetts" },
+    { "value": "MI", "label": "Michigan" },
+    { "value": "MN", "label": "Minnesota" },
+    { "value": "MS", "label": "Mississippi" },
+    { "value": "MO", "label": "Missouri" },
+    { "value": "MT", "label": "Montana" },
+    { "value": "NE", "label": "Nebraska" },
+    { "value": "NV", "label": "Nevada" },
+    { "value": "NH", "label": "New Hampshire" },
+    { "value": "NJ", "label": "New Jersey" },
+    { "value": "NM", "label": "New Mexico" },
+    { "value": "NY", "label": "New York" },
+    { "value": "NC", "label": "North Carolina" },
+    { "value": "ND", "label": "North Dakota" },
+    { "value": "OH", "label": "Ohio" },
+    { "value": "OK", "label": "Oklahoma" },
+    { "value": "OR", "label": "Oregon" },
+    { "value": "PA", "label": "Pennsylvania" },
+    { "value": "RI", "label": "Rhode Island" },
+    { "value": "SC", "label": "South Carolina" },
+    { "value": "SD", "label": "South Dakota" },
+    { "value": "TN", "label": "Tennessee" },
+    { "value": "TX", "label": "Texas" },
+    { "value": "UT", "label": "Utah" },
+    { "value": "VT", "label": "Vermont" },
+    { "value": "VA", "label": "Virginia" },
+    { "value": "WA", "label": "Washington" },
+    { "value": "WV", "label": "West Virginia" },
+    { "value": "WI", "label": "Wisconsin" },
+    { "value": "WY", "label": "Wyoming" }
+  ]
+}
