@@ -19,7 +19,21 @@ html {
 }
 
 body {
-  background: var(--bg-primary);
+  background: linear-gradient(
+    170deg,
+    #1a0a00 0%,
+    #3d1c0a 8%,
+    #7a3510 18%,
+    #b85a1a 30%,
+    #d4841e 42%,
+    #E8A633 52%,
+    #d4841e 62%,
+    #c45220 72%,
+    #a83218 82%,
+    #7a1a12 92%,
+    #3d0a08 100%
+  );
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 16px;
@@ -177,6 +191,34 @@ body {
 }
 
 /* ============================================
+   DARK CONTENT PANELS — legibility on gradient bg
+   ============================================ */
+.opening-section,
+.phase-form,
+.phase-results,
+.phase-wins,
+.phase-permission,
+.phase-validation,
+.phase-change,
+.phase-action {
+  background: rgba(12, 15, 20, 0.88);
+  border: 1px solid rgba(42, 48, 64, 0.4);
+  border-radius: 16px;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: var(--space-3);
+}
+
+/* Loading and error share the dark panel look */
+.loading-section,
+.error-section {
+  background: rgba(12, 15, 20, 0.88);
+  border: 1px solid rgba(42, 48, 64, 0.4);
+  border-radius: 16px;
+}
+
+/* ============================================
    OPENING STATEMENT
    ============================================ */
 .opening-section {
@@ -185,8 +227,6 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  max-width: 640px;
-  margin: 0 auto;
   padding: var(--space-10) var(--space-3);
   text-align: center;
 }
@@ -230,9 +270,12 @@ body {
    PHASE 1 — INPUT FORM
    ============================================ */
 .phase-form {
+  padding: var(--space-5) var(--space-4) var(--space-5);
+}
+
+.phase-form form {
   max-width: 480px;
   margin: 0 auto;
-  padding: var(--space-10) var(--space-3) var(--space-8);
 }
 
 .form-field {
@@ -519,12 +562,10 @@ body {
    PHASE 2 — RESULTS CARD
    ============================================ */
 .phase-results {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: var(--space-8) var(--space-3);
+  padding: var(--space-5) var(--space-3);
 }
 
 .results-card {
@@ -992,13 +1033,11 @@ body {
 .phase-validation,
 .phase-change,
 .phase-action {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 0 var(--space-3);
+  padding: var(--space-4) var(--space-3);
 }
 
 .phase-permission {
-  padding-top: var(--space-15);
+  padding-top: var(--space-5);
 }
 
 .stat-card {
@@ -1056,7 +1095,7 @@ body {
 /* Reframe statement */
 .reframe-statement {
   max-width: 720px;
-  margin: var(--space-8) auto;
+  margin: var(--space-4) auto;
   text-align: center;
   font-family: var(--font-display);
   font-weight: 700;
@@ -1076,7 +1115,7 @@ body {
    PHASE 3B — VALIDATION
    ============================================ */
 .phase-validation {
-  padding-top: var(--space-10);
+  padding-top: var(--space-4);
 }
 
 .validation-block {
@@ -1119,7 +1158,7 @@ body {
    PHASE 3C — RAISE VISUALIZATION
    ============================================ */
 .phase-change {
-  padding-top: var(--space-10);
+  padding-top: var(--space-4);
 }
 
 .change-heading {
@@ -1232,16 +1271,14 @@ body {
   font-family: var(--font-body);
   font-size: 16px;
   color: var(--text-secondary);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-3);
 }
 
 /* ============================================
    COLLECTIVE ACTION WINS — Standalone Section
    ============================================ */
 .phase-wins {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: var(--space-8) var(--space-3);
+  padding: var(--space-4) var(--space-3);
 }
 
 .wins-header {
@@ -1326,8 +1363,8 @@ body {
    PHASE 3D — TAKE A STEP
    ============================================ */
 .phase-action {
-  padding-top: var(--space-6);
-  padding-bottom: var(--space-10);
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-5);
 }
 
 .action-heading {
@@ -1542,8 +1579,8 @@ body {
   font-family: var(--font-body);
   font-size: 16px;
   color: var(--text-secondary);
-  margin-top: var(--space-10);
-  padding-bottom: var(--space-8);
+  margin-top: var(--space-4);
+  padding-bottom: var(--space-3);
 }
 
 /* ============================================
@@ -2152,7 +2189,7 @@ body {
    ============================================ */
 .urgency-section {
   max-width: 480px;
-  margin: var(--space-6) auto;
+  margin: var(--space-3) auto;
 }
 
 .urgency-heading {
