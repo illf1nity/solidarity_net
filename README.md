@@ -31,19 +31,24 @@ Enter your salary, ZIP code, and work history. Ruptura calculates:
 ## Project Structure
 
 ```
-server.js              Express 5 backend, static file serving, legacy endpoints
-routes/econ.js         Economic calculator API endpoints (impact, worth-gap, negotiation)
+server.js                  Entry point — middleware, route mounting, server start
+routes/
+  econ.js                  Economic calculator endpoints (impact, worth-gap, negotiation)
+  data.js                  Public data APIs (CPI, yearly indicators, HUD rent, map)
+  legacy.js                Solidarity Net endpoints (collectives, petitions, buildings)
 services/
-  calculationService.js  Market median, worth gap, lifetime cost calculations
-  wageData.js            MSA and state-level wage data (BLS)
-db.js                  SQLite schema, seed data, yearly economic indicators (1975-2024)
-econ.html              Main interface (single page)
-econ.js                Client-side logic (vanilla JS, IIFE pattern)
-econ.css               Styles (uses ruptura-tokens.css design tokens)
-ruptura-tokens.css     Shared design tokens (colors, fonts, spacing)
-content.json           All UI copy (labels, errors, messaging)
-video-card.js          Downloadable results card generation
-index.html             Redirects to econ.html
+  calculationService.js    Market median, worth gap, lifetime cost calculations
+  wageData.js              MSA and state-level wage data (BLS)
+  govApi.js                BLS + HUD API wrappers with caching
+  scraping.js              Change.org + Telegram data fetchers
+db.js                      SQLite schema, seed data, yearly indicators (1975-2024)
+econ.html                  Main interface (single page)
+econ.js                    Client-side logic (vanilla JS, IIFE pattern)
+econ.css                   Styles (uses ruptura-tokens.css design tokens)
+ruptura-tokens.css         Shared design tokens (colors, fonts, spacing)
+content.json               All UI copy (labels, errors, messaging)
+video-card.js              Downloadable results card generation
+index.html                 Redirects to econ.html
 ```
 
 ## Configuration (Optional)

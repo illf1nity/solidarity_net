@@ -53,6 +53,7 @@
     renderPhase3aShell();
     renderPhase3bShell();
     renderPhase3cShell();
+    renderWinsShell();
     renderPhase3dShell();
     renderDownloadCard();
     bindEvents();
@@ -106,6 +107,29 @@
       const inputEl = document.getElementById(key);
       if (inputEl && fields[key].placeholder) {
         inputEl.setAttribute('placeholder', fields[key].placeholder);
+      }
+
+      // Populate select elements from content.json options (supports optgroup)
+      if (inputEl && inputEl.tagName === 'SELECT' && fields[key].options) {
+        inputEl.innerHTML = '';
+        fields[key].options.forEach(function(opt) {
+          if (opt.optgroup && opt.options) {
+            var group = document.createElement('optgroup');
+            group.label = opt.optgroup;
+            opt.options.forEach(function(subOpt) {
+              var option = document.createElement('option');
+              option.value = subOpt.value;
+              option.textContent = subOpt.label;
+              group.appendChild(option);
+            });
+            inputEl.appendChild(group);
+          } else if (opt.value !== undefined) {
+            var option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            inputEl.appendChild(option);
+          }
+        });
       }
 
       const errorEl = document.querySelector('[data-error="' + key + '"]');
@@ -193,14 +217,24 @@
       projContainer.appendChild(card);
     });
 
-    document.getElementById('wins-heading').textContent = content.phase3c.wins_heading;
-    const winsContainer = document.getElementById('wins-container');
-    content.phase3c.wins.forEach(win => {
-      const card = document.createElement('div');
+  }
+
+  // ------------------------------------
+  // WINS SECTION — Collective action proof
+  // ------------------------------------
+  function renderWinsShell() {
+    document.getElementById('wins-label').textContent = content.wins.label;
+    document.getElementById('wins-heading').textContent = content.wins.heading;
+    var winsContainer = document.getElementById('wins-container');
+    content.wins.items.forEach(function(win) {
+      var card = document.createElement('div');
       card.className = 'win-card';
       card.innerHTML =
-        '<p class="win-text">' + escapeHtml(win.text) + '</p>' +
-        '<small class="source">' + escapeHtml(win.source) + '</small>';
+        '<div class="win-accent"></div>' +
+        '<div class="win-body">' +
+          '<p class="win-text">' + escapeHtml(win.text) + '</p>' +
+          '<small class="source">' + escapeHtml(win.source) + '</small>' +
+        '</div>';
       winsContainer.appendChild(card);
     });
   }
@@ -453,6 +487,7 @@
       start_salary: stripCurrency(document.getElementById('start_salary').value),
       start_year: parseInt(document.getElementById('start_year').value.trim()),
       years_in_role: parseInt(document.getElementById('years_in_role').value.trim()),
+      industry: document.getElementById('industry').value || '',
       current_rent: stripCurrency(document.getElementById('current_rent').value),
     };
     formValues.years_experience = currentYear - formValues.start_year;
@@ -479,6 +514,7 @@
             start_salary: annualStartSalary,
             current_salary: annualSalary,
             current_rent: formValues.current_rent,
+            industry: formValues.industry || undefined,
           }
         }),
         fetchJSON('/api/worth-gap-analyzer', {
@@ -516,7 +552,7 @@
         }
       });
 
-      ['phase2', 'phase3a', 'phase3b', 'phase3c', 'phase3d'].forEach(id => {
+      ['phase2', 'wins-section', 'phase3a', 'phase3b', 'phase3c', 'phase3d'].forEach(id => {
         document.getElementById(id).hidden = false;
       });
 
@@ -525,6 +561,13 @@
        'hero-context', 'secondary-stat', 'survival-metrics', 'primary-cta'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.classList.remove('revealed');
+      });
+
+      // Reset inline display styles from prior positive-outcome submission
+      ['value-generated', 'wages-received', 'value-generated-context',
+       'wages-received-context', 'gap-claim'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = '';
       });
 
       // Reset script content for fresh negotiation on resubmission
@@ -588,6 +631,7 @@
       console.error('API error:', err);
       document.getElementById('loading').hidden = true;
       document.getElementById('error-state').hidden = false;
+      form.classList.remove('faded');
     }
 
     btn.textContent = content.form.submit_text;
@@ -835,30 +879,72 @@
     const annual = resultsData.annualSalary;
     const worth = resultsData.worth;
     const gapAnnual = worth.worthGap ? worth.worthGap.annual : 0;
-    const halfGap = gapAnnual / 2;
-    const projected = annual + halfGap;
-    const maxVal = Math.max(annual, projected);
 
+    // If the gap is zero or negative, the user earns at or above market rate.
+    // Hide the raise visualization and show an empowering "ahead" message instead.
+    if (gapAnnual <= 0) {
+      var phase3c = document.getElementById('phase3c');
+      var raiseHeading = document.getElementById('raise-heading');
+      var barChart = document.getElementById('bar-chart');
+      var barDiff = document.getElementById('bar-difference');
+      var projCards = document.getElementById('projection-cards');
+      var ctxLine = document.getElementById('context-line');
+      var costTranslator = document.getElementById('cost-translator');
+      var urgencySection = document.getElementById('urgency-section');
+      var timelineSection = document.getElementById('career-timeline-section');
+
+      // Hide the raise-specific elements
+      if (barChart) barChart.hidden = true;
+      if (barDiff) barDiff.hidden = true;
+      if (projCards) projCards.hidden = true;
+      if (costTranslator) costTranslator.hidden = true;
+      if (urgencySection) urgencySection.hidden = true;
+
+      // Rewrite heading and context for "ahead" case
+      if (raiseHeading) raiseHeading.textContent = content.phase3c.ahead_heading || "Your pay is competitive";
+      if (ctxLine) ctxLine.textContent = content.phase3c.ahead_context || "Your compensation meets or exceeds the market-adjusted rate for your experience. That\u2019s leverage \u2014 use it to help a coworker.";
+
+      // Career timeline and wins still show (they remain relevant)
+      return;
+    }
+
+    var halfGap = gapAnnual / 2;
+    var projected = annual + halfGap;
+    var maxVal = Math.max(annual, projected);
+
+    // Ensure all elements are visible (may have been hidden from a prior negative-gap run)
+    var barChart = document.getElementById('bar-chart');
+    var barDiff = document.getElementById('bar-difference');
+    var projCards = document.getElementById('projection-cards');
+    var costTranslatorEl = document.getElementById('cost-translator');
+    var urgencySectionEl = document.getElementById('urgency-section');
+    if (barChart) barChart.hidden = false;
+    if (barDiff) barDiff.hidden = false;
+    if (projCards) projCards.hidden = false;
+    if (costTranslatorEl) costTranslatorEl.hidden = false;
+    if (urgencySectionEl) urgencySectionEl.hidden = false;
+
+    document.getElementById('raise-heading').textContent = content.phase3c.raise_heading;
     document.getElementById('bar-current').style.width = (annual / maxVal * 80) + '%';
     document.getElementById('bar-projected').style.width = (projected / maxVal * 80) + '%';
     document.getElementById('bar-value-current').textContent = formatCurrency(annual);
     document.getElementById('bar-value-projected').textContent = formatCurrency(projected);
     document.getElementById('bar-difference').textContent = content.results.bar_difference_template.replace('{{amount}}', formatCurrency(halfGap));
 
-    const periods = content.phase3c.projection_periods;
-    const multipliers = [1, 5, 10];
-    periods.forEach((period, i) => {
-      const el = document.querySelector('[data-period="' + period + '"]');
+    var periods = content.phase3c.projection_periods;
+    var multipliers = [1, 5, 10];
+    periods.forEach(function(period, i) {
+      var el = document.querySelector('[data-period="' + period + '"]');
       if (el) el.textContent = '+' + formatCurrency(halfGap * multipliers[i]);
     });
 
-    const monthlyRent = resultsData.formValues.current_rent;
+    var monthlyRent = resultsData.formValues.current_rent;
     if (monthlyRent > 0) {
-      const months = Math.floor(halfGap / monthlyRent);
+      var months = Math.floor(halfGap / monthlyRent);
       document.getElementById('context-line').textContent =
         content.results.context_rent_template.replace('{{months}}', months);
     } else {
-      const groceryMonths = Math.floor(halfGap / 400);
+      var groceryMonths = Math.floor(halfGap / 400);
       document.getElementById('context-line').textContent =
         content.results.context_grocery_template.replace('{{months}}', groceryMonths);
     }

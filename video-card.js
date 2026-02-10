@@ -570,9 +570,26 @@
   }
 
   // ------------------------------------
+  // MP4 MUXER (dynamically loaded)
+  // ------------------------------------
+  var Mp4MuxerModule = null;
+
+  function loadMp4Muxer() {
+    if (Mp4MuxerModule) return Promise.resolve(Mp4MuxerModule);
+    return import('https://cdn.jsdelivr.net/npm/mp4-muxer@5/build/mp4-muxer.mjs').then(function (mod) {
+      Mp4MuxerModule = mod;
+      return mod;
+    });
+  }
+
+  // ------------------------------------
   // FEATURE DETECTION
   // ------------------------------------
-  function isSupported() {
+  function canMp4() {
+    return typeof window.VideoEncoder === 'function' && typeof window.VideoFrame === 'function';
+  }
+
+  function canWebm() {
     var testCanvas = document.createElement('canvas');
     if (typeof testCanvas.captureStream !== 'function') return false;
     if (typeof window.MediaRecorder === 'undefined') return false;
@@ -582,15 +599,123 @@
     return true;
   }
 
+  function isSupported() {
+    return canMp4() || canWebm();
+  }
+
   // ------------------------------------
-  // MAIN GENERATE
+  // MAIN GENERATE — MP4 path (WebCodecs + mp4-muxer)
   // ------------------------------------
-  function generate(resultsData, content, onProgress, onComplete, onError) {
-    if (generating) return;
+  function generateMp4(resultsData, content, onProgress, onComplete, onError) {
     generating = true;
     function cleanup() { generating = false; }
 
+    var cumulative = resultsData.impact.summary.cumulative_economic_impact;
+    var selection = selectBackground(resultsData.formValues, cumulative);
+    var tier = selection.tier;
+    var bgInstance = selection.bgDef.create(selection.hash);
+
     onProgress(0.05);
+
+    Promise.all([ensureFontsLoaded(), loadMp4Muxer()]).then(function (results) {
+      var Mp4Muxer = results[1];
+      onProgress(0.1);
+
+      var canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      var ctx = canvas.getContext('2d');
+
+      var muxer = new Mp4Muxer.Muxer({
+        target: new Mp4Muxer.ArrayBufferTarget(),
+        video: {
+          codec: 'avc',
+          width: W,
+          height: H
+        },
+        fastStart: 'in-memory'
+      });
+
+      var encoder = new VideoEncoder({
+        output: function (chunk, meta) { muxer.addVideoChunk(chunk, meta); },
+        error: function (e) { cleanup(); onError(e); }
+      });
+
+      encoder.configure({
+        codec: 'avc1.42001f',
+        width: W,
+        height: H,
+        bitrate: 4000000,
+        framerate: FPS
+      });
+
+      var totalFrames = DURATION * FPS;
+      var frameIndex = 0;
+      var frameDuration = 1000000 / FPS; // microseconds
+
+      function encodeNextFrame() {
+        if (frameIndex >= totalFrames) {
+          // Finalize
+          encoder.flush().then(function () {
+            muxer.finalize();
+            var buffer = muxer.target.buffer;
+            var blob = new Blob([buffer], { type: 'video/mp4' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'ruptura-impact.mp4';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+            onProgress(1);
+            cleanup();
+            onComplete();
+          }).catch(function (err) { cleanup(); onError(err); });
+          return;
+        }
+
+        var elapsed = frameIndex / FPS;
+
+        bgInstance.render(ctx, elapsed);
+        drawTextOverlay(ctx, resultsData, content, tier, elapsed);
+
+        var frame = new VideoFrame(canvas, {
+          timestamp: frameIndex * frameDuration,
+          duration: frameDuration
+        });
+
+        var isKeyFrame = frameIndex % (FPS * 2) === 0;
+        encoder.encode(frame, { keyFrame: isKeyFrame });
+        frame.close();
+
+        frameIndex++;
+
+        var progress = 0.1 + (frameIndex / totalFrames) * 0.85;
+        onProgress(Math.min(progress, 0.95));
+
+        // Yield to the browser every 4 frames to keep UI responsive
+        if (frameIndex % 4 === 0) {
+          setTimeout(encodeNextFrame, 0);
+        } else {
+          encodeNextFrame();
+        }
+      }
+
+      encodeNextFrame();
+
+    }).catch(function (err) {
+      cleanup();
+      onError(err);
+    });
+  }
+
+  // ------------------------------------
+  // MAIN GENERATE — WebM fallback path (MediaRecorder)
+  // ------------------------------------
+  function generateWebm(resultsData, content, onProgress, onComplete, onError) {
+    generating = true;
+    function cleanup() { generating = false; }
 
     var cumulative = resultsData.impact.summary.cumulative_economic_impact;
     var selection = selectBackground(resultsData.formValues, cumulative);
@@ -635,7 +760,7 @@
           stopped = true;
           try { recorder.stop(); } catch (e) {}
         }
-      }, 30000); // 30s timeout for fractal rendering
+      }, 30000);
 
       recorder.onstop = function () {
         clearTimeout(safetyTimeout);
@@ -648,7 +773,7 @@
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
-        a.download = 'ruptura-impact.webm';
+        a.download = 'ruptura-impact.mp4';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -691,6 +816,30 @@
       cleanup();
       onError(err);
     });
+  }
+
+  // ------------------------------------
+  // PUBLIC GENERATE — dispatches to MP4 or WebM path
+  // ------------------------------------
+  function generate(resultsData, content, onProgress, onComplete, onError) {
+    if (generating) return;
+
+    if (canMp4()) {
+      generateMp4(resultsData, content, onProgress, onComplete, function (err) {
+        // If MP4 encoding fails, try WebM fallback
+        console.warn('MP4 encoding failed, falling back to WebM:', err);
+        if (canWebm()) {
+          generating = false;
+          generateWebm(resultsData, content, onProgress, onComplete, onError);
+        } else {
+          onError(err);
+        }
+      });
+    } else if (canWebm()) {
+      generateWebm(resultsData, content, onProgress, onComplete, onError);
+    } else {
+      onError(new Error('Video recording not supported'));
+    }
   }
 
   // ------------------------------------

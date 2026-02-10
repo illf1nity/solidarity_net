@@ -47,6 +47,163 @@
         "placeholder": "e.g. 5",
         "error": "Please enter a number between 0 and 50."
       },
+      "industry": {
+        "label": "Industry (optional)",
+        "placeholder": "",
+        "error": "",
+        "options": [
+          { "value": "", "label": "— Select your industry —" },
+          { "optgroup": "Agriculture, Forestry, Fishing & Hunting", "options": [
+            { "value": "agriculture", "label": "Agriculture, Forestry, Fishing & Hunting" },
+            { "value": "crop_production", "label": "Crop Production" },
+            { "value": "animal_production", "label": "Animal Production" },
+            { "value": "forestry_logging", "label": "Forestry and Logging" },
+            { "value": "fishing_hunting_trapping", "label": "Fishing, Hunting and Trapping" },
+            { "value": "support_agriculture", "label": "Support Activities for Agriculture and Forestry" }
+          ]},
+          { "optgroup": "Mining, Quarrying & Oil/Gas Extraction", "options": [
+            { "value": "mining", "label": "Mining, Quarrying, and Oil and Gas Extraction" },
+            { "value": "oil_gas_extraction", "label": "Oil and Gas Extraction" },
+            { "value": "mining_except_oil_gas", "label": "Mining (except Oil and Gas)" },
+            { "value": "support_mining", "label": "Support Activities for Mining" }
+          ]},
+          { "optgroup": "Utilities", "options": [
+            { "value": "utilities", "label": "Utilities" }
+          ]},
+          { "optgroup": "Construction", "options": [
+            { "value": "construction", "label": "Construction" },
+            { "value": "construction_buildings", "label": "Construction of Buildings" },
+            { "value": "heavy_civil_engineering", "label": "Heavy and Civil Engineering Construction" },
+            { "value": "specialty_trade_contractors", "label": "Specialty Trade Contractors" }
+          ]},
+          { "optgroup": "Manufacturing", "options": [
+            { "value": "manufacturing", "label": "Manufacturing" },
+            { "value": "food_manufacturing", "label": "Food Manufacturing" },
+            { "value": "beverage_tobacco_mfg", "label": "Beverage and Tobacco Product Manufacturing" },
+            { "value": "textile_mills", "label": "Textile Mills" },
+            { "value": "textile_product_mills", "label": "Textile Product Mills" },
+            { "value": "apparel_manufacturing", "label": "Apparel Manufacturing" },
+            { "value": "leather_mfg", "label": "Leather and Allied Product Manufacturing" },
+            { "value": "wood_product_mfg", "label": "Wood Product Manufacturing" },
+            { "value": "paper_manufacturing", "label": "Paper Manufacturing" },
+            { "value": "printing_support", "label": "Printing and Related Support Activities" },
+            { "value": "petroleum_coal_mfg", "label": "Petroleum and Coal Products Manufacturing" },
+            { "value": "chemical_manufacturing", "label": "Chemical Manufacturing" },
+            { "value": "plastics_rubber_mfg", "label": "Plastics and Rubber Products Manufacturing" },
+            { "value": "nonmetallic_mineral_mfg", "label": "Nonmetallic Mineral Product Manufacturing" },
+            { "value": "primary_metal_mfg", "label": "Primary Metal Manufacturing" },
+            { "value": "fabricated_metal_mfg", "label": "Fabricated Metal Product Manufacturing" },
+            { "value": "machinery_manufacturing", "label": "Machinery Manufacturing" },
+            { "value": "computer_electronic_mfg", "label": "Computer and Electronic Product Manufacturing" },
+            { "value": "electrical_equipment_mfg", "label": "Electrical Equipment, Appliance, and Component Manufacturing" },
+            { "value": "transportation_equip_mfg", "label": "Transportation Equipment Manufacturing" },
+            { "value": "furniture_mfg", "label": "Furniture and Related Product Manufacturing" },
+            { "value": "miscellaneous_mfg", "label": "Miscellaneous Manufacturing" }
+          ]},
+          { "optgroup": "Wholesale Trade", "options": [
+            { "value": "wholesale_trade", "label": "Wholesale Trade" },
+            { "value": "wholesale_durable", "label": "Merchant Wholesalers, Durable Goods" },
+            { "value": "wholesale_nondurable", "label": "Merchant Wholesalers, Nondurable Goods" },
+            { "value": "wholesale_electronic_markets", "label": "Wholesale Electronic Markets and Agents and Brokers" }
+          ]},
+          { "optgroup": "Retail Trade", "options": [
+            { "value": "retail", "label": "Retail Trade" },
+            { "value": "motor_vehicle_dealers", "label": "Motor Vehicle and Parts Dealers" },
+            { "value": "furniture_home_stores", "label": "Furniture and Home Furnishings Stores" },
+            { "value": "electronics_appliance_stores", "label": "Electronics and Appliance Stores" },
+            { "value": "building_material_stores", "label": "Building Material and Garden Equipment Dealers" },
+            { "value": "food_beverage_stores", "label": "Food and Beverage Stores" },
+            { "value": "health_personal_care_stores", "label": "Health and Personal Care Stores" },
+            { "value": "gasoline_stations", "label": "Gasoline Stations" },
+            { "value": "clothing_stores", "label": "Clothing and Clothing Accessories Stores" },
+            { "value": "sporting_hobby_book_stores", "label": "Sporting Goods, Hobby, Book, and Music Stores" },
+            { "value": "general_merchandise_stores", "label": "General Merchandise Stores" },
+            { "value": "miscellaneous_store_retailers", "label": "Miscellaneous Store Retailers" },
+            { "value": "nonstore_retailers", "label": "Nonstore Retailers" }
+          ]},
+          { "optgroup": "Transportation & Warehousing", "options": [
+            { "value": "transportation", "label": "Transportation and Warehousing" },
+            { "value": "air_transportation", "label": "Air Transportation" },
+            { "value": "rail_transportation", "label": "Rail Transportation" },
+            { "value": "water_transportation", "label": "Water Transportation" },
+            { "value": "truck_transportation", "label": "Truck Transportation" },
+            { "value": "transit_ground_passenger", "label": "Transit and Ground Passenger Transportation" },
+            { "value": "pipeline_transportation", "label": "Pipeline Transportation" },
+            { "value": "scenic_sightseeing", "label": "Scenic and Sightseeing Transportation" },
+            { "value": "support_transportation", "label": "Support Activities for Transportation" },
+            { "value": "postal_service", "label": "Postal Service" },
+            { "value": "couriers_messengers", "label": "Couriers and Messengers" },
+            { "value": "warehousing_storage", "label": "Warehousing and Storage" }
+          ]},
+          { "optgroup": "Information", "options": [
+            { "value": "information", "label": "Information" },
+            { "value": "publishing", "label": "Publishing Industries (except Internet)" },
+            { "value": "motion_picture_sound", "label": "Motion Picture and Sound Recording Industries" },
+            { "value": "broadcasting", "label": "Broadcasting (except Internet)" },
+            { "value": "internet_publishing", "label": "Internet Publishing and Broadcasting" },
+            { "value": "telecommunications", "label": "Telecommunications" },
+            { "value": "data_processing_hosting", "label": "Data Processing, Hosting, and Related Services" },
+            { "value": "other_information_services", "label": "Other Information Services" }
+          ]},
+          { "optgroup": "Finance & Insurance", "options": [
+            { "value": "finance", "label": "Finance and Insurance" },
+            { "value": "monetary_authorities", "label": "Monetary Authorities - Central Bank" },
+            { "value": "credit_intermediation", "label": "Credit Intermediation and Related Activities" },
+            { "value": "securities_commodities", "label": "Securities, Commodity Contracts, and Related" },
+            { "value": "insurance_carriers", "label": "Insurance Carriers and Related Activities" },
+            { "value": "funds_trusts", "label": "Funds, Trusts, and Other Financial Vehicles" }
+          ]},
+          { "optgroup": "Real Estate & Rental/Leasing", "options": [
+            { "value": "real_estate_rental", "label": "Real Estate and Rental and Leasing" },
+            { "value": "real_estate", "label": "Real Estate" },
+            { "value": "rental_leasing_services", "label": "Rental and Leasing Services" },
+            { "value": "lessors_intangible_assets", "label": "Lessors of Nonfinancial Intangible Assets" }
+          ]},
+          { "optgroup": "Professional, Scientific & Technical Services", "options": [
+            { "value": "professional_services", "label": "Professional, Scientific, and Technical Services" }
+          ]},
+          { "optgroup": "Management of Companies", "options": [
+            { "value": "management_companies", "label": "Management of Companies and Enterprises" }
+          ]},
+          { "optgroup": "Administrative, Support & Waste Management", "options": [
+            { "value": "admin_support_waste", "label": "Administrative and Support and Waste Management" },
+            { "value": "admin_support_services", "label": "Administrative and Support Services" },
+            { "value": "waste_management", "label": "Waste Management and Remediation Services" }
+          ]},
+          { "optgroup": "Educational Services", "options": [
+            { "value": "education", "label": "Educational Services" }
+          ]},
+          { "optgroup": "Health Care & Social Assistance", "options": [
+            { "value": "healthcare", "label": "Health Care and Social Assistance" },
+            { "value": "ambulatory_health_care", "label": "Ambulatory Health Care Services" },
+            { "value": "hospitals", "label": "Hospitals" },
+            { "value": "nursing_residential_care", "label": "Nursing and Residential Care Facilities" },
+            { "value": "social_assistance", "label": "Social Assistance" }
+          ]},
+          { "optgroup": "Arts, Entertainment & Recreation", "options": [
+            { "value": "arts_entertainment", "label": "Arts, Entertainment, and Recreation" },
+            { "value": "performing_arts_sports", "label": "Performing Arts, Spectator Sports, and Related" },
+            { "value": "museums_historical_sites", "label": "Museums, Historical Sites, and Similar Institutions" },
+            { "value": "amusement_gambling_recreation", "label": "Amusement, Gambling, and Recreation Industries" }
+          ]},
+          { "optgroup": "Accommodation & Food Services", "options": [
+            { "value": "accommodation_food", "label": "Accommodation and Food Services" },
+            { "value": "accommodation", "label": "Accommodation" },
+            { "value": "food_service", "label": "Food Services and Drinking Places" }
+          ]},
+          { "optgroup": "Other Services", "options": [
+            { "value": "other_services", "label": "Other Services (except Public Administration)" },
+            { "value": "repair_maintenance", "label": "Repair and Maintenance" },
+            { "value": "personal_laundry_services", "label": "Personal and Laundry Services" },
+            { "value": "religious_civic_orgs", "label": "Religious, Grantmaking, Civic, Professional Organizations" },
+            { "value": "private_households", "label": "Private Households" }
+          ]},
+          { "optgroup": "Government", "options": [
+            { "value": "government", "label": "Government" }
+          ]},
+          { "value": "other", "label": "Other" }
+        ]
+      },
       "current_rent": {
         "label": "Monthly Rent (optional)",
         "placeholder": "e.g. 1,500",
@@ -163,13 +320,19 @@
 
   "phase3c": {
     "raise_heading": "What a raise would mean for your life",
+    "ahead_heading": "Your pay is competitive",
+    "ahead_context": "Your compensation meets or exceeds the market-adjusted rate for your experience and region. That\u2019s leverage \u2014 use it to help a coworker negotiate theirs.",
     "bar_labels": {
       "current": "Your current annual income",
       "projected": "With the gap closed by half"
     },
-    "projection_periods": ["Year 1", "5 Years", "10 Years"],
-    "wins_heading": "What collective action has won",
-    "wins": [
+    "projection_periods": ["Year 1", "5 Years", "10 Years"]
+  },
+
+  "wins": {
+    "label": "PROOF IT WORKS",
+    "heading": "What collective action has won",
+    "items": [
       {
         "text": "Newly unionized workers see an average 18% wage increase in their first contract.",
         "source": "Economic Policy Institute, 2023"

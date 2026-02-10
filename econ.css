@@ -148,6 +148,14 @@ body {
   box-shadow: 0 0 0 3px var(--accent-gold-glow);
 }
 
+.form-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: var(--space-4);
+}
+
 .form-input.error,
 .form-select.error {
   border-color: var(--gap-red);
@@ -178,6 +186,21 @@ body {
   background: var(--bg-elevated);
   color: var(--text-primary);
   padding: 12px;
+}
+
+.form-select optgroup {
+  background: var(--bg-surface);
+  color: var(--accent-gold);
+  font-weight: 600;
+  font-size: 13px;
+  font-style: normal;
+  letter-spacing: 0.03em;
+}
+
+.form-select optgroup option {
+  color: var(--text-primary);
+  font-weight: 400;
+  padding-left: 12px;
 }
 
 /* Pay frequency toggle */
@@ -1076,24 +1099,58 @@ body {
   margin-bottom: var(--space-8);
 }
 
-/* Collective action wins */
+/* ============================================
+   COLLECTIVE ACTION WINS — Standalone Section
+   ============================================ */
+.phase-wins {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-3);
+}
+
+.wins-header {
+  text-align: center;
+  margin-bottom: var(--space-5);
+}
+
+.wins-label {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  margin-bottom: var(--space-1);
+  padding: 4px 12px;
+  background: rgba(212, 160, 84, 0.08);
+  border-radius: 4px;
+}
+
 .wins-heading {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 20px;
+  font-size: 24px;
   color: var(--text-primary);
-  margin-bottom: var(--space-3);
-  text-align: center;
+  margin-top: var(--space-2);
+}
+
+.wins-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .win-card {
-  max-width: 480px;
-  margin: 0 auto var(--space-2);
-  padding: var(--space-3);
+  display: flex;
+  max-width: 520px;
+  margin: 0 auto;
+  width: 100%;
   background: var(--bg-surface);
-  border-radius: 8px;
+  border-radius: 10px;
+  overflow: hidden;
   opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(20px);
   transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
 
@@ -1102,11 +1159,31 @@ body {
   transform: translateY(0);
 }
 
+.win-accent {
+  width: 4px;
+  min-height: 100%;
+  background: var(--accent-gold);
+  flex-shrink: 0;
+}
+
+.win-body {
+  padding: var(--space-3) var(--space-3);
+  flex: 1;
+}
+
 .win-text {
   font-family: var(--font-body);
-  font-size: 16px;
+  font-weight: 500;
+  font-size: 15px;
   color: var(--text-primary);
-  line-height: 1.5;
+  line-height: 1.55;
+}
+
+.win-card .source {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--text-tertiary-accessible);
 }
 
 /* ============================================
@@ -1446,7 +1523,7 @@ body {
   font-family: var(--font-body);
   font-size: 13px;
   color: var(--text-tertiary-accessible);
-  margin-top: var(--space-2);
+  margin-bottom: var(--space-3);
   padding: var(--space-1) 0;
 }
 
@@ -2123,6 +2200,14 @@ body {
 
   .urgency-card-value {
     font-size: 20px;
+  }
+
+  .wins-heading {
+    font-size: 28px;
+  }
+
+  .win-text {
+    font-size: 16px;
   }
 
   .cost-icon-grid {
