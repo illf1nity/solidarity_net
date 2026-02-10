@@ -58,6 +58,7 @@
     renderDownloadCard();
     bindEvents();
     initScrollObserver();
+    initHeader();
   }
 
   document.addEventListener('DOMContentLoaded', init);
@@ -1590,6 +1591,38 @@
     const resp = await fetch(url, config);
     if (!resp.ok) throw new Error('API ' + resp.status);
     return resp.json();
+  }
+
+  // ------------------------------------
+  // HEADER SCROLL BEHAVIOR
+  // ------------------------------------
+  function initHeader() {
+    var header = document.getElementById('site-header');
+    if (!header) return;
+
+    var ticking = false;
+
+    function updateHeader() {
+      var openingSection = document.getElementById('opening');
+      var openingHeight = openingSection ? openingSection.offsetHeight : 600;
+
+      // Show header after user scrolls past 60% of opening
+      if (window.scrollY > openingHeight * 0.6) {
+        header.classList.add('visible');
+      } else {
+        header.classList.remove('visible');
+      }
+      ticking = false;
+    }
+
+    window.addEventListener('scroll', function() {
+      if (!ticking) {
+        window.requestAnimationFrame(updateHeader);
+        ticking = true;
+      }
+    }, { passive: true });
+
+    updateHeader();
   }
 
   function loadScript(src) {
