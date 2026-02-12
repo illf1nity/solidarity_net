@@ -63,7 +63,7 @@ body {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(12, 15, 20, 0.97);
+  background: var(--bg-header);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(212, 160, 84, 0.25);
@@ -244,8 +244,8 @@ body {
 .phase-validation,
 .phase-change,
 .phase-action {
-  background: rgba(12, 15, 20, 0.88);
-  border: 1px solid rgba(42, 48, 64, 0.4);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 16px;
   max-width: 680px;
   margin-left: auto;
@@ -256,8 +256,8 @@ body {
 /* Loading and error share the dark panel look */
 .loading-section,
 .error-section {
-  background: rgba(12, 15, 20, 0.88);
-  border: 1px solid rgba(42, 48, 64, 0.4);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 16px;
 }
 
@@ -320,7 +320,7 @@ body {
   max-width: 600px;
   margin: 0 auto var(--space-4);
   padding: var(--space-3) var(--space-3);
-  background: rgba(12, 15, 20, 0.75);
+  background: var(--bg-trust);
   border: 1px solid rgba(74, 155, 127, 0.2);
   border-radius: 12px;
   backdrop-filter: blur(8px);
@@ -2036,7 +2036,7 @@ body {
   left: 0;
   right: 0;
   height: 56px;
-  background: rgba(22, 27, 36, 0.92);
+  background: var(--bg-sticky);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--border-subtle);
@@ -2414,6 +2414,291 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   CUSTOMIZATION PANEL — Isolated from page theming
+   All colors hardcoded so panel stays stable
+   ============================================ */
+.customize-toggle {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1100;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #161B24;
+  border: 1px solid #2A3040;
+  color: #9CA3AF;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: background-color 200ms ease, color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+
+@media (hover: hover) {
+  .customize-toggle:hover {
+    background: #E8A633;
+    color: #0C0F14;
+    box-shadow: 0 4px 24px rgba(232, 166, 51, 0.3);
+    transform: rotate(30deg);
+  }
+}
+
+.customize-toggle:active {
+  transform: scale(0.92);
+}
+
+.customize-toggle svg {
+  transition: transform 400ms ease;
+}
+
+.customize-toggle.active svg {
+  transform: rotate(90deg);
+}
+
+.customize-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+
+.customize-overlay.visible {
+  opacity: 1;
+}
+
+.customize-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1060;
+  width: 340px;
+  max-width: 90vw;
+  background: #0C0F14;
+  border-right: 1px solid #2A3040;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 300ms ease;
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+}
+
+.customize-overlay.visible .customize-panel {
+  transform: translateX(0);
+}
+
+.customize-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #2A3040;
+  flex-shrink: 0;
+}
+
+.customize-title {
+  font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #E8A633;
+}
+
+.customize-close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid #2A3040;
+  border-radius: 8px;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+
+@media (hover: hover) {
+  .customize-close:hover {
+    color: #F0EDE8;
+    border-color: #9CA3AF;
+  }
+}
+
+.customize-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #2A3040 transparent;
+}
+
+.customize-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.customize-body::-webkit-scrollbar-thumb {
+  background: #2A3040;
+  border-radius: 3px;
+}
+
+.customize-section {
+  margin-bottom: 24px;
+}
+
+.customize-section-title {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7B8694;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #2A3040;
+}
+
+.customize-field {
+  margin-bottom: 14px;
+}
+
+.customize-label {
+  display: block;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: #9CA3AF;
+  margin-bottom: 4px;
+}
+
+.customize-color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.customize-color {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #2A3040;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 2px;
+  background: #161B24;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.customize-color::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.customize-color::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.customize-color::-moz-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.customize-color-hex {
+  font-family: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  color: #7B8694;
+}
+
+.customize-input,
+.customize-textarea {
+  width: 100%;
+  background: #161B24;
+  border: 1px solid #2A3040;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  color: #F0EDE8;
+  transition: border-color 200ms ease;
+  resize: vertical;
+}
+
+.customize-input:focus,
+.customize-textarea:focus {
+  outline: none;
+  border-color: #E8A633;
+}
+
+.customize-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #2A3040;
+  margin-bottom: 80px;
+}
+
+.customize-btn {
+  flex: 1;
+  height: 38px;
+  border-radius: 8px;
+  font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 200ms ease, transform 100ms ease;
+}
+
+.customize-btn-reset {
+  background: #161B24;
+  color: #9CA3AF;
+  border: 1px solid #2A3040;
+}
+
+@media (hover: hover) {
+  .customize-btn-reset:hover {
+    background: #1E2430;
+  }
+}
+
+.customize-btn-export {
+  background: #E8A633;
+  color: #0C0F14;
+}
+
+@media (hover: hover) {
+  .customize-btn-export:hover {
+    background: #F5C04D;
+  }
+}
+
+.customize-btn:active {
+  transform: scale(0.97);
+}
+
+/* Bump gear above sticky bar via JS-toggled class */
+.customize-toggle.above-sticky {
+  bottom: 80px;
+}
+
+@media (max-width: 640px) {
+  .customize-toggle {
+    bottom: 16px;
+    left: 16px;
+    width: 44px;
+    height: 44px;
+  }
+  .customize-toggle.above-sticky {
+    bottom: 72px;
   }
 }
 

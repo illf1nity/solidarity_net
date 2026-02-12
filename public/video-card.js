@@ -10,7 +10,7 @@
 
   var W = 1080;
   var H = 1920;
-  var DURATION = 5; // seconds
+  var DURATION = 15; // seconds (3 scenes × 5s each)
   var FPS = 30;
 
   // Fractal render resolution (1/4 scale for performance)
@@ -426,163 +426,307 @@
   // ------------------------------------
   function drawTextOverlay(ctx, resultsData, content, tier, t) {
     var dc = content.download_card;
-    var cumulative = resultsData.impact.summary.cumulative_economic_impact;
+    var summary = resultsData.impact.summary;
+    var metrics = resultsData.impact.metrics;
     var worth = resultsData.worth;
+    var cumulative = summary.cumulative_economic_impact;
 
     var heroColor = GOLD;
     if (tier === 'severe') heroColor = GAP_RED;
     if (tier === 'positive') heroColor = GROWTH_GREEN;
 
-    // -- Dark backing gradient for text readability --
+    var hasGap = worth && worth.worthGap && worth.worthGap.annual > 0;
+
+    // -- Dark backing gradient (always present, covers full frame) --
     var backAlpha = Math.min(t / 0.3, 1) * 0.65;
     ctx.save();
     ctx.globalAlpha = backAlpha;
-    var backing = ctx.createLinearGradient(0, 200, 0, 1300);
+    var backing = ctx.createLinearGradient(0, 100, 0, H - 100);
     backing.addColorStop(0, 'rgba(12, 15, 20, 0)');
-    backing.addColorStop(0.12, 'rgba(12, 15, 20, 1)');
-    backing.addColorStop(0.88, 'rgba(12, 15, 20, 1)');
+    backing.addColorStop(0.08, 'rgba(12, 15, 20, 1)');
+    backing.addColorStop(0.92, 'rgba(12, 15, 20, 1)');
     backing.addColorStop(1, 'rgba(12, 15, 20, 0)');
     ctx.fillStyle = backing;
-    ctx.fillRect(0, 200, W, 1100);
+    ctx.fillRect(0, 100, W, H - 200);
     ctx.restore();
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // -- Staggered fade-in timing --
-    var headerAlpha = fadeIn(t, 0.2, 0.4);
-    var heroAlpha = fadeIn(t, 0.5, 0.5);
-    var contextAlpha = fadeIn(t, 1.2, 0.4);
-    var secondaryAlpha = fadeIn(t, 1.8, 0.4);
-    var footerAlpha = fadeIn(t, 2.2, 0.4);
+    // ========== SCENE 1: YOUR ECONOMIC IMPACT (0–5s) ==========
+    if (t < 5) {
+      var s1o = fadeOut(t, 4.0, 1.0); // fade out last second
 
-    // -- HEADER (vertically centered layout) --
-    ctx.save();
-    ctx.globalAlpha = headerAlpha;
-    ctx.font = '400 30px "Space Grotesk", sans-serif';
-    ctx.fillStyle = TEXT_SECONDARY;
-    if (typeof ctx.letterSpacing !== 'undefined') ctx.letterSpacing = '4px';
-    ctx.fillText(dc.header.toUpperCase(), W / 2, 520);
-    if (typeof ctx.letterSpacing !== 'undefined') ctx.letterSpacing = '0px';
-    ctx.restore();
-
-    // -- HERO NUMBER (count-up animation) --
-    ctx.save();
-    ctx.globalAlpha = heroAlpha;
-    ctx.font = '700 110px "JetBrains Mono", monospace';
-    ctx.fillStyle = heroColor;
-    ctx.shadowColor = heroColor;
-    ctx.shadowBlur = 40;
-    var displayVal = countUp(cumulative, t, 0.5, 2.0);
-    ctx.fillText(formatCurrency(displayVal), W / 2, 720);
-    ctx.restore();
-
-    // -- CONTEXT LINE --
-    ctx.save();
-    ctx.globalAlpha = contextAlpha;
-    ctx.font = '300 38px "Space Grotesk", sans-serif';
-    ctx.fillStyle = TEXT_PRIMARY;
-    wrapText(ctx, content.results.hero_context_template, W / 2, 870, 820, 54);
-    ctx.restore();
-
-    // -- SECONDARY STAT --
-    if (worth && worth.worthGap && worth.worthGap.annual > 0) {
+      // Header
+      var hA = fadeIn(t, 0.2, 0.4) * s1o;
       ctx.save();
-      ctx.globalAlpha = secondaryAlpha;
-      ctx.font = '400 30px "Inter", sans-serif';
+      ctx.globalAlpha = hA;
+      ctx.font = '400 30px "Space Grotesk", sans-serif';
       ctx.fillStyle = TEXT_SECONDARY;
-      var secondaryText = formatCurrency(worth.worthGap.annual) +
-        '/yr ' + content.results.secondary_context_template;
-      wrapText(ctx, secondaryText, W / 2, 1040, 740, 44);
+      if (typeof ctx.letterSpacing !== 'undefined') ctx.letterSpacing = '4px';
+      ctx.fillText(dc.header.toUpperCase(), W / 2, 520);
+      if (typeof ctx.letterSpacing !== 'undefined') ctx.letterSpacing = '0px';
       ctx.restore();
+
+      // Hero count-up
+      var heroA = fadeIn(t, 0.5, 0.5) * s1o;
+      ctx.save();
+      ctx.globalAlpha = heroA;
+      ctx.font = '700 110px "JetBrains Mono", monospace';
+      ctx.fillStyle = heroColor;
+      ctx.shadowColor = heroColor;
+      ctx.shadowBlur = 40;
+      var displayVal = countUp(cumulative, t, 0.5, 2.0);
+      ctx.fillText(formatCurrency(displayVal), W / 2, 720);
+      ctx.restore();
+
+      // Context line
+      var ctxA = fadeIn(t, 1.2, 0.4) * s1o;
+      ctx.save();
+      ctx.globalAlpha = ctxA;
+      ctx.font = '300 38px "Space Grotesk", sans-serif';
+      ctx.fillStyle = TEXT_PRIMARY;
+      wrapText(ctx, content.results.hero_context_template, W / 2, 870, 820, 54);
+      ctx.restore();
+
+      // Secondary stat
+      if (hasGap) {
+        var secA = fadeIn(t, 1.8, 0.4) * s1o;
+        ctx.save();
+        ctx.globalAlpha = secA;
+        ctx.font = '400 30px "Inter", sans-serif';
+        ctx.fillStyle = TEXT_SECONDARY;
+        var secText = formatCurrency(worth.worthGap.annual) +
+          '/yr ' + content.results.secondary_context_template;
+        wrapText(ctx, secText, W / 2, 1040, 740, 44);
+        ctx.restore();
+      }
     }
 
-    // -- THIN DECORATIVE LINE --
-    ctx.save();
-    ctx.globalAlpha = footerAlpha * 0.4;
-    ctx.strokeStyle = GOLD;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo((W - 300) / 2, H - 310);
-    ctx.lineTo((W + 300) / 2, H - 310);
-    ctx.stroke();
-    ctx.restore();
+    // ========== SCENE 2: THE BREAKDOWN (5–10s) ==========
+    if (t >= 4.5 && t < 10) {
+      var s2t = t - 5;
+      var s2i = fadeIn(s2t, 0, 0.5);
+      var s2o = fadeOut(t, 9.0, 1.0);
+      var s2 = s2i * s2o;
 
-    // -- LOGO / URL --
-    if (logoLoaded && logoImage) {
+      // Header
+      var h2A = fadeIn(s2t, 0.0, 0.4) * s2o;
       ctx.save();
-      ctx.globalAlpha = footerAlpha;
+      ctx.globalAlpha = h2A;
+      ctx.font = '400 30px "Space Grotesk", sans-serif';
+      ctx.fillStyle = TEXT_SECONDARY;
+      if (typeof ctx.letterSpacing !== 'undefined') ctx.letterSpacing = '4px';
+      ctx.fillText('THE BREAKDOWN', W / 2, 320);
+      if (typeof ctx.letterSpacing !== 'undefined') ctx.letterSpacing = '0px';
+      ctx.restore();
 
-      // Logo native: 1062x135 (aspect 7.87:1)
-      var logoH = 60;
-      var logoW = Math.round(logoH * (1062 / 135));
-      var logoX = (W - logoW) / 2;
-      var logoY = (H - 250) - logoH / 2;
+      drawDecoLine(ctx, 380, h2A);
 
-      // Gradient pill frame behind logo (red → orange → amber → gold)
-      var pillPadH = 14;
-      var pillPadW = 28;
-      var pillR = 16;
-      var rx = logoX - pillPadW;
-      var ry = logoY - pillPadH;
-      var rw = logoW + pillPadW * 2;
-      var rh = logoH + pillPadH * 2;
+      // Stat rows with staggered fade-in
+      var prodVal = metrics.productivity ? metrics.productivity.value : '—';
+      var wageVal = metrics.wages ? metrics.wages.value : '—';
+      var valueCreated = summary.total_value_generated || 0;
+      var wagesReceived = summary.total_wages_received || 0;
+      var annualGap = hasGap ? worth.worthGap.annual : 0;
+      var rentVal = metrics.rent ? metrics.rent.value : null;
 
-      // Helper: draw rounded rect path
-      function drawPillPath(c, x, y, w, h, r) {
-        c.beginPath();
-        if (c.roundRect) {
-          c.roundRect(x, y, w, h, r);
-        } else {
-          c.moveTo(x + r, y);
-          c.lineTo(x + w - r, y);
-          c.arcTo(x + w, y, x + w, y + r, r);
-          c.lineTo(x + w, y + h - r);
-          c.arcTo(x + w, y + h, x + w - r, y + h, r);
-          c.lineTo(x + r, y + h);
-          c.arcTo(x, y + h, x, y + h - r, r);
-          c.lineTo(x, y + r);
-          c.arcTo(x, y, x + r, y, r);
-          c.closePath();
-        }
+      // Row 1: Productivity Growth
+      var r1A = fadeIn(s2t, 0.2, 0.3) * s2o;
+      ctx.save();
+      ctx.globalAlpha = r1A;
+      ctx.font = '400 26px "Inter", sans-serif';
+      ctx.fillStyle = TEXT_SECONDARY;
+      ctx.fillText('Productivity Growth', W / 2, 460);
+      ctx.font = '700 64px "JetBrains Mono", monospace';
+      ctx.fillStyle = GOLD;
+      ctx.fillText(prodVal, W / 2, 540);
+      ctx.restore();
+
+      // Row 2: Wage Growth
+      var r2A = fadeIn(s2t, 0.5, 0.3) * s2o;
+      ctx.save();
+      ctx.globalAlpha = r2A;
+      ctx.font = '400 26px "Inter", sans-serif';
+      ctx.fillStyle = TEXT_SECONDARY;
+      ctx.fillText('Wage Growth', W / 2, 640);
+      ctx.font = '700 64px "JetBrains Mono", monospace';
+      ctx.fillStyle = TEXT_PRIMARY;
+      ctx.fillText(wageVal, W / 2, 720);
+      ctx.restore();
+
+      drawDecoLine(ctx, 790, fadeIn(s2t, 0.8, 0.3) * s2o);
+
+      // Row 3: Value Created
+      var r3A = fadeIn(s2t, 1.0, 0.3) * s2o;
+      ctx.save();
+      ctx.globalAlpha = r3A;
+      ctx.font = '400 26px "Inter", sans-serif';
+      ctx.fillStyle = TEXT_SECONDARY;
+      ctx.fillText('Value You Created', W / 2, 870);
+      ctx.font = '700 58px "JetBrains Mono", monospace';
+      ctx.fillStyle = GOLD;
+      ctx.fillText(formatCurrency(valueCreated), W / 2, 945);
+      ctx.restore();
+
+      // Row 4: Wages Received
+      var r4A = fadeIn(s2t, 1.3, 0.3) * s2o;
+      ctx.save();
+      ctx.globalAlpha = r4A;
+      ctx.font = '400 26px "Inter", sans-serif';
+      ctx.fillStyle = TEXT_SECONDARY;
+      ctx.fillText('You Were Paid', W / 2, 1040);
+      ctx.font = '700 58px "JetBrains Mono", monospace';
+      ctx.fillStyle = TEXT_PRIMARY;
+      ctx.fillText(formatCurrency(wagesReceived), W / 2, 1115);
+      ctx.restore();
+
+      drawDecoLine(ctx, 1190, fadeIn(s2t, 1.6, 0.3) * s2o);
+
+      // Row 5: Annual Gap
+      if (hasGap) {
+        var r5A = fadeIn(s2t, 1.8, 0.3) * s2o;
+        ctx.save();
+        ctx.globalAlpha = r5A;
+        ctx.font = '400 26px "Inter", sans-serif';
+        ctx.fillStyle = TEXT_SECONDARY;
+        ctx.fillText('Annual Worth Gap', W / 2, 1270);
+        ctx.font = '700 64px "JetBrains Mono", monospace';
+        ctx.fillStyle = heroColor;
+        ctx.shadowColor = heroColor;
+        ctx.shadowBlur = 30;
+        ctx.fillText(formatCurrency(annualGap) + '/yr', W / 2, 1350);
+        ctx.restore();
       }
 
-      // Gradient stroke border only — no fill, transparent interior
-      var pillGrad = ctx.createLinearGradient(rx, ry, rx + rw, ry + rh);
-      pillGrad.addColorStop(0, '#C45B4A');
-      pillGrad.addColorStop(0.35, '#D4721A');
-      pillGrad.addColorStop(0.70, '#D4A054');
-      pillGrad.addColorStop(1, '#E8A633');
-      drawPillPath(ctx, rx, ry, rw, rh, pillR);
-      ctx.strokeStyle = pillGrad;
-      ctx.lineWidth = 4;
-      ctx.stroke();
-
-      // Draw logo on top of the light pill (no shadow)
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetY = 0;
-      ctx.drawImage(logoImage, logoX, logoY, logoW, logoH);
-
-      ctx.restore();
-    } else {
-      // Fallback: render URL text if logo unavailable
-      ctx.save();
-      ctx.globalAlpha = footerAlpha;
-      ctx.font = '400 34px "Inter", sans-serif';
-      ctx.fillStyle = TEXT_TERTIARY;
-      ctx.fillText(dc.url, W / 2, H - 220);
-      ctx.restore();
+      // Row 6: Rent Burden (if available)
+      if (rentVal) {
+        var r6A = fadeIn(s2t, 2.1, 0.3) * s2o;
+        ctx.save();
+        ctx.globalAlpha = r6A;
+        ctx.font = '400 26px "Inter", sans-serif';
+        ctx.fillStyle = TEXT_SECONDARY;
+        ctx.fillText('Rent Burden Increase', W / 2, hasGap ? 1460 : 1270);
+        ctx.font = '600 48px "JetBrains Mono", monospace';
+        ctx.fillStyle = GAP_RED;
+        ctx.fillText(rentVal, W / 2, hasGap ? 1530 : 1340);
+        ctx.restore();
+      }
     }
 
-    // -- TAGLINE (vivid red-orange for visibility) --
-    ctx.save();
-    ctx.globalAlpha = footerAlpha;
-    ctx.font = '600 30px "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#E8563A';
-    ctx.fillText(dc.tagline, W / 2, H - 150);
-    ctx.restore();
+    // ========== SCENE 3: THE REAL COST (10–15s) ==========
+    if (t >= 9.5) {
+      var s3t = t - 10;
+      var s3i = fadeIn(s3t, 0, 0.5);
 
-    // -- WATERMARK --
+      // Header
+      var h3A = fadeIn(s3t, 0.0, 0.4);
+      ctx.save();
+      ctx.globalAlpha = h3A;
+      ctx.font = '400 30px "Space Grotesk", sans-serif';
+      ctx.fillStyle = TEXT_SECONDARY;
+      if (typeof ctx.letterSpacing !== 'undefined') ctx.letterSpacing = '4px';
+      ctx.fillText('THE REAL COST', W / 2, 320);
+      if (typeof ctx.letterSpacing !== 'undefined') ctx.letterSpacing = '0px';
+      ctx.restore();
+
+      drawDecoLine(ctx, 380, h3A);
+
+      if (hasGap) {
+        // Days worked free per year
+        var annualSalary = resultsData.formValues.current_wage || resultsData.annualSalary || 1;
+        var dailyWage = annualSalary / 260;
+        var daysWorkedFree = Math.round(worth.worthGap.annual / dailyWage);
+
+        var d1A = fadeIn(s3t, 0.3, 0.4);
+        ctx.save();
+        ctx.globalAlpha = d1A;
+        ctx.font = '400 28px "Inter", sans-serif';
+        ctx.fillStyle = TEXT_SECONDARY;
+        ctx.fillText('Days per year your employer keeps', W / 2, 460);
+        ctx.font = '700 80px "JetBrains Mono", monospace';
+        ctx.fillStyle = GOLD;
+        ctx.shadowColor = GOLD;
+        ctx.shadowBlur = 30;
+        var daysDisplay = countUp(daysWorkedFree, s3t, 0.3, 1.0);
+        ctx.fillText(daysDisplay + ' days', W / 2, 560);
+        ctx.restore();
+
+        // Months of rent (if rent data available)
+        var monthlyRent = (resultsData.formValues && resultsData.formValues.current_rent)
+          ? resultsData.formValues.current_rent
+          : (resultsData.local && resultsData.local.rent ? resultsData.local.rent : 0);
+
+        if (monthlyRent > 0) {
+          var rentMonths = Math.round((worth.worthGap.annual / monthlyRent) * 10) / 10;
+
+          var d2A = fadeIn(s3t, 0.8, 0.4);
+          ctx.save();
+          ctx.globalAlpha = d2A;
+          ctx.font = '400 28px "Inter", sans-serif';
+          ctx.fillStyle = TEXT_SECONDARY;
+          ctx.fillText('Months of rent that gap covers', W / 2, 680);
+          ctx.font = '700 80px "JetBrains Mono", monospace';
+          ctx.fillStyle = GAP_RED;
+          ctx.shadowColor = GAP_RED;
+          ctx.shadowBlur = 30;
+          ctx.fillText(rentMonths.toFixed(1), W / 2, 780);
+          ctx.restore();
+        }
+
+        drawDecoLine(ctx, monthlyRent > 0 ? 860 : 660, fadeIn(s3t, 1.2, 0.3));
+
+        // Lifetime impact
+        var lifeY = monthlyRent > 0 ? 940 : 740;
+        if (worth.lifetimeImpact) {
+          var d3A = fadeIn(s3t, 1.4, 0.4);
+          ctx.save();
+          ctx.globalAlpha = d3A;
+          ctx.font = '400 28px "Inter", sans-serif';
+          ctx.fillStyle = TEXT_SECONDARY;
+          ctx.fillText('Lifetime lost income', W / 2, lifeY);
+          ctx.font = '700 64px "JetBrains Mono", monospace';
+          ctx.fillStyle = heroColor;
+          ctx.shadowColor = heroColor;
+          ctx.shadowBlur = 30;
+          var lifeVal = countUp(worth.lifetimeImpact.totalLostIncome, s3t, 1.4, 1.5);
+          ctx.fillText(formatCurrency(lifeVal), W / 2, lifeY + 80);
+          ctx.restore();
+
+          if (worth.lifetimeImpact.lostInvestmentGrowth > 0) {
+            var d4A = fadeIn(s3t, 2.0, 0.4);
+            ctx.save();
+            ctx.globalAlpha = d4A;
+            ctx.font = '400 28px "Inter", sans-serif';
+            ctx.fillStyle = TEXT_SECONDARY;
+            ctx.fillText('If that gap were invested', W / 2, lifeY + 180);
+            ctx.font = '700 58px "JetBrains Mono", monospace';
+            ctx.fillStyle = GOLD;
+            ctx.fillText(formatCurrency(worth.lifetimeImpact.totalOpportunityCost), W / 2, lifeY + 255);
+            ctx.restore();
+          }
+        }
+      } else {
+        // Edge case: user is ahead of the curve
+        var eA = fadeIn(s3t, 0.3, 0.5);
+        ctx.save();
+        ctx.globalAlpha = eA;
+        ctx.font = '600 48px "Space Grotesk", sans-serif';
+        ctx.fillStyle = GROWTH_GREEN;
+        wrapText(ctx, "You're ahead of the curve.", W / 2, 600, 800, 64);
+        ctx.font = '300 32px "Inter", sans-serif';
+        ctx.fillStyle = TEXT_SECONDARY;
+        wrapText(ctx, 'Your pay aligns with your productivity-adjusted value. Use that leverage to help a coworker negotiate theirs.', W / 2, 780, 780, 48);
+        ctx.restore();
+      }
+
+      // Logo + tagline (bottom of Scene 3)
+      var footA = fadeIn(s3t, 2.5, 0.5);
+      drawDecoLine(ctx, H - 310, footA);
+      drawLogoFooter(ctx, dc, footA);
+    }
+
+    // -- WATERMARK (always visible) --
     ctx.save();
     ctx.globalAlpha = 0.08;
     ctx.textAlign = 'left';
@@ -602,12 +746,94 @@
     return p * p * (3 - 2 * p); // smoothstep
   }
 
+  function fadeOut(t, start, dur) {
+    if (t < start) return 1;
+    if (t >= start + dur) return 0;
+    var p = (t - start) / dur;
+    return 1 - p * p * (3 - 2 * p); // inverse smoothstep
+  }
+
   function countUp(target, t, start, dur) {
     if (t < start) return 0;
     if (t >= start + dur) return target;
     var p = (t - start) / dur;
     p = 1 - Math.pow(1 - p, 3); // ease-out cubic
     return Math.round(target * p);
+  }
+
+  function drawDecoLine(ctx, y, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.4;
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo((W - 400) / 2, y);
+    ctx.lineTo((W + 400) / 2, y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPillPath(c, x, y, w, h, r) {
+    c.beginPath();
+    if (c.roundRect) {
+      c.roundRect(x, y, w, h, r);
+    } else {
+      c.moveTo(x + r, y);
+      c.lineTo(x + w - r, y);
+      c.arcTo(x + w, y, x + w, y + r, r);
+      c.lineTo(x + w, y + h - r);
+      c.arcTo(x + w, y + h, x + w - r, y + h, r);
+      c.lineTo(x + r, y + h);
+      c.arcTo(x, y + h, x, y + h - r, r);
+      c.lineTo(x, y + r);
+      c.arcTo(x, y, x + r, y, r);
+      c.closePath();
+    }
+  }
+
+  function drawLogoFooter(ctx, dc, alpha) {
+    if (logoLoaded && logoImage) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      var logoH = 60;
+      var logoW = Math.round(logoH * (1062 / 135));
+      var logoX = (W - logoW) / 2;
+      var logoY = (H - 250) - logoH / 2;
+      var pillPadH = 14;
+      var pillPadW = 28;
+      var pillR = 16;
+      var rx = logoX - pillPadW;
+      var ry = logoY - pillPadH;
+      var rw = logoW + pillPadW * 2;
+      var rh = logoH + pillPadH * 2;
+      var pillGrad = ctx.createLinearGradient(rx, ry, rx + rw, ry + rh);
+      pillGrad.addColorStop(0, '#C45B4A');
+      pillGrad.addColorStop(0.35, '#D4721A');
+      pillGrad.addColorStop(0.70, '#D4A054');
+      pillGrad.addColorStop(1, '#E8A633');
+      drawPillPath(ctx, rx, ry, rw, rh, pillR);
+      ctx.strokeStyle = pillGrad;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.drawImage(logoImage, logoX, logoY, logoW, logoH);
+      ctx.restore();
+    } else {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.font = '400 34px "Inter", sans-serif';
+      ctx.fillStyle = TEXT_TERTIARY;
+      ctx.textAlign = 'center';
+      ctx.fillText(dc.url, W / 2, H - 220);
+      ctx.restore();
+    }
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    ctx.font = '600 30px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#E8563A';
+    ctx.fillText(dc.tagline, W / 2, H - 150);
+    ctx.restore();
   }
 
   // ------------------------------------

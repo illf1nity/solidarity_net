@@ -37,21 +37,21 @@
       <strong>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Anonymous
       </strong>
-      <span>No tracking. No accounts.</span>
+      <span id="trust-anon-text">No tracking. No accounts.</span>
     </div>
     <div class="trust-divider"></div>
     <div class="trust-stat">
       <strong>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>BLS Data
       </strong>
-      <span>Government economic statistics</span>
+      <span id="trust-data-text">Government economic statistics</span>
     </div>
     <div class="trust-divider"></div>
     <div class="trust-stat">
       <strong>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>Open Source
       </strong>
-      <span>Transparent calculations</span>
+      <span id="trust-source-text">Transparent calculations</span>
     </div>
   </div>
 
@@ -333,7 +333,7 @@
     <!-- Career Timeline: stacked bars per year -->
     <div id="career-timeline-section" hidden>
       <button class="breakdown-trigger career-timeline-trigger" id="career-timeline-trigger" aria-expanded="false" aria-controls="career-timeline-content">
-        <span>Your Career Timeline</span>
+        <span id="career-timeline-text">Your Career Timeline</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
       <div class="career-timeline-content" id="career-timeline-content">
@@ -345,7 +345,7 @@
 
     <!-- Cost of Waiting: urgency visualization -->
     <div id="urgency-section" class="urgency-section" hidden>
-      <h3 class="urgency-heading">The Cost of Waiting</h3>
+      <h3 class="urgency-heading" id="urgency-heading">The Cost of Waiting</h3>
       <div class="urgency-chart" id="urgency-chart" role="img" aria-label="Cumulative cost of waiting to act">
         <!-- SVG populated by JS -->
       </div>
@@ -360,12 +360,271 @@
   <div id="sticky-bar" class="sticky-bar" hidden aria-label="Quick actions">
     <button class="sticky-bar-btn btn-secondary" id="sticky-share-btn">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-      <span>Share</span>
+      <span id="sticky-share-text">Share</span>
     </button>
     <button class="sticky-bar-btn btn-primary" id="sticky-script-btn">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-      Get Script
+      <span id="sticky-script-text">Get Script</span>
     </button>
+  </div>
+
+  <!-- CUSTOMIZATION PANEL -->
+  <button class="customize-toggle" id="customize-toggle" aria-label="Open customization panel" title="Customize">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+  </button>
+
+  <div class="customize-overlay" id="customize-overlay" hidden>
+    <div class="customize-panel" id="customize-panel">
+      <div class="customize-header">
+        <h3 class="customize-title">Customize</h3>
+        <button class="customize-close" id="customize-close" aria-label="Close customization panel">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="customize-body" id="customize-body">
+        <!-- COLORS SECTION -->
+        <div class="customize-section">
+          <h4 class="customize-section-title">Colors</h4>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-accent-gold">Accent Gold</label>
+            <div class="customize-color-row">
+              <input type="color" id="cust-accent-gold" class="customize-color" data-var="--accent-gold" value="#E8A633">
+              <span class="customize-color-hex" id="cust-accent-gold-hex">#E8A633</span>
+            </div>
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-bg-primary">Background</label>
+            <div class="customize-color-row">
+              <input type="color" id="cust-bg-primary" class="customize-color" data-var="--bg-primary" data-derives="true" value="#0C0F14">
+              <span class="customize-color-hex" id="cust-bg-primary-hex">#0C0F14</span>
+            </div>
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-bg-surface">Surface</label>
+            <div class="customize-color-row">
+              <input type="color" id="cust-bg-surface" class="customize-color" data-var="--bg-surface" value="#161B24">
+              <span class="customize-color-hex" id="cust-bg-surface-hex">#161B24</span>
+            </div>
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-text-primary">Text Primary</label>
+            <div class="customize-color-row">
+              <input type="color" id="cust-text-primary" class="customize-color" data-var="--text-primary" value="#F0EDE8">
+              <span class="customize-color-hex" id="cust-text-primary-hex">#F0EDE8</span>
+            </div>
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-text-secondary">Text Secondary</label>
+            <div class="customize-color-row">
+              <input type="color" id="cust-text-secondary" class="customize-color" data-var="--text-secondary" value="#9CA3AF">
+              <span class="customize-color-hex" id="cust-text-secondary-hex">#9CA3AF</span>
+            </div>
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-gap-red">Gap Red</label>
+            <div class="customize-color-row">
+              <input type="color" id="cust-gap-red" class="customize-color" data-var="--gap-red" value="#E63946">
+              <span class="customize-color-hex" id="cust-gap-red-hex">#E63946</span>
+            </div>
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-growth-green">Growth Green</label>
+            <div class="customize-color-row">
+              <input type="color" id="cust-growth-green" class="customize-color" data-var="--growth-green" value="#4A9B7F">
+              <span class="customize-color-hex" id="cust-growth-green-hex">#4A9B7F</span>
+            </div>
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-border-subtle">Borders</label>
+            <div class="customize-color-row">
+              <input type="color" id="cust-border-subtle" class="customize-color" data-var="--border-subtle" value="#2A3040">
+              <span class="customize-color-hex" id="cust-border-subtle-hex">#2A3040</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TEXT — Header & Opening -->
+        <div class="customize-section">
+          <h4 class="customize-section-title">Header & Opening</h4>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-slogan">Header Slogan</label>
+            <textarea class="customize-textarea" id="cust-slogan" data-target=".header-slogan" rows="2">Know your worth.
+Claim it.</textarea>
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-privacy-note">Privacy Note</label>
+            <input type="text" class="customize-input" id="cust-privacy-note" data-target="#privacy-note-text" value="Anonymous. Nothing is stored or tracked.">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-submit-text">Submit Button</label>
+            <input type="text" class="customize-input" id="cust-submit-text" data-target="#submit-btn" value="See Your Results">
+          </div>
+        </div>
+
+        <!-- TEXT — Results -->
+        <div class="customize-section">
+          <h4 class="customize-section-title">Results Card</h4>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-card-label">Card Label</label>
+            <input type="text" class="customize-input" id="cust-card-label" data-target="#card-label" value="YOUR ECONOMIC IMPACT">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-hero-context">Hero Context</label>
+            <input type="text" class="customize-input" id="cust-hero-context" data-target="#hero-context" value="in productivity your wages never reflected">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-gap-claim">Gap Claim</label>
+            <input type="text" class="customize-input" id="cust-gap-claim" data-target="#gap-claim" value="That gap is yours. You earned it.">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-secondary-context">Secondary Context</label>
+            <input type="text" class="customize-input" id="cust-secondary-context" data-target="#secondary-stat-context" value="less per year than your labor produces">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-breakdown-trigger">Breakdown Trigger</label>
+            <input type="text" class="customize-input" id="cust-breakdown-trigger" data-target="#breakdown-trigger-text" value="See Full Breakdown">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-download-text">Download Button</label>
+            <input type="text" class="customize-input" id="cust-download-text" data-target="#download-btn-text" value="Download">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-share-text">Share Button</label>
+            <input type="text" class="customize-input" id="cust-share-text" data-target="#share-btn-text" value="Show Someone">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-methodology-trigger">Methodology Trigger</label>
+            <input type="text" class="customize-input" id="cust-methodology-trigger" data-target="#methodology-trigger-text" value="How We Calculated This">
+          </div>
+        </div>
+
+        <!-- TEXT — Wins & Action -->
+        <div class="customize-section">
+          <h4 class="customize-section-title">Wins & Action</h4>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-wins-heading">Wins Heading</label>
+            <input type="text" class="customize-input" id="cust-wins-heading" data-target="#wins-heading" value="What collective action has won">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-wins-label">Wins Label</label>
+            <input type="text" class="customize-input" id="cust-wins-label" data-target="#wins-label" value="PROOF IT WORKS">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-raise-heading">Raise Heading</label>
+            <input type="text" class="customize-input" id="cust-raise-heading" data-target="#raise-heading" value="What a raise would mean for your life">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-reframe">Reframe Statement</label>
+            <textarea class="customize-textarea" id="cust-reframe" data-target="#reframe-statement" rows="2">They didn't ask your permission. Why are you asking for theirs?</textarea>
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-action-heading">Action Heading</label>
+            <input type="text" class="customize-input" id="cust-action-heading" data-target="#action-heading" value="Take a Step">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-negotiate-btn">Negotiate Button</label>
+            <input type="text" class="customize-input" id="cust-negotiate-btn" data-target="#negotiation-btn-text, #collect-btn-text" value="GET WHAT YOU'RE OWED">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-closing-line">Closing Line</label>
+            <input type="text" class="customize-input" id="cust-closing-line" data-target="#closing-line" value="Bookmark this page. Run your numbers again next year.">
+          </div>
+        </div>
+
+        <!-- TEXT — Trust Banner -->
+        <div class="customize-section">
+          <h4 class="customize-section-title">Trust Banner</h4>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-trust-anon">Anonymous Note</label>
+            <input type="text" class="customize-input" id="cust-trust-anon" data-target="#trust-anon-text" value="No tracking. No accounts.">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-trust-data">Data Source Note</label>
+            <input type="text" class="customize-input" id="cust-trust-data" data-target="#trust-data-text" value="Government economic statistics">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-trust-source">Open Source Note</label>
+            <input type="text" class="customize-input" id="cust-trust-source" data-target="#trust-source-text" value="Transparent calculations">
+          </div>
+        </div>
+
+        <!-- TEXT — Charts & Timeline -->
+        <div class="customize-section">
+          <h4 class="customize-section-title">Charts & Timeline</h4>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-bar-current">Bar Label (Current)</label>
+            <input type="text" class="customize-input" id="cust-bar-current" data-target="#bar-label-current" value="Your current annual income">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-bar-projected">Bar Label (Projected)</label>
+            <input type="text" class="customize-input" id="cust-bar-projected" data-target="#bar-label-projected" value="With the gap closed by half">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-urgency-heading">Urgency Heading</label>
+            <input type="text" class="customize-input" id="cust-urgency-heading" data-target="#urgency-heading" value="The Cost of Waiting">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-career-timeline">Career Timeline Label</label>
+            <input type="text" class="customize-input" id="cust-career-timeline" data-target="#career-timeline-text" value="Your Career Timeline">
+          </div>
+        </div>
+
+        <!-- TEXT — Sticky Bar -->
+        <div class="customize-section">
+          <h4 class="customize-section-title">Sticky Bar</h4>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-sticky-share">Share Button</label>
+            <input type="text" class="customize-input" id="cust-sticky-share" data-target="#sticky-share-text" value="Share">
+          </div>
+
+          <div class="customize-field">
+            <label class="customize-label" for="cust-sticky-script">Script Button</label>
+            <input type="text" class="customize-input" id="cust-sticky-script" data-target="#sticky-script-text" value="Get Script">
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="customize-actions">
+          <button class="customize-btn customize-btn-reset" id="cust-reset">Reset to Defaults</button>
+          <button class="customize-btn customize-btn-export" id="cust-export">Export Settings</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- HIDDEN: Downloadable card render target (off-screen, for html2canvas) -->
