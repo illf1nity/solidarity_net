@@ -13,6 +13,8 @@ npm start
 
 Open **http://localhost:3000** in your browser.
 
+> **No server?** You can also open `public/econ.html` directly in your browser to preview the UI. The calculator requires the server, but all static content will render.
+
 ## What It Does
 
 Enter your salary, ZIP code, and work history. Ruptura calculates:
@@ -31,24 +33,28 @@ Enter your salary, ZIP code, and work history. Ruptura calculates:
 ## Project Structure
 
 ```
-server.js                  Entry point — middleware, route mounting, server start
+server.js                    Entry point (Express 5, middleware, route mounting)
+db.js                        SQLite schema, seed data, yearly indicators 1975-2024
 routes/
-  econ.js                  Economic calculator endpoints (impact, worth-gap, negotiation)
-  data.js                  Public data APIs (CPI, yearly indicators, HUD rent, map)
-  legacy.js                Solidarity Net endpoints (collectives, petitions, buildings)
+  econ.js                    Economic calculator endpoints
+  data.js                    Public data APIs (CPI, yearly, HUD rent, map)
+  legacy.js                  Solidarity Net endpoints (collectives, petitions)
 services/
-  calculationService.js    Market median, worth gap, lifetime cost calculations
-  wageData.js              MSA and state-level wage data (BLS)
-  govApi.js                BLS + HUD API wrappers with caching
-  scraping.js              Change.org + Telegram data fetchers
-db.js                      SQLite schema, seed data, yearly indicators (1975-2024)
-econ.html                  Main interface (single page)
-econ.js                    Client-side logic (vanilla JS, IIFE pattern)
-econ.css                   Styles (uses ruptura-tokens.css design tokens)
-ruptura-tokens.css         Shared design tokens (colors, fonts, spacing)
-content.json               All UI copy (labels, errors, messaging)
-video-card.js              Downloadable results card generation
-index.html                 Redirects to econ.html
+  calculationService.js      Market median, worth gap, lifetime cost calculations
+  wageData.js                MSA and state-level wage data (BLS)
+  govApi.js                  BLS + HUD API wrappers with caching
+  scraping.js                Change.org + Telegram data fetchers
+public/                      Client-side files (served as static by Express)
+  index.html                 Redirects to econ.html
+  econ.html                  Main interface (single page)
+  econ.js                    Client-side logic (vanilla JS, IIFE pattern)
+  econ.css                   Styles (uses ruptura-tokens.css design tokens)
+  ruptura-tokens.css         Shared design tokens (colors, fonts, spacing)
+  content.json               All UI copy (labels, errors, messaging)
+  video-card.js              Downloadable results card generation (canvas/MediaRecorder)
+  ruptura_logo.svg           Logo
+  images/
+    ruptura-logo.jpg         Logo raster fallback
 ```
 
 ## Configuration (Optional)
