@@ -31,6 +31,12 @@
   --growth-green: #4A9B7F;
   --growth-green-subtle: rgba(74, 155, 127, 0.12);
 
+  /* Colors — Derived Backgrounds (transparent overlays on body gradient) */
+  --bg-panel: rgba(12, 15, 20, 0.88);
+  --bg-header: rgba(12, 15, 20, 0.97);
+  --bg-sticky: rgba(22, 27, 36, 0.92);
+  --bg-trust: rgba(12, 15, 20, 0.75);
+
   /* Gradients — extracted from logo */
   --gradient-rupture: linear-gradient(180deg, #1a1a1a 0%, #E8A633 45%, #D4A054 65%, #E63946 100%);
   --gradient-rupture-h: linear-gradient(90deg, #E8A633 0%, #D4A054 50%, #E63946 100%);

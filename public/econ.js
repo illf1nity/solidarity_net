@@ -70,6 +70,7 @@
     bindEvents();
     initScrollObserver();
     initHeader();
+    initCustomizePanel();
   }
 
   document.addEventListener('DOMContentLoaded', init);
@@ -1694,4 +1695,275 @@
       document.head.appendChild(s);
     });
   }
+
+  // ============================================
+  // CUSTOMIZATION PANEL
+  // ============================================
+  var CUSTOM_STORAGE_KEY = 'ruptura_customizations';
+
+  var DEFAULT_COLORS = {
+    '--accent-gold': '#E8A633',
+    '--bg-primary': '#0C0F14',
+    '--bg-surface': '#161B24',
+    '--text-primary': '#F0EDE8',
+    '--text-secondary': '#9CA3AF',
+    '--gap-red': '#E63946',
+    '--growth-green': '#4A9B7F',
+    '--border-subtle': '#2A3040'
+  };
+
+  var DERIVED_VARS = ['--bg-panel', '--bg-header', '--bg-sticky', '--bg-trust'];
+
+  var DEFAULT_TEXTS = {
+    'cust-slogan': 'Know your worth.\nClaim it.',
+    'cust-privacy-note': 'Anonymous. Nothing is stored or tracked.',
+    'cust-submit-text': 'See Your Results',
+    'cust-card-label': 'YOUR ECONOMIC IMPACT',
+    'cust-hero-context': 'in productivity your wages never reflected',
+    'cust-gap-claim': 'That gap is yours. You earned it.',
+    'cust-secondary-context': 'less per year than your labor produces',
+    'cust-breakdown-trigger': 'See Full Breakdown',
+    'cust-download-text': 'Download',
+    'cust-share-text': 'Show Someone',
+    'cust-methodology-trigger': 'How We Calculated This',
+    'cust-wins-heading': 'What collective action has won',
+    'cust-wins-label': 'PROOF IT WORKS',
+    'cust-raise-heading': 'What a raise would mean for your life',
+    'cust-reframe': "They didn't ask your permission. Why are you asking for theirs?",
+    'cust-action-heading': 'Take a Step',
+    'cust-negotiate-btn': "GET WHAT YOU'RE OWED",
+    'cust-closing-line': 'Bookmark this page. Run your numbers again next year.',
+    'cust-trust-anon': 'No tracking. No accounts.',
+    'cust-trust-data': 'Government economic statistics',
+    'cust-trust-source': 'Transparent calculations',
+    'cust-bar-current': 'Your current annual income',
+    'cust-bar-projected': 'With the gap closed by half',
+    'cust-urgency-heading': 'The Cost of Waiting',
+    'cust-career-timeline': 'Your Career Timeline',
+    'cust-sticky-share': 'Share',
+    'cust-sticky-script': 'Get Script'
+  };
+
+  function hexToRgb(hex) {
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return { r: r, g: g, b: b };
+  }
+
+  function updateDerivedColors(bgPrimaryHex, bgSurfaceHex) {
+    var p = hexToRgb(bgPrimaryHex);
+    var s = hexToRgb(bgSurfaceHex);
+    document.documentElement.style.setProperty('--bg-panel', 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0.88)');
+    document.documentElement.style.setProperty('--bg-header', 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0.97)');
+    document.documentElement.style.setProperty('--bg-trust', 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',0.75)');
+    document.documentElement.style.setProperty('--bg-sticky', 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',0.92)');
+  }
+
+  function initCustomizePanel() {
+    var toggle = document.getElementById('customize-toggle');
+    var overlay = document.getElementById('customize-overlay');
+    var closeBtn = document.getElementById('customize-close');
+    var resetBtn = document.getElementById('cust-reset');
+    var exportBtn = document.getElementById('cust-export');
+
+    if (!toggle || !overlay) return;
+
+    // Open panel
+    toggle.addEventListener('click', function() {
+      overlay.hidden = false;
+      toggle.classList.add('active');
+      // Force reflow before adding class for transition
+      overlay.offsetHeight;
+      overlay.classList.add('visible');
+    });
+
+    // Close panel
+    function closePanel() {
+      overlay.classList.remove('visible');
+      toggle.classList.remove('active');
+      setTimeout(function() { overlay.hidden = true; }, 300);
+    }
+
+    closeBtn.addEventListener('click', closePanel);
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closePanel();
+    });
+
+    // Escape key closes
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && !overlay.hidden) closePanel();
+    });
+
+    // Color pickers — live update CSS variables
+    var colorInputs = overlay.querySelectorAll('.customize-color');
+    colorInputs.forEach(function(input) {
+      input.addEventListener('input', function() {
+        var cssVar = this.getAttribute('data-var');
+        var hex = this.value;
+        document.documentElement.style.setProperty(cssVar, hex);
+        var hexSpan = document.getElementById(this.id + '-hex');
+        if (hexSpan) hexSpan.textContent = hex.toUpperCase();
+        // Recompute derived transparent backgrounds when base colors change
+        if (cssVar === '--bg-primary' || cssVar === '--bg-surface') {
+          var bgPrimary = document.querySelector('.customize-color[data-var="--bg-primary"]');
+          var bgSurface = document.querySelector('.customize-color[data-var="--bg-surface"]');
+          updateDerivedColors(bgPrimary.value, bgSurface.value);
+        }
+        saveCustomizations();
+      });
+    });
+
+    // Text inputs — live update DOM
+    var textInputs = overlay.querySelectorAll('.customize-input, .customize-textarea');
+    textInputs.forEach(function(input) {
+      input.addEventListener('input', function() {
+        var target = this.getAttribute('data-target');
+        if (!target) return;
+        var els = document.querySelectorAll(target);
+        els.forEach(function(el) {
+          if (target === '.header-slogan') {
+            // Preserve line break as <br>
+            el.innerHTML = escapeHtml(input.value).replace(/\n/g, '<br>');
+          } else {
+            el.textContent = input.value;
+          }
+        });
+        saveCustomizations();
+      });
+    });
+
+    // Reset
+    resetBtn.addEventListener('click', function() {
+      // Reset colors
+      Object.keys(DEFAULT_COLORS).forEach(function(cssVar) {
+        document.documentElement.style.removeProperty(cssVar);
+      });
+      // Also clear derived transparent background variables
+      DERIVED_VARS.forEach(function(cssVar) {
+        document.documentElement.style.removeProperty(cssVar);
+      });
+      colorInputs.forEach(function(input) {
+        var cssVar = input.getAttribute('data-var');
+        var def = DEFAULT_COLORS[cssVar];
+        if (def) {
+          input.value = def;
+          var hexSpan = document.getElementById(input.id + '-hex');
+          if (hexSpan) hexSpan.textContent = def.toUpperCase();
+        }
+      });
+
+      // Reset texts
+      textInputs.forEach(function(input) {
+        var def = DEFAULT_TEXTS[input.id];
+        if (def !== undefined) {
+          input.value = def;
+          var target = input.getAttribute('data-target');
+          if (target) {
+            var els = document.querySelectorAll(target);
+            els.forEach(function(el) {
+              if (target === '.header-slogan') {
+                el.innerHTML = escapeHtml(def).replace(/\n/g, '<br>');
+              } else {
+                el.textContent = def;
+              }
+            });
+          }
+        }
+      });
+
+      try { localStorage.removeItem(CUSTOM_STORAGE_KEY); } catch(e) {}
+    });
+
+    // Export
+    exportBtn.addEventListener('click', function() {
+      var data = getCustomizationData();
+      var json = JSON.stringify(data, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'ruptura-customizations.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Keep gear button above sticky bar when it's visible
+    var stickyBar = document.getElementById('sticky-bar');
+    if (stickyBar) {
+      var stickyObs = new MutationObserver(function() {
+        toggle.classList.toggle('above-sticky', stickyBar.classList.contains('visible'));
+      });
+      stickyObs.observe(stickyBar, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // Load saved customizations on init
+    loadCustomizations();
+  }
+
+  function getCustomizationData() {
+    var data = { colors: {}, texts: {} };
+    document.querySelectorAll('#customize-overlay .customize-color').forEach(function(input) {
+      var cssVar = input.getAttribute('data-var');
+      data.colors[cssVar] = input.value;
+    });
+    document.querySelectorAll('#customize-overlay .customize-input, #customize-overlay .customize-textarea').forEach(function(input) {
+      data.texts[input.id] = input.value;
+    });
+    return data;
+  }
+
+  function saveCustomizations() {
+    try {
+      var data = getCustomizationData();
+      localStorage.setItem(CUSTOM_STORAGE_KEY, JSON.stringify(data));
+    } catch(e) {}
+  }
+
+  function loadCustomizations() {
+    try {
+      var saved = localStorage.getItem(CUSTOM_STORAGE_KEY);
+      if (!saved) return;
+      var data = JSON.parse(saved);
+
+      // Apply colors
+      if (data.colors) {
+        Object.keys(data.colors).forEach(function(cssVar) {
+          document.documentElement.style.setProperty(cssVar, data.colors[cssVar]);
+          // Update picker input
+          var input = document.querySelector('.customize-color[data-var="' + cssVar + '"]');
+          if (input) {
+            input.value = data.colors[cssVar];
+            var hexSpan = document.getElementById(input.id + '-hex');
+            if (hexSpan) hexSpan.textContent = data.colors[cssVar].toUpperCase();
+          }
+        });
+        // Recompute derived backgrounds from saved colors
+        var bgP = data.colors['--bg-primary'] || DEFAULT_COLORS['--bg-primary'];
+        var bgS = data.colors['--bg-surface'] || DEFAULT_COLORS['--bg-surface'];
+        updateDerivedColors(bgP, bgS);
+      }
+
+      // Apply texts
+      if (data.texts) {
+        Object.keys(data.texts).forEach(function(id) {
+          var input = document.getElementById(id);
+          if (!input) return;
+          input.value = data.texts[id];
+          var target = input.getAttribute('data-target');
+          if (target) {
+            var els = document.querySelectorAll(target);
+            els.forEach(function(el) {
+              if (target === '.header-slogan') {
+                el.innerHTML = escapeHtml(data.texts[id]).replace(/\n/g, '<br>');
+              } else {
+                el.textContent = data.texts[id];
+              }
+            });
+          }
+        });
+      }
+    } catch(e) {}
+  }
+
 })();
